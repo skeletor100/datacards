@@ -127,17 +127,11 @@ def create_token(image_path, url):
         }
     }
 
-
-# =========================
-# RECURSIVE FOLDER BUILD
-# =========================
-
-def build_container(folder):
-
-    container = {
+def create_container(name):
+    return {
         "GUID": guid(),
         "Name": "Bag",
-        "Nickname": os.path.basename(folder),
+        "Nickname": name,
 
         "Transform": {
             "posX": 0,
@@ -170,6 +164,14 @@ def build_container(folder):
 
         "ContainedObjects": []
     }
+
+# =========================
+# RECURSIVE FOLDER BUILD
+# =========================
+
+def build_container(folder):
+
+    container = create_container(os.path.basename(folder))
 
     for item in sorted(os.listdir(folder)):
 
@@ -220,6 +222,8 @@ if __name__ == "__main__":
 
     root_objects = []
 
+    base_container = create_container("40kDatacards")
+
     for item in sorted(os.listdir(ROOT_DIR)):
 
         if item in EXCLUDED_DIRS:
@@ -233,12 +237,11 @@ if __name__ == "__main__":
         if faction_filter and faction_filter not in path:
             continue
 
-
-
-        root_objects.append(
+        base_container["ContainedObjects"].append(
             build_container(path)
         )
 
+    root_objects.append(base_container)
 
     tts_save = {
         "ObjectStates": root_objects
