@@ -35,10 +35,17 @@ def git_publish_all():
         check=True
     )
 
-    subprocess.run(
-        ["git", "commit", "-m", "update images"],
-        check=True
+    status = subprocess.run(
+        ["git", "diff", "--cached", "--quiet"]
     )
+
+    if status.returncode != 0:
+        subprocess.run(
+            ["git", "commit", "-m", "update images"],
+            check=True
+        )
+    else:
+        print("No changes to commit")
 
     subprocess.run(
         [
