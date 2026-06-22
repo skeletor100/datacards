@@ -28,6 +28,11 @@ IMAGE_EXTENSIONS = {
     ".jpeg"
 }
 
+EXCLUDED_DIRS = {
+    ".git",
+    "__pycache__"
+}
+
 def git_publish_all():
 
     subprocess.run(
@@ -167,6 +172,9 @@ if __name__ == "__main__":
 
     for item in sorted(os.listdir(ROOT_DIR)):
 
+        if item in EXCLUDED_DIRS:
+            continue
+        
         path = os.path.join(ROOT_DIR, item)
 
         if not os.path.isdir(path):
@@ -174,6 +182,8 @@ if __name__ == "__main__":
 
         if faction_filter and faction_filter not in path:
             continue
+
+
 
         root_objects.append(
             build_container(path)
