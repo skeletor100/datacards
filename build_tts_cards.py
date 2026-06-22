@@ -5,7 +5,7 @@ import requests
 import argparse
 import subprocess
 from PIL import Image
-
+import uuid
 
 # =========================
 # CONFIG
@@ -32,6 +32,9 @@ EXCLUDED_DIRS = {
     ".git",
     "__pycache__"
 }
+
+def guid():
+    return str(uuid.uuid4())[:6]
 
 def git_publish_all():
 
@@ -72,37 +75,53 @@ def parse_args():
 
 
 # =========================
-# IMAGE → TTS TILE
+# IMAGE → TTS TOKEN
 # =========================
 
-def create_tile(image_path, url):
+def create_token(image_path, url):
 
     img = Image.open(image_path)
-
     width, height = img.size
 
     return {
-        "Name": "Tile",
-        "Nickname": os.path.splitext(
-            os.path.basename(image_path)
-        )[0],
+        "GUID": guid(),
+        "Name": "Custom_Token",
+        "Nickname": os.path.splitext(os.path.basename(image_path))[0],
 
         "Transform": {
             "posX": 0,
             "posY": 1,
             "posZ": 0,
-
-            "scaleX": width * PIXEL_TO_TTS_SCALE,
+            "rotX": 0,
+            "rotY": 180,
+            "rotZ": 0,
+            "scaleX": 1,
             "scaleY": 1,
-            "scaleZ": height * PIXEL_TO_TTS_SCALE
+            "scaleZ": 1
         },
+
+        "ColorDiffuse": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+        },
+
+        "Locked": False,
+        "Grid": True,
+        "Snap": True,
+        "DragSelectable": True,
+        "Tooltip": True,
 
         "CustomImage": {
             "ImageURL": url,
-            "WidthScale": 0,
-            "CustomTile": {
-                "Type": 0,
-                "Thickness": 0.1,
+            "ImageSecondaryURL": "",
+            "ImageScalar": 1.0,
+            "WidthScale": 0.0,
+
+            "CustomToken": {
+                "Thickness": 0.2,
+                "MergeDistancePixels": 15.0,
+                "StandUp": False,
                 "Stackable": False
             }
         }
@@ -116,8 +135,39 @@ def create_tile(image_path, url):
 def build_container(folder):
 
     container = {
+        "GUID": guid(),
         "Name": "Bag",
         "Nickname": os.path.basename(folder),
+
+        "Transform": {
+            "posX": 0,
+            "posY": 0,
+            "posZ": 0,
+            "rotX": 0,
+            "rotY": 0,
+            "rotZ": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "scaleZ": 1
+        },
+
+        "ColorDiffuse": {
+            "r": 0.7058823,
+            "g": 0.366520882,
+            "b": 0.0
+        },
+
+        "Locked": False,
+        "Grid": True,
+        "Snap": True,
+        "Sticky": True,
+        "DragSelectable": True,
+        "Tooltip": True,
+
+        "Bag": {
+            "Order": 0
+        },
+
         "ContainedObjects": []
     }
 
@@ -147,7 +197,7 @@ def build_container(folder):
             )
 
             container["ContainedObjects"].append(
-                create_tile(
+                create_token(
                     path,
                     image_url
                 )
@@ -174,7 +224,7 @@ if __name__ == "__main__":
 
         if item in EXCLUDED_DIRS:
             continue
-        
+
         path = os.path.join(ROOT_DIR, item)
 
         if not os.path.isdir(path):
