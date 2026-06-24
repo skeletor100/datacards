@@ -3,6 +3,7 @@ import argparse
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 from datacard_parser import run as parse_datacard
+from detachment_scraper import run as scrape_detachment
 import time
 
 import threading
@@ -47,9 +48,14 @@ def parse_args():
         help="Only process this faction name"
     )
     parser.add_argument(
-        "--no-datacard",
+        "--no-units",
         action="store_true",
-        help="Do not extract data cards"
+        help="Do not extract unit data cards"
+    )
+    parser.add_argument(
+        "--no-detachments",
+        action="store_true",
+        help="Do not extract detachment data cards"
     )
     parser.add_argument(
         "--retry",
@@ -81,7 +87,7 @@ def run_retry_pipeline(retry_file):
 
     job_queue.join()
 
-def run_full_pipeline(page, failed_units, faction_filter=None, extract_datacards=True):
+def run_full_pipeline(page, failed_units, failed_detachments, faction_filter=None, extract_units=True, extract_detachments=True):
     all_factions_manifest = {}
     exclusion_set = {'sForgeWorld', 'sLegendary', 'datasheetsCollated'}
 
@@ -171,13 +177,35 @@ def run_full_pipeline(page, failed_units, faction_filter=None, extract_datacards
                 manifest_entry[sub_filter_key] = sub_filter_data
 
         # Extract Detachments
-        target_select = selects[-1] if selects else None
-        if target_select:
-            for opt in target_select.find_all('option', class_='ctrlOption'):
-                name = opt.text.strip()
-                val = opt.get('value')
-                if not any(x in name.lower() for x in ["no filter", "no supplements"]) and val != "AA":
-                    manifest_entry["detachments"].append({"id": val, "name": name})
+        contents = page.locator("div.contents_header").first
+
+        container = contents.locator(
+            "xpath=ancestor::div[contains(@class,'BreakInsideAvoid')]"
+        ).first
+
+        headers = container.locator(
+            "div.i10 a[href^='#'], div.i30 a[href^='#']"
+        )
+        count = headers.count()
+
+        detachments = []
+        name = None
+
+        for i in range(count):
+            h = headers.nth(i)
+
+            text = h.inner_text().strip()
+            cls = h.locator("..").get_attribute("class") or ""
+
+            if "i10" in cls:
+                name = text
+                continue
+
+            if "i30" in cls:
+                if name and text == "Detachment Rule":
+                    manifest_entry["detachments"].append({"name": name})
+                name = None
+
 
         # Extract Units
         warehouse = sm_soup.find(id="tooltip_contentArmyList")
@@ -192,9 +220,28 @@ def run_full_pipeline(page, failed_units, faction_filter=None, extract_datacards
 
         u_len = len(manifest_entry["units"])
         d_len = len(manifest_entry["detachments"])
-        print(f"Discovered: {faction['name']} | Units: {u_len}")
+        print(f"Discovered: {faction['name']} | Units: {u_len}, Detachments: {d_len}")
 
-        if u_len > 0 and extract_datacards:
+
+
+        if d_len > 0 and extract_detachments:
+            for detachment in manifest_entry["detachments"]:
+                print(f"Processing Detachment: {detachment['name']}")
+                try:
+                    # Why do some factions have to be so fucking weird?
+                    faction_name_str = faction["name"]
+                    if (faction["name"] == "Space Marines"):
+                        faction_name_str = "Adeptus Astartes"
+                    if (faction["name"] == "Chaos Daemons"):
+                        faction_name_str = "Legiones_Daemonica"
+                    scrape_detachment(page, faction_name_str, detachment["name"])
+                except Exception as e:
+                    failed_detachments.append({"detachment_name": detachment['name'], "faction": faction['name'], "faction_path": faction['path'], "error": str(e)})
+                    print(f"Failed to process Detachment: {detachment['name']} | Faction: {faction['name']} | Faction Path: {faction['path']} | Error: {e}")
+
+
+
+        if u_len > 0 and extract_units:
             for unit in manifest_entry["units"]:
                 print(f"Processing: {unit['unit_name']} | URL: {DOMAIN + unit['href']}")
                 try:
@@ -230,6 +277,7 @@ if __name__ == "__main__":
         page = context.new_page()
 
         failed_units = []
+        failed_detachments = []
 
         for _ in range(3):
             t = threading.Thread(
@@ -243,7 +291,7 @@ if __name__ == "__main__":
         if (args.retry):
             run_retry_pipeline(args.retry)
         else:
-            run_full_pipeline(page, failed_units, args.faction, not args.no_datacard)
+            run_full_pipeline(page, failed_units, failed_detachments, args.faction, not args.no_units, not args.no_detachments)
 
         browser.close()
 
@@ -255,6 +303,9 @@ if __name__ == "__main__":
 
         with open("failed_units.json", "w", encoding="utf-8") as f:
             json.dump(failed_units, f, indent=4, ensure_ascii=False)
+
+        with open("failed_detachments.json", "w", encoding="utf-8") as f:
+            json.dump(failed_detachments, f, indent=4, ensure_ascii=False)
 
     elapsed = time.perf_counter() - start_time
     minutes = int(elapsed // 60)

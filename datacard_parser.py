@@ -219,32 +219,9 @@ def screenshot_datacard(page, url, unit_name, faction_name):
     }
     """)
 
-    page.evaluate("""
-    () => {
-        document.querySelectorAll(
-            '.modal, .overlay, .popup, .blur'
-        ).forEach(e => e.remove());
-        document.body.style.overflow = 'auto';
-    }
-    """)
+    clean_page_for_screenshot(page)
 
-    # try common close patterns to remove popups immediately before screenshot
-    for selector in [
-        "button:has-text('Close')",
-        "button:has-text('OK')",
-        "button:has-text('Accept')",
-        ".modal-close",
-        ".close",
-        "[aria-label='Close']",
-        ".popup-close",
-        ".btn-close"
-    ]:
-        try:
-            if page.locator(selector).count() > 0:
-                page.locator(selector).first.click()
-                break
-        except:
-            pass
+    wait_for_render_stable(page)
 
     # -------------------------------------------------
     # STEP 4: SCREENSHOT CLIPPED REGION
@@ -267,6 +244,114 @@ def screenshot_datacard(page, url, unit_name, faction_name):
     img.save(output_path, optimize=True, quality=85)
 
     print(f"Saved datacard screenshot: {output_path}")
+
+
+def wait_for_render_stable(page):
+
+    page.wait_for_function("""
+    () => {
+
+        return new Promise(resolve => {
+
+            requestAnimationFrame(() => {
+
+                requestAnimationFrame(() => {
+
+                    resolve(true);
+
+                });
+
+            });
+
+        });
+
+    }
+    """)
+
+
+def clean_page_for_screenshot(page):
+
+    page.evaluate("""
+    () => {
+
+        // Remove common popup/overlay elements
+        const selectors = [
+            '[class*="modal"]',
+            '[class*="popup"]',
+            '[class*="overlay"]',
+            '[class*="cookie"]',
+            '[class*="consent"]',
+            '[class*="banner"]',
+            '[class*="dialog"]',
+            '[role="dialog"]',
+            '[aria-modal="true"]'
+        ];
+
+
+        selectors.forEach(sel => {
+            document.querySelectorAll(sel).forEach(el => {
+                el.remove();
+            });
+        });
+
+
+        // Kill blur effects everywhere
+        document.querySelectorAll("*").forEach(el => {
+
+            const style = window.getComputedStyle(el);
+
+            if (
+                style.filter.includes("blur") ||
+                style.backdropFilter.includes("blur")
+            ){
+                el.style.filter = "none";
+                el.style.backdropFilter = "none";
+                el.style.webkitBackdropFilter = "none";
+            }
+
+        });
+
+
+        // Remove fixed floating elements
+        document.querySelectorAll("*").forEach(el => {
+
+            const style = window.getComputedStyle(el);
+
+            if(style.position === "fixed") {
+
+                const rect = el.getBoundingClientRect();
+
+                if(rect.width > 100 && rect.height > 50) {
+                    el.remove();
+                }
+            }
+
+        });
+
+
+        // Disable all animations/transitions
+        const css = document.createElement("style");
+
+        css.innerHTML = `
+            *,
+            *::before,
+            *::after {
+
+                animation:none !important;
+                transition:none !important;
+                caret-color:transparent !important;
+
+            }
+        `;
+
+        document.head.appendChild(css);
+
+
+        // Reset scrolling
+        document.body.style.overflow = "visible";
+
+    }
+    """)
 
 # =========================================================
 # ENTRY
