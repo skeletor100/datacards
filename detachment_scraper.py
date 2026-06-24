@@ -208,7 +208,7 @@ def screenshot_detachment(
 
     output_dir = os.path.join(
         faction_dir,
-        detachment_name
+        detachment_name.upper()
     )
 
     for rule in detachment_rule_names:
@@ -229,11 +229,10 @@ def screenshot_detachment(
             )
         )
 
-    enhancementAnchors = detachment_block.locator("a[name^='Enhancements']")
-    count = enhancementAnchors.count()
+    if has_enhancements:
+        enhancementAnchors = detachment_block.locator("a[name^='Enhancements']")
 
-    for i in range(count):
-        anchor = enhancementAnchors.nth(i)
+        anchor = enhancementAnchors.first
 
         section = anchor.locator(
             "xpath=ancestor::div[contains(@class,'BreakInsideAvoid')]"
@@ -249,11 +248,10 @@ def screenshot_detachment(
             )
         )
 
-    stratagemAnchors = detachment_block.locator("a[name^='Stratagems']")
-    count = stratagemAnchors.count()
+    if has_stratagems:
+        stratagemAnchors = detachment_block.locator("a[name^='Stratagems']")
 
-    for i in range(count):
-        anchor = stratagemAnchors.nth(i)
+        anchor = stratagemAnchors.first
 
         section = anchor.locator(
             "xpath=ancestor::div[contains(@class,'BreakInsideAvoid')]"
