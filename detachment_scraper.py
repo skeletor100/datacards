@@ -59,6 +59,8 @@ def normalise_anchor_name(name):
         .replace("(", "")
         .replace(")", "")
         .replace("’","-")
+        .replace("!","-")
+        .replace("--","-")
     )
 
 # =========================================================

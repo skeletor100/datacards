@@ -1,0 +1,20 @@
+[
+    {
+        "detachment_name": "Dread Mob",
+        "faction": "Orks",
+        "faction_path": "https://wahapedia.ru/wh40k10ed/factions/orks",
+        "error": "Locator.bounding_box: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"a[name]\").nth(22).locator(\"xpath=ancestor::div[contains(@class,'clFl')]\").first.locator(\"a[name^='Try-Dat-Button!']\").first.locator(\"xpath=ancestor::div[contains(@class,'BreakInsideAvoid')]\").first\n"
+    },
+    {
+        "detachment_name": "Taktikal Brigade",
+        "faction": "Orks",
+        "faction_path": "https://wahapedia.ru/wh40k10ed/factions/orks",
+        "error": "Locator.bounding_box: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"a[name]\").nth(38).locator(\"xpath=ancestor::div[contains(@class,'clFl')]\").first.locator(\"a[name^='Lissen--Ere']\").first.locator(\"xpath=ancestor::div[contains(@class,'BreakInsideAvoid')]\").first\n"
+    },
+    {
+        "detachment_name": "More Dakka!",
+        "faction": "Orks",
+        "faction_path": "https://wahapedia.ru/wh40k10ed/factions/orks",
+        "error": "Locator.bounding_box: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"a[name]\").nth(43).locator(\"xpath=ancestor::div[contains(@class,'clFl')]\").first.locator(\"a[name^='Dakka!-Dakka!-Dakka!']\").first.locator(\"xpath=ancestor::div[contains(@class,'BreakInsideAvoid')]\").first\n"
+    }
+]
