@@ -10,6 +10,7 @@ import threading
 import queue
 
 job_queue = queue.Queue(maxsize=10)
+result_queue = queue.Queue()
 workers = []
 
 def worker(failed_units):
@@ -25,11 +26,16 @@ def worker(failed_units):
                 job_queue.task_done()
                 break
 
-            url, name = job
+            faction_name, url, name, scrape_data_only, screenshot_only = job
 
             try:
                 print(f"Picked up job: {name} | URL: {url}")
-                parse_datacard(page, url)
+                data = parse_datacard(page, url, scrape_data_only, screenshot_only)
+                result_queue.put({
+                    "faction": faction_name,
+                    "unit_name": name,
+                    "data": data
+                })
             except Exception as e:
                 failed_units.append((name, url, str(e)))
                 print(f"Failed to process: {name} | URL: {url} | Error: {e}")
@@ -61,6 +67,16 @@ def parse_args():
         "--retry",
         help="Retry failed units from a JSON file"
     )
+    parser.add_argument(
+        "--no-unit-scrapes",
+        action="store_true",
+        help="Don't scrape unit data"
+    )
+    parser.add_argument(
+        "--no-unit-screenshots",
+        action="store_true",
+        help="Don't screenshot units"
+    )
     return parser.parse_args()
 
 def load_retry_jobs(path):
@@ -87,7 +103,7 @@ def run_retry_pipeline(retry_file):
 
     job_queue.join()
 
-def run_full_pipeline(page, failed_units, failed_detachments, faction_filter=None, extract_units=True, extract_detachments=True):
+def run_full_pipeline(page, failed_units, failed_detachments, args):
     all_factions_manifest = {}
     exclusion_set = {'sForgeWorld', 'sLegendary', 'datasheetsCollated'}
 
@@ -100,14 +116,14 @@ def run_full_pipeline(page, failed_units, failed_detachments, faction_filter=Non
     discovered_factions = [{"name": a.text.strip(), "path": (DOMAIN + a['href'])} 
                             for a in anchors if "/factions/" in a['href']]
     
-    if faction_filter:
+    if args.faction:
         discovered_factions = [
             f for f in discovered_factions
-            if f["name"].lower() == faction_filter.lower()
+            if f["name"].lower() == args.faction.lower()
         ]
 
         if not discovered_factions:
-            print(f"No faction found matching: {faction_filter}")
+            print(f"No faction found matching: {args.faction}")
             return
 
     # --- STAGE 2: EXTRACTION ---
@@ -224,7 +240,7 @@ def run_full_pipeline(page, failed_units, failed_detachments, faction_filter=Non
 
 
 
-        if d_len > 0 and extract_detachments:
+        if d_len > 0 and not args.no_detachments:
             for detachment in manifest_entry["detachments"]:
                 print(f"Processing Detachment: {detachment['name']}")
                 try:
@@ -241,15 +257,30 @@ def run_full_pipeline(page, failed_units, failed_detachments, faction_filter=Non
 
 
 
-        if u_len > 0 and extract_units:
+        if u_len > 0 and not args.no_units:
             for unit in manifest_entry["units"]:
                 print(f"Processing: {unit['unit_name']} | URL: {DOMAIN + unit['href']}")
                 try:
-                    job_queue.put((DOMAIN + unit['href'], unit['unit_name']))
+                    # TODO Add in args to handle scraping/screenshotting only
+                    job_queue.put((faction["name"], DOMAIN + unit['href'], unit['unit_name'], args.no_unit_scrapes, args.no_unit_screenshots))
                 except Exception as e:
                     failed_units.append({"unit_name": unit['unit_name'], "href": unit['href'], "error": str(e)})
                     print(f"Failed to process: {unit['unit_name']} | URL: {DOMAIN + unit['href']} | Error: {e}")
             job_queue.join()
+
+            unit_cards = {}
+
+            while not result_queue.empty():
+                result = result_queue.get()
+
+                if result["faction"] != faction["name"]:
+                    # Should not happen if you join per faction, but keeps it safe.
+                    result_queue.put(result)
+                    break
+
+                unit_cards[result["unit_name"]] = result["data"]
+
+            manifest_entry["unit_cards"] = unit_cards
 
         all_factions_manifest[faction["name"]] = manifest_entry
         
@@ -263,8 +294,8 @@ def run_full_pipeline(page, failed_units, failed_detachments, faction_filter=Non
             print() 
 
     # --- STAGE 3: GENERATION ---
-    with open("units.js", "w", encoding="utf-8") as f:
-        f.write(f"const unitsData = {json.dumps(all_factions_manifest, indent=4, ensure_ascii=False)};\n")
+    with open("units.json", "w", encoding="utf-8") as f:
+        json.dump(all_factions_manifest, f, indent=4, ensure_ascii=False)
 
 if __name__ == "__main__":
     args = parse_args()
@@ -291,7 +322,7 @@ if __name__ == "__main__":
         if (args.retry):
             run_retry_pipeline(args.retry)
         else:
-            run_full_pipeline(page, failed_units, failed_detachments, args.faction, not args.no_units, not args.no_detachments)
+            run_full_pipeline(page, failed_units, failed_detachments, args)
 
         browser.close()
 

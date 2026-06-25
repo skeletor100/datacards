@@ -71,6 +71,11 @@ PIXEL_TO_TTS_SCALE = 0.002
 def parse_args():
     parser = argparse.ArgumentParser(description="Wahapedia faction extractor")
     parser.add_argument("--faction", help="Faction name, e.g. 'Adeptus Astartes'")
+    parser.add_argument(
+        "--no-git-refresh",
+        action="store_true",
+        help="Do not upload to git"
+    )
     return parser.parse_args()
 
 
@@ -78,14 +83,15 @@ def parse_args():
 # IMAGE → TTS TOKEN
 # =========================
 
-def create_token(image_path, url):
+# =========================
+# IMAGE → TTS TILE
+# =========================
 
-    img = Image.open(image_path)
-    width, height = img.size
+def create_tile(image_path, url):
 
     return {
         "GUID": guid(),
-        "Name": "Custom_Token",
+        "Name": "Custom_Tile",
         "Nickname": os.path.splitext(os.path.basename(image_path))[0],
 
         "Transform": {
@@ -95,9 +101,9 @@ def create_token(image_path, url):
             "rotX": 0,
             "rotY": 180,
             "rotZ": 0,
-            "scaleX": 1,
-            "scaleY": 1,
-            "scaleZ": 1
+            "scaleX": 3,
+            "scaleY": 3,
+            "scaleZ": 3
         },
 
         "ColorDiffuse": {
@@ -114,15 +120,18 @@ def create_token(image_path, url):
 
         "CustomImage": {
             "ImageURL": url,
-            "ImageSecondaryURL": "",
+
+            # back of tile
+            "ImageSecondaryURL": url,
+
             "ImageScalar": 1.0,
             "WidthScale": 0.0,
 
-            "CustomToken": {
-                "Thickness": 0.2,
-                "MergeDistancePixels": 15.0,
-                "StandUp": False,
-                "Stackable": False
+            "CustomTile": {
+                "Type": 0,
+                "Thickness": 0.1,
+                "Stackable": False,
+                "Stretch": True
             }
         }
     }
@@ -199,7 +208,7 @@ def build_container(folder):
             )
 
             container["ContainedObjects"].append(
-                create_token(
+                create_tile(
                     path,
                     image_url
                 )
@@ -218,7 +227,8 @@ if __name__ == "__main__":
 
     faction_filter = args.faction.strip().upper().replace(" ", "_") if args.faction else None
 
-    git_publish_all()
+    if not args.no_git_refresh:
+        git_publish_all()
 
     root_objects = []
 
