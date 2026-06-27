@@ -1,9 +1,10 @@
 import sys
 import os
+import json
 
 import re
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString, Tag
 from playwright.sync_api import sync_playwright
 
 from PIL import Image
@@ -22,6 +23,485 @@ def clean_text(element):
 
     return " ".join(text.split())
 
+
+def clean_text_from_string(value):
+    if not value:
+        return ""
+
+    value = re.sub(r"\s+", " ", str(value))
+    return value.strip()
+
+
+def clean_punctuation_spacing(text):
+    text = clean_text_from_string(text)
+    text = re.sub(r"\s+([,.;:])", r"\1", text)
+    text = re.sub(r"([(\[])\s+", r"\1", text)
+    text = re.sub(r"\s+([)\]])", r"\1", text)
+    return text
+
+
+def is_fluff_node(node):
+    if not isinstance(node, Tag):
+        return False
+
+    classes = node.get("class", [])
+
+    return (
+        "ShowFluff" in classes
+        or "legend" in classes
+        or "legend2" in classes
+    )
+
+
+def is_ignorable_node(node):
+    if isinstance(node, NavigableString):
+        return not clean_punctuation_spacing(str(node))
+
+    if not isinstance(node, Tag):
+        return True
+
+    if node.name in ("script", "style", "br"):
+        return True
+
+    if is_fluff_node(node):
+        return True
+
+    style = (node.get("style") or "").replace(" ", "").lower()
+    if "display:none" in style:
+        return True
+
+    return False
+
+
+def is_br(node):
+    return isinstance(node, Tag) and node.name == "br"
+
+
+def merge_adjacent_runs(runs):
+    merged = []
+
+    for run in runs:
+        if not run["text"]:
+            continue
+
+        if (
+            merged
+            and merged[-1].get("source_classes", []) == run.get("source_classes", [])
+        ):
+            merged[-1]["text"] = clean_punctuation_spacing(
+                merged[-1]["text"] + " " + run["text"]
+            )
+        else:
+            merged.append(run)
+
+    return merged
+
+
+INLINE_RENDER_CLASSES = {
+    "kwb",
+    "kwb2",
+    "bluefont",
+}
+
+
+def filtered_inline_classes(classes):
+    return [
+        c for c in classes
+        if c in INLINE_RENDER_CLASSES
+    ]
+
+
+def extract_text_runs(node, inherited_classes=None):
+    inherited_classes = inherited_classes or []
+
+    if isinstance(node, NavigableString):
+        text = clean_punctuation_spacing(str(node))
+        if not text:
+            return []
+
+        source_classes = filtered_inline_classes(inherited_classes)
+
+        return [{
+            "text": text,
+            "source_classes": sorted(set(source_classes))
+        }]
+
+    if not isinstance(node, Tag):
+        return []
+
+    if node.name in ("script", "style", "br"):
+        return []
+
+    if is_fluff_node(node):
+        return []
+
+    classes = filtered_inline_classes(node.get("class", []))
+    combined_classes = inherited_classes + classes
+
+    runs = []
+
+    for child in node.children:
+        runs.extend(extract_text_runs(child, combined_classes))
+
+    return merge_adjacent_runs(runs)
+
+
+def runs_to_text(runs):
+    return clean_punctuation_spacing(
+        " ".join(run["text"] for run in runs)
+    )
+
+
+def paragraph_block_from_nodes(nodes):
+    runs = []
+
+    for node in nodes:
+        if is_ignorable_node(node):
+            continue
+
+        runs.extend(extract_text_runs(node))
+
+    runs = merge_adjacent_runs(runs)
+
+    if not runs:
+        return None
+
+    return {
+        "displayItem": "p",
+        "runs": runs
+    }
+
+
+def parse_list_item(li):
+    bold = li.find("b")
+    title = ""
+
+    if bold:
+        title = clean_punctuation_spacing(
+            bold.get_text(" ", strip=True)
+        ).rstrip(":")
+        bold.extract()
+
+    return {
+        "title": title,
+        "text": clean_punctuation_spacing(li.get_text(" ", strip=True))
+    }
+
+
+def attach_paragraphs_to_custom_subrules(blocks):
+    out = []
+    i = 0
+
+    while i < len(blocks):
+        block = blocks[i]
+
+        if (
+            block.get("displayItem") == "subrule"
+            and block.get("content") == []
+            and (
+                block.get("source") == "h_custom"
+                or block.get("source") == "hi_custom"
+            )
+            and i + 1 < len(blocks)
+            and blocks[i + 1].get("displayItem") == "p"
+        ):
+            block = dict(block)
+            block["content"] = [blocks[i + 1]]
+            out.append(block)
+            i += 2
+            continue
+
+        out.append(block)
+        i += 1
+
+    return out
+
+
+def extract_content_blocks(nodes):
+    blocks = []
+    paragraph_nodes = []
+    br_count = 0
+
+    def flush_paragraph():
+        nonlocal paragraph_nodes
+
+        block = paragraph_block_from_nodes(paragraph_nodes)
+        if block:
+            blocks.append(block)
+
+        paragraph_nodes = []
+
+    for node in nodes:
+        if is_br(node):
+            br_count += 1
+
+            if br_count >= 2:
+                flush_paragraph()
+                br_count = 0
+
+            continue
+
+        br_count = 0
+
+        if is_ignorable_node(node):
+            continue
+
+        if (
+            isinstance(node, Tag)
+            and node.name == "span"
+            and (
+                "h_custom" in node.get("class", [])
+                or "hi_custom" in node.get("class", [])
+            )
+        ):
+            flush_paragraph()
+
+            blocks.append({
+                "displayItem": "subrule",
+                "title": clean_punctuation_spacing(node.get_text(" ", strip=True)),
+                "content": [],
+                "source": "h_custom"
+            })
+
+            continue
+
+        if isinstance(node, Tag) and node.name in ("ul", "ol"):
+            flush_paragraph()
+
+            blocks.append({
+                "displayItem": node.name,
+                "items": [
+                    {
+                        "title": parse_list_item(li)["title"],
+                        "runs": extract_text_runs(li)
+                    }
+                    for li in node.find_all("li", recursive=False)
+                ]
+            })
+
+            continue
+
+        paragraph_nodes.append(node)
+
+    flush_paragraph()
+    return attach_paragraphs_to_custom_subrules(blocks)
+
+
+def find_section_by_anchor_prefix(soup, anchor_prefix):
+    anchor = soup.find(
+        "a",
+        attrs={"name": lambda v: v and v.startswith(anchor_prefix)}
+    )
+
+    if not anchor:
+        return None
+
+    return anchor.find_parent("div", class_="BreakInsideAvoid")
+
+
+def extract_subrule_from_table(block):
+    title_node = block.select_one(".impact18")
+    if not title_node:
+        return None
+
+    content_nodes = []
+
+    for node in title_node.next_siblings:
+        if is_ignorable_node(node):
+            continue
+        content_nodes.append(node)
+
+    return {
+        "displayItem": "subrule",
+        "title": clean_text(title_node),
+        "content": extract_content_blocks(content_nodes)
+    }
+
+
+def extract_detachment_rules(soup):
+    rules = []
+
+    for heading in soup.select("h3"):
+        if heading.find_parent(class_="str10Wrap"):
+            continue
+
+        block = heading.find_parent("div", class_="BreakInsideAvoid")
+        if not block:
+            continue
+
+        content_nodes = []
+
+        for node in heading.next_siblings:
+            if isinstance(node, Tag) and node.name in ("h2", "h3"):
+                break
+
+            if is_ignorable_node(node):
+                continue
+
+            if isinstance(node, Tag) and node.select_one(".impact18"):
+                subrule = extract_subrule_from_table(node)
+                if subrule:
+                    content_nodes.append(subrule)
+                continue
+
+            content_nodes.append(node)
+
+        content = []
+
+        # extract_content_blocks expects DOM nodes, but subrules are already parsed dicts.
+        raw_nodes = []
+        for node in content_nodes:
+            if isinstance(node, dict):
+                content.extend(extract_content_blocks(raw_nodes))
+                raw_nodes = []
+                content.append(node)
+            else:
+                raw_nodes.append(node)
+
+        content.extend(extract_content_blocks(raw_nodes))
+
+        if content:
+            rules.append({
+                "name": clean_text(heading),
+                "content": content,
+                "heading_class": heading.get("class", [])
+            })
+
+    return rules
+
+
+def extract_enhancements(soup):
+    enhancements = []
+
+    section = find_section_by_anchor_prefix(soup, "Enhancements")
+    if not section:
+        return enhancements
+
+    for item in section.select("ul.EnhancementsPts li"):
+        spans = item.find_all("span", recursive=False)
+        name = clean_text(spans[0]) if spans else clean_text(item)
+
+        container = item.find_parent("div", class_="BreakInsideAvoid")
+        if not container:
+            continue
+
+        content_nodes = []
+
+        for node in container.find_all("p", recursive=True):
+            if is_fluff_node(node):
+                continue
+
+            if clean_text(node):
+                content_nodes.append(node)
+
+        content = extract_content_blocks(content_nodes)
+
+        enhancements.append({
+            "name": name,
+            "content": content
+        })
+
+    return enhancements
+
+
+def extract_stratagem_field_block(text_el, label):
+    if not text_el:
+        return None
+
+    label = label.upper()
+    collecting = False
+    nodes = []
+
+    labels = {"WHEN", "TARGET", "EFFECT", "RESTRICTIONS"}
+
+    for child in text_el.children:
+        if isinstance(child, Tag):
+            child_text = clean_text(child).upper().rstrip(":")
+
+            if child.name == "span" and child_text == label:
+                collecting = True
+                continue
+
+            if (
+                collecting
+                and child.name == "span"
+                and child_text in labels
+                and child_text != label
+            ):
+                break
+
+        if collecting:
+            nodes.append(child)
+
+    return paragraph_block_from_nodes(nodes)
+
+
+def extract_icon_classes(wrap):
+    icons = []
+
+    for div in wrap.select(".str10Diamond div[class]"):
+        classes = div.get("class", [])
+
+        candidates = [
+            c for c in classes
+            if c.startswith("str10")
+            and not c.startswith("str10Color")
+            and c not in {
+                "str10Diamond",
+                "str10CP",
+                "str10Pos2",
+                "str10DiamondWrap",
+            }
+        ]
+
+        for candidate in candidates:
+            if candidate not in icons:
+                icons.append(candidate)
+
+    return icons
+
+
+def extract_color_class(wrap):
+    for c in wrap.get("class", []):
+        if c.startswith("str10Color"):
+            return c
+
+    for el in wrap.select("[class]"):
+        for c in el.get("class", []):
+            if c.startswith("str10Color"):
+                return c
+
+    return None
+
+
+def strip_detachment_name_from_type(value):
+    if "–" in value:
+        return clean_punctuation_spacing(value.split("–", 1)[1])
+
+    return clean_punctuation_spacing(value)
+
+
+def extract_stratagems(soup):
+    stratagems = []
+
+    for wrap in soup.select(".str10Wrap"):
+        text_el = wrap.select_one(".str10Text")
+
+        stratagems.append({
+            "name": clean_text(wrap.select_one(".str10Name")),
+            "cp": clean_text(wrap.select_one(".str10CP")),
+            "type": strip_detachment_name_from_type(
+                clean_text(wrap.select_one(".str10Type"))
+            ),
+            "when": extract_stratagem_field_block(text_el, "WHEN"),
+            "target": extract_stratagem_field_block(text_el, "TARGET"),
+            "effect": extract_stratagem_field_block(text_el, "EFFECT"),
+            "restrictions": extract_stratagem_field_block(text_el, "RESTRICTIONS"),
+            "icon_classes": extract_icon_classes(wrap),
+            "color_class": extract_color_class(wrap)
+        })
+
+    return stratagems
 
 # =========================================================
 # DETACHMENT EXTRACTION
@@ -50,6 +530,18 @@ def extract_detachment_block(page, detachment_anchor):
     raise Exception(f"Detachment not found: {detachment_anchor}")
 
 
+def extract_detachment_data(detachment_block, faction_name, detachment_name):
+    soup = BeautifulSoup(detachment_block.inner_html(), "html.parser")
+
+    return {
+        "faction": faction_name,
+        "detachment": detachment_name,
+        "rules": extract_detachment_rules(soup),
+        "enhancements": extract_enhancements(soup),
+        "stratagems": extract_stratagems(soup)
+    }
+
+
 def normalise_anchor_name(name):
 
     return (
@@ -67,7 +559,7 @@ def normalise_anchor_name(name):
 # PIPELINE (FETCH + IDENTIFICATION ONLY)
 # =========================================================
 
-def run(page, faction_name, detachment_name):
+def run(page, faction_name, detachment_name, take_screenshot):
 
     detachment_anchor = normalise_anchor_name(
         detachment_name
@@ -168,20 +660,33 @@ def run(page, faction_name, detachment_name):
     )
 
 
+    data = []
+    
+
+    data = extract_detachment_data(
+        detachment_block,
+        faction_name,
+        detachment_name
+    )
+
+
     print(
         f"Faction: {faction_name} | Detachment: {detachment_anchor}"
     )
 
 
-    screenshot_detachment(
-        page,
-        detachment_block,
-        faction_name,
-        detachment_anchor,
-        detachment_rule_names,
-        has_enhancements,
-        has_stratagems
-    )
+    if take_screenshot:
+        screenshot_detachment(
+            page,
+            detachment_block,
+            faction_name,
+            detachment_anchor,
+            detachment_rule_names,
+            has_enhancements,
+            has_stratagems
+        )
+
+    return data
 
 
 
@@ -476,6 +981,11 @@ def parse_args():
         help="Detachment anchor name (eg Gladius-Task-Force)"
     )
 
+    parser.add_argument(
+        "--screenshot",
+        action="store_true",
+        help="Screenshot detachment"
+    )
 
     return parser.parse_args()
 
@@ -500,11 +1010,19 @@ if __name__ == "__main__":
             wait_until="domcontentloaded"
         )
 
-        run(
+        data = run(
             page,
             args.faction,
-            args.detachment
+            args.detachment,
+            args.screenshot
         )
 
+        output_path = f"./{args.faction}/{args.detachment}.json"
+
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+        print(f"Wrote detachment data to {output_path}")
 
         browser.close()

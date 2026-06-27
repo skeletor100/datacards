@@ -11,11 +11,11 @@ import uuid
 # CONFIG
 # =========================
 
-ROOT_DIR = "."
+ROOT_DIR = "./rendered_cards"
 
 GITHUB_USER = "skeletor100"
 GITHUB_REPO = "datacards"
-GITHUB_BRANCH = "main"
+GITHUB_BRANCH = "main/rendered_cards"
 
 # create a GitHub personal access token
 import os

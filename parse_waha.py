@@ -26,11 +26,11 @@ def worker(failed_units):
                 job_queue.task_done()
                 break
 
-            faction_name, url, name, scrape_data_only, screenshot_only = job
+            faction_name, url, name, screenshots = job
 
             try:
                 print(f"Picked up job: {name} | URL: {url}")
-                data = parse_datacard(page, url, scrape_data_only, screenshot_only)
+                data = parse_datacard(page, url, screenshots)
                 result_queue.put({
                     "faction": faction_name,
                     "unit_name": name,
@@ -68,14 +68,9 @@ def parse_args():
         help="Retry failed units from a JSON file"
     )
     parser.add_argument(
-        "--no-unit-scrapes",
+        "--screenshots",
         action="store_true",
-        help="Don't scrape unit data"
-    )
-    parser.add_argument(
-        "--no-unit-screenshots",
-        action="store_true",
-        help="Don't screenshot units"
+        help="Take Waha screenshots"
     )
     return parser.parse_args()
 
@@ -92,6 +87,45 @@ def get_dropdown_label(select_element):
     select_text = select_element.get_text()
     label = full_text.replace(select_text, "").replace(":", "").strip()
     return label or "SubFilter"
+
+def build_detachment_subfaction_map(faction_name, detachment_select):
+    mapping = {}
+    current_subfaction = faction_name
+
+    for option in detachment_select.find_all("option"):
+        text = option.get_text(strip=True)
+        value = option.get("value")
+        classes = option.get("class", [])
+
+        if option.has_attr("disabled"):
+            if text == "Boarding Actions":
+                break
+
+            if "ctrlOptionHeader" in classes and text != "Detachment":
+                current_subfaction = text
+
+            continue
+
+        # Skip "No filter"
+        if text.lower() == "no filter":
+            continue
+
+        mapping[value] = current_subfaction
+
+    return mapping
+
+def get_detachment_identifier(cls):
+    for token in cls.split():
+        if len(token) != 4 or token == "clFl":
+            continue
+
+        left = token[:2]
+        right = token[2:]
+
+        if left != right:
+            return right
+
+    return None
 
 def run_retry_pipeline(retry_file):
     jobs = load_retry_jobs(retry_file)
@@ -140,6 +174,8 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
         manifest_entry = {"units": [], "detachments": []}
         sub_filter_data = []
         sub_filter_key = None
+
+        detachment_subfaction_map = {}
 
         # Handle Sub-Filter ONLY if multiple dropdowns exist
         if len(selects) >= 2:
@@ -192,6 +228,10 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
             if sub_filter_data:
                 manifest_entry[sub_filter_key] = sub_filter_data
 
+            detachment_subfaction_map = build_detachment_subfaction_map(faction['name'], selects[1])
+
+            
+
         # Extract Detachments
         contents = page.locator("div.contents_header").first
 
@@ -219,7 +259,14 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
 
             if "i30" in cls:
                 if name and text == "Detachment Rule":
-                    manifest_entry["detachments"].append({"name": name})
+                    identifier = get_detachment_identifier(cls)
+                    sub_faction = detachment_subfaction_map.get(identifier, faction['name'])
+
+                    manifest_entry["detachments"].append({
+                        "name": name,
+                        "identifier": identifier,
+                        "sub_faction": sub_faction
+                    })
                 name = None
 
 
@@ -241,28 +288,31 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
 
 
         if d_len > 0 and not args.no_detachments:
+            detachment_cards = {}
             for detachment in manifest_entry["detachments"]:
-                print(f"Processing Detachment: {detachment['name']}")
                 try:
                     # Why do some factions have to be so fucking weird?
-                    faction_name_str = faction["name"]
-                    if (faction["name"] == "Space Marines"):
+                    faction_name_str = detachment["sub_faction"]
+                    if (detachment["sub_faction"] == "Space Marines"):
                         faction_name_str = "Adeptus Astartes"
-                    if (faction["name"] == "Chaos Daemons"):
+                    if (detachment["sub_faction"] == "Chaos Daemons"):
                         faction_name_str = "Legiones_Daemonica"
-                    scrape_detachment(page, faction_name_str, detachment["name"])
+                    print(f"Processing Detachment: {detachment['name']} for faction {faction_name_str}")
+                    detachment_data = scrape_detachment(page, faction_name_str, detachment["name"], args.screenshots)
+
+                    detachment_cards[detachment["name"]] = detachment_data
                 except Exception as e:
                     failed_detachments.append({"detachment_name": detachment['name'], "faction": faction['name'], "faction_path": faction['path'], "error": str(e)})
                     print(f"Failed to process Detachment: {detachment['name']} | Faction: {faction['name']} | Faction Path: {faction['path']} | Error: {e}")
 
+            manifest_entry["detachment_cards"] = detachment_cards
 
 
         if u_len > 0 and not args.no_units:
             for unit in manifest_entry["units"]:
                 print(f"Processing: {unit['unit_name']} | URL: {DOMAIN + unit['href']}")
                 try:
-                    # TODO Add in args to handle scraping/screenshotting only
-                    job_queue.put((faction["name"], DOMAIN + unit['href'], unit['unit_name'], args.no_unit_scrapes, args.no_unit_screenshots))
+                    job_queue.put((faction["name"], DOMAIN + unit['href'], unit['unit_name'], args.screenshots))
                 except Exception as e:
                     failed_units.append({"unit_name": unit['unit_name'], "href": unit['href'], "error": str(e)})
                     print(f"Failed to process: {unit['unit_name']} | URL: {DOMAIN + unit['href']} | Error: {e}")

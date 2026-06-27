@@ -674,7 +674,7 @@ def preprocess(img, max_width=1200, max_height=2000):
 # =========================================================
 # PIPELINE (PURE FETCH + PARSE ONLY)
 # =========================================================
-def run(page, url, no_scrape, no_screenshot):
+def run(page, url, screenshot):
     page.set_viewport_size({"width": 1600, "height": 2000})
 
     page.goto(url, wait_until="domcontentloaded")
@@ -743,14 +743,12 @@ def run(page, url, no_scrape, no_screenshot):
 
     print(f"Faction: {faction_name} | Keywords: {faction_keywords_str} | Unit: {data['name']}")
 
-    if not no_screenshot:
+    if screenshot:
         # ONLY NEW ADDITION (post-extraction safe zone)
         screenshot_datacard(page, url, data["name"], faction_keywords_str)
 
-    if not no_scrape:
-        return data
-    else:
-        return {}
+
+    return data
 
 # =========================================================
 # SCREENSHOT STAGE (POST-EXTRACTION ONLY)
@@ -970,12 +968,7 @@ def parse_args():
         help="The url for the unit"
     )
     parser.add_argument(
-        "--no-scrape",
-        action="store_true",
-        help="Don't scrape the unit data"
-    )
-    parser.add_argument(
-        "--no-screenshot",
+        "--screenshot",
         action="store_true",
         help="Don't take a screenshot of the datacard"
     )
@@ -993,7 +986,7 @@ if __name__ == "__main__":
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        data = run(page, args.url, args.no_scrape, args.no_screenshot)
+        data = run(page, args.url, args.screenshot)
 
         browser.close()
 

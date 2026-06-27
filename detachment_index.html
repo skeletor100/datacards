@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Detachment Card Renderer</title>
+  <style>
+    :root{
+      --card-w:1800px; --card-h:1200px; --strat-card-w:1200px; --strat-card-h:1800px; --paper:#ece9df; --ink:#111; --banner:#084563;
+      --frame:#4b6262; --green:#22796c; --blue:#096691; --red:#bf0d12;
+      --font:"Conduit ITC","ConduitITC","Bahnschrift Condensed","Aptos Narrow","Arial Narrow",Arial,sans-serif;
+    }
+    *{box-sizing:border-box} body{margin:0;background:#242424;color:var(--ink);font-family:var(--font);padding:24px}
+    .toolbar{max-width:var(--card-w);margin:0 auto 16px;color:#ddd;font:14px Arial,sans-serif;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.toolbar select{padding:6px 8px}.toolbar label{display:flex;gap:6px;align-items:center}
+    #app{width:min(96vw,var(--card-w));margin:0 auto;display:grid;gap:24px}.hidden{display:none!important}
+    .detachment-card{width:100%;aspect-ratio:3/2;background:var(--paper);border:4px solid var(--frame);position:relative;overflow:hidden;container-type:inline-size;box-shadow:0 12px 40px rgba(0,0,0,.45)}
+    .detachment-card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 18% 22%,rgba(255,255,255,.35),transparent 28%),linear-gradient(90deg,rgba(0,0,0,.035),transparent 20%,transparent 80%,rgba(0,0,0,.07));pointer-events:none}
+    .header{position:absolute;left:4%;right:4%;top:3%;height:10.2%;background:var(--banner);color:#fff;padding:0 1.55%;text-transform:uppercase;font-weight:900;letter-spacing:.035em;line-height:.95}.header::after{content:"";position:absolute;left:1.55%;right:1.55%;top:50%;height:.42cqw;background:#fff;transform:translateY(-50%)}.kicker{position:absolute;left:1.55%;right:1.55%;top:12%;font-size:2.26cqw;line-height:1}.page-title{position:absolute;left:1.55%;right:1.55%;line-height:.9}.rule-card .page-title{font-size:2.94cqw; bottom:7%;}.strat-card .page-title{font-size:3.4cqw; bottom:11%;}
+    .content{position:absolute;left:4%;right:4%;top:16%;bottom:4%;overflow:hidden}.section-title{background:var(--frame);color:white;text-transform:uppercase;font-weight:900;letter-spacing:.04em;font-size:2.0cqw;padding:.35cqw 1cqw;margin-bottom:.75cqw}.rule-body{font:var(--rule-fs,1.62cqw)/1.20 var(--font)}.rule-name,.enh-name{font-weight:900;text-transform:uppercase;font-size:calc(var(--enh-fs,1.45cqw) * 1.38);letter-spacing:.02em;margin:.35cqw 0 .14cqw}.subrule-title{font-weight:900;text-transform:uppercase;font-size:calc(var(--rule-fs,1.62cqw) * 1.02);margin:.55cqw 0 .08cqw}.enh-grid{display:grid;grid-template-columns:1fr 1fr;gap:.85cqw 2.0cqw}.enh-card{border-top:.18cqw dotted #222;padding-top:.32cqw;min-width:0}.enh-text{font:var(--enh-fs,1.45cqw)/1.16 var(--font)}
+    .kwb,.kwb2{font-weight:900;text-transform:uppercase}.bluefont{color:#2d6c83}.tt,.kwbu{font-weight:900;text-transform:none;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:.12em} p{margin:.30cqw 0}.rule-card .content{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:.85cqw}.rules-zone,.enh-zone{min-height:0;overflow:hidden}.enh-zone{align-self:end}
+    .strat-card{width:min(96vw,var(--strat-card-w));aspect-ratio:2/3;margin:0 auto}.strat-card .header{height:8.2%;}.strat-card .kicker{font-size:3.7cqw}.strat-card .page-title{font-size:3.2cqw}.strat-card .content{top:12.2%;bottom:3.2%}
+    .strat-grid{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 2.3cqw;
+      align-items: start;
+      height: 100%;
+      overflow: hidden;
+    }
+    .strat-col{
+      display: flex;
+      flex-direction: column;
+      gap: 1.5cqw;
+      min-width: 0;
+    }
+    .strat{display: grid;grid-template-columns: 8.7cqw 1fr;gap: 1.25cqw;min-height: auto;}
+    .strat-icons{
+      --diamond-size: 5.7cqw;
+      --diamond-gap: 1.05cqw;
+
+      position: relative;
+      width: 8.4cqw;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 1.05cqw;
+      gap: var(--diamond-gap);
+    }
+    .strat-icons::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:.64cqw;transform:translateX(-50%);background:currentColor;z-index:0}
+    .diamond-slot{
+      width: calc(var(--diamond-size) * 1.41421356);
+      height: calc(var(--diamond-size) * 1.41421356);
+      display: grid;
+      place-items: start center;
+      flex: 0 0 auto;
+      z-index: 1;
+    }
+    .diamond-slot:first-child{
+      height: var(--diamond-size);
+      margin-bottom: calc((var(--diamond-size) * 1.41421356) - var(--diamond-size));
+    }
+    .diamond{
+      width: var(--diamond-size);
+      height: var(--diamond-size);
+      background: var(--paper);
+      border: .64cqw solid currentColor;
+      transform: rotate(45deg);
+      display: grid;
+      place-items: center;
+    }
+    .diamond > *{
+      transform: rotate(-45deg);
+    }
+    .cp{font-weight:900;font-size:2.15cqw;line-height:1;color:currentColor}.phase-icon{width:3.8cqw;height:3.8cqw;background-color:transparent;background-repeat:no-repeat;background-size:contain;background-position:center}.str10ColorEither .phase-icon{filter:invert(40%) sepia(12%) saturate(2210%) hue-rotate(121deg) brightness(94%) contrast(88%)}.str10ColorYour .phase-icon{filter:invert(23%) sepia(88%) saturate(2002%) hue-rotate(179deg) brightness(87%) contrast(93%)}.str10ColorEnemy .phase-icon{filter:invert(10%) sepia(76%) saturate(6071%) hue-rotate(352deg) brightness(102%) contrast(99%)}.strat-body{min-width:0;overflow:hidden}.strat-name{font-weight:900;text-transform:uppercase;font-size:var(--strat-name-fs,3.39cqw);line-height:1;color:currentColor;letter-spacing:.04em;border-bottom:.30cqw solid currentColor;padding-bottom:.18cqw;white-space:nowrap;overflow:hidden;text-overflow:clip}.strat-type{font-weight:900;text-transform:uppercase;font-size:var(--strat-type-fs,3.15cqw);line-height:1.05;margin:.28cqw 0 .22cqw}.dotline{border-top:.20cqw dotted #111;height:0;margin:.13cqw 0 .28cqw}.strat-text{font:var(--strat-fs,3.15cqw)/1.08 var(--font)}.strat-field{margin:.14cqw 0 .30cqw}.label{display:inline;font-weight:900;color:currentColor;text-transform:uppercase;margin-right:.22em}.str10ColorEither{color:var(--green)}.str10ColorYour{color:var(--blue)}.str10ColorEnemy{color:var(--red)}
+  </style>
+</head>
+<body>
+  <div class="toolbar"><label>Faction <select id="faction-primary"></select></label><label>Sub-faction <select id="faction-secondary"></select></label><label>Detachment <select id="detachment"></select></label><label>Show <select id="show"><option value="all">Both cards</option><option value="rules">Rules card</option><option value="stratagems">Stratagems card</option></select></label></div>
+  <main id="app"></main>
+<script>
+
+let detachmentIndex = [];
+
+const NONE_SECONDARY = "__NONE__";
+const NONE_LABEL = "None";
+
+const FACTION_KEYWORD_ALIASES = {
+  "SPACE MARINES": "ADEPTUS ASTARTES",
+  "CHAOS DAEMONS": "LEGIONES DAEMONICA",
+  "IMPERIAL AGENTS": "AGENTS OF THE IMPERIUM"
+};
+
+function upper(value){
+  return String(value || '').trim().toUpperCase();
+}
+
+function getExpectedPrimaryKeyword(jsonFactionName){
+  const jsonFactionUpper = upper(jsonFactionName);
+  return FACTION_KEYWORD_ALIASES[jsonFactionUpper] || jsonFactionUpper;
+}
+
+function allDetachmentCards(){
+  const rows = [];
+
+  for (const [outerFaction, outerData] of Object.entries(DATA || {})) {
+    const primaryFaction = getExpectedPrimaryKeyword(outerFaction);
+    const cards = outerData?.detachment_cards || {};
+
+    for (const [detachmentKey, card] of Object.entries(cards)) {
+      if (!card?.faction) continue;
+
+      const cardFaction = upper(card.faction);
+
+      const subFaction =
+        cardFaction && cardFaction !== primaryFaction
+          ? cardFaction
+          : NONE_SECONDARY;
+
+      rows.push({
+        outerFaction,
+        primaryFaction,
+        subFaction,
+        detachmentKey,
+        detachment: card.detachment || detachmentKey,
+        card
+      });
+    }
+  }
+
+  return rows;
+}
+
+function populate(){
+  detachmentIndex = allDetachmentCards();
+
+  const primaryValues = [...new Set(detachmentIndex.map(x => x.primaryFaction))]
+    .sort();
+
+  $('#faction-primary').innerHTML = primaryValues
+    .map(v => `<option value="${esc(v)}">${esc(v)}</option>`)
+    .join('');
+
+  updateSecondary();
+}
+
+function updateSecondary(){
+  const f1 = $('#faction-primary').value;
+  const matches = detachmentIndex.filter(x => x.primaryFaction === f1);
+
+  const secondaryValues = [...new Set(matches.map(x => x.subFaction))]
+    .sort((a, b) => {
+      if (a === NONE_SECONDARY) return -1;
+      if (b === NONE_SECONDARY) return 1;
+      return a.localeCompare(b);
+    });
+
+  const hasRealSecondary = secondaryValues.some(v => v !== NONE_SECONDARY);
+  const secondary = $('#faction-secondary');
+
+  if (hasRealSecondary) {
+    secondary.hidden = false;
+    secondary.innerHTML = secondaryValues
+      .map(v => `<option value="${esc(v)}">${v === NONE_SECONDARY ? NONE_LABEL : esc(v)}</option>`)
+      .join('');
+  } else {
+    secondary.hidden = true;
+    secondary.innerHTML = `<option value="${NONE_SECONDARY}">${NONE_LABEL}</option>`;
+  }
+
+  updateDets();
+}
+
+function updateDets(){
+  const f1 = $('#faction-primary').value;
+  const secondary = $('#faction-secondary');
+  const f2 = secondary.hidden ? NONE_SECONDARY : secondary.value;
+
+  const matches = detachmentIndex
+    .filter(x => x.primaryFaction === f1 && x.subFaction === f2)
+    .sort((a, b) => a.detachment.localeCompare(b.detachment));
+
+  $('#detachment').innerHTML = matches
+    .map((x, i) => `<option value="${i}">${esc(x.detachment)}</option>`)
+    .join('');
+
+  $('#detachment')._matches = matches;
+
+  render();
+}
+
+function selectedCard(){
+  const matches = $('#detachment')._matches || [];
+  const selected = matches[Number($('#detachment').value)];
+  return selected?.card || null;
+}
+
+const DATA_URL='units.json', MANIFEST_URL='detachment_css_manifest.json';
+let DATA={}, MANIFEST={};
+const $=s=>document.querySelector(s), app=$('#app');
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function textRuns(block){ if(!block) return ''; const runs=Array.isArray(block.runs)?block.runs:[]; return runs.map(r=>`<span class="${esc((r.source_classes||[]).join(' '))}">${esc(r.text).trim()}</span>`).join(' ').replace(/\s+([,.;:])/g,'$1'); }
+function itemHtml(item){
+  const title = item.title
+    ? `<span class="li-title">${esc(item.title)}</span> `
+    : '';
+
+  return `<li>${title}${textRuns(item)}</li>`;
+}
+
+function blockHtml(block){
+  if(!block) return '';
+  if(Array.isArray(block)) return block.map(blockHtml).join('');
+
+  if(block.displayItem === 'subrule'){
+    return `<div class="subrule-title">${esc(block.title)}</div>${(block.content||[]).map(blockHtml).join('')}`;
+  }
+
+  if(block.displayItem === 'ul'){
+    return `<ul class="rule-list">${(block.items || []).map(itemHtml).join('')}</ul>`;
+  }
+
+  return `<p>${textRuns(block)}</p>`;
+}
+
+function render(){
+  const card = selectedCard();
+
+  if (!card) {
+    app.innerHTML = '';
+    return;
+  }
+
+  app.innerHTML = renderRules(card) + renderStrats(card);
+  fitAll();
+  requestAnimationFrame(fitAll);
+  applyShow();
+}
+function colourClass(cls){return cls||'str10ColorEither'}
+function headingStyleFromClasses(classes){
+    classes = Array.isArray(classes) ? classes : [];
+
+    const style = {
+        color: "#fff"
+    };
+
+    for (const cls of classes) {
+        const s = MANIFEST.heading_classes?.[cls];
+        if (!s) continue;
+
+        if (s.backgroundColor && s.backgroundColor !== "rgba(0, 0, 0, 0)")
+            style.background = s.backgroundColor;
+    }
+
+    return Object.entries(style)
+        .map(([k,v]) => `${k}:${v}`)
+        .join(";");
+}
+function iconStyle(icon){ const item=MANIFEST.stratagem_icons?.[icon]; const path=item?.backgroundImageAsset || ''; return path ? `style="background-image:url('${esc(path)}')"` : ''; }
+function cardHeader(card,title){
+    const bannerStyle = headingStyleFromClasses(card.rules?.[0]?.heading_class);
+
+    return `
+    <div class="header" style="${bannerStyle}">
+        <div class="kicker">${esc(card.faction)} - ${esc(card.detachment)}</div>
+        <div class="page-title">${title}</div>
+    </div>`;
+}
+function renderRules(card){
+  const bannerStyle = headingStyleFromClasses(card.rules?.[0]?.heading_class);
+
+  const rules = (card.rules || []).map(r => `
+    <section>
+      <div class="section-title" style="${headingStyleFromClasses(r.heading_class)}">
+        ${esc(r.name)}
+      </div>
+      <div class="rule-body">
+        ${(r.content || []).map(blockHtml).join('')}
+      </div>
+    </section>
+  `).join('');
+
+  const enh = (card.enhancements || []).map(e => `
+    <div class="enh-card">
+      <div class="enh-name">${esc(e.name)}</div>
+      <div class="enh-text">${(e.content || []).map(blockHtml).join('')}</div>
+    </div>
+  `).join('');
+
+  return `
+    <article class="detachment-card rule-card" data-card="rules">
+      ${cardHeader(card,'Detachment Rules')}
+      <div class="content">
+        <div class="rules-zone">${rules}</div>
+        <section class="enh-zone">
+          <div class="section-title" style="${bannerStyle}">Enhancements</div>
+          <div class="enh-grid">${enh}</div>
+        </section>
+      </div>
+    </article>
+  `;
+}
+function renderStrat(s,det){
+  const color=colourClass(s.color_class); const icons=(s.icon_classes&&s.icon_classes.length?s.icon_classes:['str10Any']).concat(['CP:'+s.cp]);
+  const iconHtml = icons.map(i =>
+    i.startsWith('CP:')
+      ? `<div class="diamond-slot"><div class="diamond"><div class="cp">${esc(i.slice(3)||'1CP')}</div></div></div>`
+      : `<div class="diamond-slot"><div class="diamond"><div class="phase-icon" ${iconStyle(i)}></div></div></div>`
+  ).join('');
+  const field=(label,val)=> val?`<div class="strat-field"><span class="label">${label}:</span>${textRuns(val)}</div>`:'';
+  return `<section class="strat ${color}"><div class="strat-icons">${iconHtml}</div><div class="strat-body"><div class="strat-name">${esc(s.name)}</div><div class="strat-type">${esc(det)} – ${esc(s.type||'Stratagem')}</div><div class="dotline"></div><div class="strat-text">${field('WHEN',s.when)}${field('TARGET',s.target)}${field('EFFECT',s.effect)}${field('RESTRICTIONS',s.restrictions)}</div></div></section>`;
+}
+function splitStrats(strats){
+  const leftCount = Math.ceil(strats.length / 2);
+
+  return [
+    strats.slice(0, leftCount),
+    strats.slice(leftCount)
+  ];
+}
+function renderStrats(card){
+  const strats = card.stratagems || [];
+  if (!strats.length) return '';
+
+  const [left, right] = splitStrats(strats);
+
+  return `
+    <article class="detachment-card strat-card" data-card="stratagems">
+      ${cardHeader(card,'Stratagems')}
+      <div class="content">
+        <div class="strat-grid">
+          <div class="strat-col">
+            ${left.map(s => renderStrat(s, card.detachment)).join('')}
+          </div>
+          <div class="strat-col">
+            ${right.map(s => renderStrat(s, card.detachment)).join('')}
+          </div>
+        </div>
+      </div>
+    </article>
+  `;
+}
+function pxToCqw(card, px){ return (px / card.getBoundingClientRect().width) * 100; }
+function overflowing(el){ return el && (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1); }
+function fitRulesCard(card){
+  card.style.setProperty('--rule-fs','1.62cqw');
+  card.style.setProperty('--enh-fs','1.45cqw');
+  const rules=card.querySelector('.rules-zone'), enh=card.querySelector('.enh-zone');
+  for(let i=0;i<34 && (overflowing(rules)||overflowing(enh)||overflowing(card.querySelector('.content')));i++){
+    const rule=parseFloat(getComputedStyle(card).getPropertyValue('--rule-fs')) || 1.62;
+    const enf=parseFloat(getComputedStyle(card).getPropertyValue('--enh-fs')) || 1.45;
+    if(overflowing(rules) && rule>.98) card.style.setProperty('--rule-fs',(rule-.045)+'cqw');
+    if((overflowing(enh)||overflowing(card.querySelector('.content'))) && enf>.86) card.style.setProperty('--enh-fs',(enf-.045)+'cqw');
+  }
+}
+function fitStratagems(card){
+  const grid = card.querySelector('.strat-grid');
+  const content = card.querySelector('.content');
+
+  card.querySelectorAll('.strat').forEach(strat=>{
+    strat.style.setProperty('--strat-name-fs','3.5cqw');
+    strat.style.setProperty('--strat-fs','2.4cqw');
+    strat.style.setProperty('--strat-type-fs','1.8cqw');
+  });
+
+  for(let pass = 0; pass < 120 && (overflowing(grid) || overflowing(content)); pass++){
+    card.querySelectorAll('.strat').forEach(strat=>{
+      const fs = parseFloat(getComputedStyle(strat).getPropertyValue('--strat-fs')) || 2.2;
+      const ts = parseFloat(getComputedStyle(strat).getPropertyValue('--strat-type-fs')) || 1.6;
+
+      if(fs > 0.86) strat.style.setProperty('--strat-fs', (fs - .035) + 'cqw');
+      if(ts > 1.05) strat.style.setProperty('--strat-type-fs', (ts - .025) + 'cqw');
+    });
+  }
+
+  card.querySelectorAll('.strat').forEach(strat=>{
+    const name = strat.querySelector('.strat-name');
+
+    for(let i=0; i<80 && overflowing(name); i++){
+      const ns = parseFloat(getComputedStyle(strat).getPropertyValue('--strat-name-fs')) || 3;
+      if(ns <= 1.65) break;
+      strat.style.setProperty('--strat-name-fs', (ns - .055) + 'cqw');
+    }
+  });
+}
+function fitAll(){
+  document.querySelectorAll('.rule-card').forEach(fitRulesCard);
+  document.querySelectorAll('.strat-card').forEach(fitStratagems);
+}
+function applyShow(){ const v=$('#show').value; document.querySelectorAll('.detachment-card').forEach(c=>c.classList.toggle('hidden',v!=='all'&&c.dataset.card!==v)); }
+$('#faction-primary').addEventListener('change', updateSecondary); $('#faction-secondary').addEventListener('change', updateDets); $('#detachment').addEventListener('change', render); $('#show').addEventListener('change', applyShow);
+Promise.all([fetch(DATA_URL).then(r=>r.json()), fetch(MANIFEST_URL).then(r=>r.json()).catch(()=>({}))]).then(([d,m])=>{DATA=d;MANIFEST=m;populate();});
+</script>
+</body>
+</html>

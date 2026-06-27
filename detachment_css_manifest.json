@@ -1,0 +1,548 @@
+{
+  "source": "https://wahapedia.ru/wh40k10ed/the-rules/quick-start-guide/",
+  "asset_dir": "assets",
+  "classes_found": {
+    "inline_class_sets": [
+      "bluefont kwb2",
+      "kwb",
+      "kwb2"
+    ],
+    "heading_classes": [
+      "dsColorBgAC",
+      "dsColorBgAE",
+      "dsColorBgAM",
+      "dsColorBgAS",
+      "dsColorBgAdM",
+      "dsColorBgAoI",
+      "dsColorBgCD",
+      "dsColorBgCHBA",
+      "dsColorBgCHBT",
+      "dsColorBgCHDA",
+      "dsColorBgCHDW",
+      "dsColorBgCHIF",
+      "dsColorBgCHIH",
+      "dsColorBgCHRG",
+      "dsColorBgCHSA",
+      "dsColorBgCHSW",
+      "dsColorBgCHUL",
+      "dsColorBgCHWS",
+      "dsColorBgCSM",
+      "dsColorBgDG",
+      "dsColorBgDRU",
+      "dsColorBgEC",
+      "dsColorBgGC",
+      "dsColorBgGK",
+      "dsColorBgLoV",
+      "dsColorBgNEC",
+      "dsColorBgORK",
+      "dsColorBgQI",
+      "dsColorBgQT",
+      "dsColorBgSM",
+      "dsColorBgTAU",
+      "dsColorBgTS",
+      "dsColorBgTYR",
+      "dsColorBgWE",
+      "font-white",
+      "hdrBold",
+      "padLeft8"
+    ],
+    "stratagem_color_classes": [
+      "str10ColorEither",
+      "str10ColorEnemy",
+      "str10ColorYour"
+    ],
+    "stratagem_icon_classes": [
+      "str10Any",
+      "str10Charge",
+      "str10Command",
+      "str10Fight",
+      "str10Movement",
+      "str10Shooting"
+    ]
+  },
+  "inline_classes": {
+    "bluefont kwb2": {
+      "color": "rgb(45, 108, 131)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderColor": "rgb(45, 108, 131)",
+      "fontWeight": "700",
+      "fontStyle": "normal",
+      "textTransform": "uppercase",
+      "textDecoration": "none"
+    },
+    "kwb": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "700",
+      "fontStyle": "normal",
+      "textTransform": "uppercase",
+      "textDecoration": "none"
+    },
+    "kwb2": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "700",
+      "fontStyle": "normal",
+      "textTransform": "uppercase",
+      "textDecoration": "none"
+    }
+  },
+  "heading_classes": {
+    "dsColorBgAC": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(109, 80, 53)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgAE": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(52, 115, 121)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgAM": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(50, 73, 53)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgAS": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(87, 12, 12)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgAdM": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(159, 38, 40)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgAoI": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(89, 35, 35)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgCD": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(93, 93, 97)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgCHBA": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(114, 25, 28)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgCHBT": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(28, 64, 99)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgCHDA": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(1, 58, 23)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgCHDW": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(61, 62, 65)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgCHIF": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(75, 98, 98)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgCHIH": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(75, 98, 98)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgCHRG": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(75, 98, 98)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgCHSA": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(75, 98, 98)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgCHSW": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(67, 93, 99)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgCHUL": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(75, 98, 98)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgCHWS": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(75, 98, 98)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgCSM": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(57, 75, 87)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgDG": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(77, 86, 14)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgDRU": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(15, 69, 78)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgEC": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(144, 92, 104)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgGC": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(91, 27, 54)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgGK": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(74, 94, 103)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgLoV": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(60, 75, 63)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgNEC": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(4, 83, 42)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgORK": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(70, 91, 24)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgQI": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(3, 74, 105)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgQT": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(73, 88, 76)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgSM": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(75, 98, 98)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgTAU": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(46, 90, 106)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgTS": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(0, 60, 112)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgTYR": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(99, 37, 103)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "dsColorBgWE": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(97, 16, 19)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "font-white": {
+      "color": "rgb(255, 255, 255)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderColor": "rgb(255, 255, 255)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "hdrBold": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "700",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "padLeft8": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderColor": "rgb(0, 0, 0)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    }
+  },
+  "stratagem_colors": {
+    "str10ColorEither": {
+      "color": "rgb(34, 121, 108)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderColor": "rgb(34, 121, 108)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "str10ColorEnemy": {
+      "color": "rgb(191, 13, 18)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderColor": "rgb(191, 13, 18)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    },
+    "str10ColorYour": {
+      "color": "rgb(9, 102, 145)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderColor": "rgb(9, 102, 145)",
+      "fontWeight": "400",
+      "fontStyle": "normal",
+      "textTransform": "none",
+      "textDecoration": "none"
+    }
+  },
+  "stratagem_icons": {
+    "str10Any": {
+      "width": "33px",
+      "height": "33px",
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "backgroundImage": "url(\"https://wahapedia.ru/wh40k10ed/img/stratAny.png\")",
+      "maskImage": "none",
+      "webkitMaskImage": "none",
+      "filter": "none",
+      "backgroundSize": "auto",
+      "backgroundRepeat": "repeat",
+      "backgroundPosition": "0% 0%",
+      "backgroundImageUrl": "https://wahapedia.ru/wh40k10ed/img/stratAny.png",
+      "backgroundImageAsset": "assets/str10Any_146ae9fe.png"
+    },
+    "str10Charge": {
+      "width": "33px",
+      "height": "33px",
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "backgroundImage": "url(\"https://wahapedia.ru/wh40k10ed/img/stratCharge.png\")",
+      "maskImage": "none",
+      "webkitMaskImage": "none",
+      "filter": "none",
+      "backgroundSize": "auto",
+      "backgroundRepeat": "repeat",
+      "backgroundPosition": "0% 0%",
+      "backgroundImageUrl": "https://wahapedia.ru/wh40k10ed/img/stratCharge.png",
+      "backgroundImageAsset": "assets/str10Charge_d9c29aab.png"
+    },
+    "str10Command": {
+      "width": "33px",
+      "height": "33px",
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "backgroundImage": "url(\"https://wahapedia.ru/wh40k10ed/img/stratCommand.png\")",
+      "maskImage": "none",
+      "webkitMaskImage": "none",
+      "filter": "none",
+      "backgroundSize": "auto",
+      "backgroundRepeat": "repeat",
+      "backgroundPosition": "0% 0%",
+      "backgroundImageUrl": "https://wahapedia.ru/wh40k10ed/img/stratCommand.png",
+      "backgroundImageAsset": "assets/str10Command_3e7eb7f2.png"
+    },
+    "str10Fight": {
+      "width": "33px",
+      "height": "33px",
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "backgroundImage": "url(\"https://wahapedia.ru/wh40k10ed/img/stratFight.png\")",
+      "maskImage": "none",
+      "webkitMaskImage": "none",
+      "filter": "none",
+      "backgroundSize": "auto",
+      "backgroundRepeat": "repeat",
+      "backgroundPosition": "0% 0%",
+      "backgroundImageUrl": "https://wahapedia.ru/wh40k10ed/img/stratFight.png",
+      "backgroundImageAsset": "assets/str10Fight_c6c09c45.png"
+    },
+    "str10Movement": {
+      "width": "33px",
+      "height": "33px",
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "backgroundImage": "url(\"https://wahapedia.ru/wh40k10ed/img/stratMovement.png\")",
+      "maskImage": "none",
+      "webkitMaskImage": "none",
+      "filter": "none",
+      "backgroundSize": "auto",
+      "backgroundRepeat": "repeat",
+      "backgroundPosition": "0% 0%",
+      "backgroundImageUrl": "https://wahapedia.ru/wh40k10ed/img/stratMovement.png",
+      "backgroundImageAsset": "assets/str10Movement_9748df77.png"
+    },
+    "str10Shooting": {
+      "width": "33px",
+      "height": "33px",
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "backgroundImage": "url(\"https://wahapedia.ru/wh40k10ed/img/stratShooting.png\")",
+      "maskImage": "none",
+      "webkitMaskImage": "none",
+      "filter": "none",
+      "backgroundSize": "auto",
+      "backgroundRepeat": "repeat",
+      "backgroundPosition": "0% 0%",
+      "backgroundImageUrl": "https://wahapedia.ru/wh40k10ed/img/stratShooting.png",
+      "backgroundImageAsset": "assets/str10Shooting_21cde964.png"
+    }
+  }
+}
