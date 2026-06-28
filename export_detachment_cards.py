@@ -80,7 +80,17 @@ def screenshot_visible_cards(page, outdir):
                 continue
             raise RuntimeError("Rules card was not rendered")
 
-        card.screenshot(path=str(base / f"{name}.png"), type="png")
+        box = card.bounding_box()
+
+        page.screenshot(
+            path=str(base / f"{name}.png"),
+            clip={
+                "x": box["x"],
+                "y": box["y"],
+                "width": 1200,
+                "height": 1800,
+            }
+        )
         print(f"Saved {base / f'{name}.png'}")
 def export_detachment(page,outdir): screenshot_visible_cards(page,outdir)
 def export_selected_subfaction(page, outdir):
@@ -119,7 +129,10 @@ def main():
     out=Path(a.output)
     with sync_playwright() as p:
         browser=p.chromium.launch(headless=not a.headed)
-        page=browser.new_page(viewport={'width':1800,'height':1200}, device_scale_factor=a.scale)
+        page = browser.new_page(
+            viewport={"width": 1300, "height": 1900},
+            device_scale_factor=a.scale
+        )
         page.goto(a.url, wait_until='networkidle'); page.wait_for_selector('.detachment-card'); wait(page)
         if a.faction:
             select_text(page, "#faction-primary", a.faction)
