@@ -35,10 +35,10 @@ def main():
     jobs = []
 
     if not args.no_units:
-        jobs.append([sys.executable, "export_units.py", *common])
+        jobs.append([sys.executable, "export_datacards.py", *common])
 
     if not args.no_detachments:
-        jobs.append([sys.executable, "export_detachments.py", *common])
+        jobs.append([sys.executable, "export_detachment_cards.py", *common])
 
     if not jobs:
         raise SystemExit("Nothing to export: both --no-units and --no-detachments were set")

@@ -13,6 +13,8 @@ STAT_KEYS = ["M", "T", "Sv", "W", "Ld", "OC"]
 EXCLUDED_SECTION_TITLES = {
     "UNIT COMPOSITION",
     "LEADER",
+    "ATTACHED UNIT",
+    "SUPREME COMMANDER",
     "DEDICATED TRANSPORT",
     "TRANSPORT",
     "POINTS",
@@ -746,8 +748,10 @@ def run(page, url, screenshot):
     # Why do some factions have to be so fucking weird?
     if (faction_name == "SPACE MARINES"):
         faction_name = "ADEPTUS ASTARTES"
-    if (faction_name == "CHAOS_DAEMONS"):
+    if (faction_name == "CHAOS DAEMONS"):
         faction_name = "LEGIONES DAEMONICA"
+    if (faction_name == "IMPERIAL AGENTS"):
+        faction_name = "AGENTS OF THE IMPERIUM"
 
     faction_keywords_str = ""
 
@@ -755,7 +759,7 @@ def run(page, url, screenshot):
     if (faction_name not in data["faction_keywords"]):
         faction_keywords_str = f"{faction_name}/{"/".join(data["faction_keywords"])}"
     else:
-        faction_keywords_str = "./".join(data["faction_keywords"])
+        faction_keywords_str = "/".join(data["faction_keywords"])
 
     faction_keywords_str = faction_keywords_str.replace(" ", "_")
 

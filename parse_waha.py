@@ -9,7 +9,7 @@ import time
 import threading
 import queue
 
-job_queue = queue.Queue(maxsize=10)
+job_queue = queue.Queue()
 result_queue = queue.Queue()
 workers = []
 
@@ -290,7 +290,14 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
         d_len = len(manifest_entry["detachments"])
         print(f"Discovered: {faction['name']} | Units: {u_len}, Detachments: {d_len}")
 
-
+        if u_len > 0 and not args.no_units:
+            for unit in manifest_entry["units"]:
+                try:
+                    job_queue.put((faction["name"], DOMAIN + unit['href'], unit['unit_name'], args.screenshots))
+                except Exception as e:
+                    failed_units.append({"unit_name": unit['unit_name'], "href": unit['href'], "error": str(e)})
+                    print(f"Failed to process: {unit['unit_name']} | URL: {DOMAIN + unit['href']} | Error: {e}")
+            job_queue.join()
 
         if d_len > 0 and not args.no_detachments:
             detachment_cards = {}
@@ -302,6 +309,8 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
                         faction_name_str = "Adeptus Astartes"
                     if (detachment["sub_faction"] == "Chaos Daemons"):
                         faction_name_str = "Legiones_Daemonica"
+                    if (detachment["sub)faction"] == "Imperial Agents"):
+                        faction_name_str = "Agents of the Imperium"
                     print(f"Processing Detachment: {detachment['name']} for faction {faction_name_str}")
                     detachment_data = scrape_detachment(page, faction_name_str, detachment["name"], args.screenshots)
 
@@ -312,29 +321,19 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
 
             manifest_entry["detachment_cards"] = detachment_cards
 
+        unit_cards = {}
 
-        if u_len > 0 and not args.no_units:
-            for unit in manifest_entry["units"]:
-                print(f"Processing: {unit['unit_name']} | URL: {DOMAIN + unit['href']}")
-                try:
-                    job_queue.put((faction["name"], DOMAIN + unit['href'], unit['unit_name'], args.screenshots))
-                except Exception as e:
-                    failed_units.append({"unit_name": unit['unit_name'], "href": unit['href'], "error": str(e)})
-                    print(f"Failed to process: {unit['unit_name']} | URL: {DOMAIN + unit['href']} | Error: {e}")
-            job_queue.join()
+        while not result_queue.empty():
+            result = result_queue.get()
 
-            unit_cards = {}
+            if result["faction"] != faction["name"]:
+                # Should not happen if you join per faction, but keeps it safe.
+                result_queue.put(result)
+                break
 
-            while not result_queue.empty():
-                result = result_queue.get()
+            unit_cards[result["unit_name"]] = result["data"]
 
-                if result["faction"] != faction["name"]:
-                    # Should not happen if you join per faction, but keeps it safe.
-                    result_queue.put(result)
-                    break
-
-                unit_cards[result["unit_name"]] = result["data"]
-
+        if len(unit_cards) > 0:
             manifest_entry["unit_cards"] = unit_cards
 
         all_factions_manifest[faction["name"]] = manifest_entry
