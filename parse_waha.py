@@ -6,6 +6,8 @@ from datacard_parser import run as parse_datacard
 from detachment_scraper import run as scrape_detachment
 import time
 
+import waha_parse_utils as utils
+
 import threading
 import queue
 
@@ -26,19 +28,25 @@ def worker(failed_units):
                 job_queue.task_done()
                 break
 
-            faction_name, url, name, screenshots = job
-
             try:
-                print(f"Picked up job: {name} | URL: {url}")
-                data = parse_datacard(page, url, screenshots)
-                result_queue.put({
-                    "faction": faction_name,
-                    "unit_name": name,
-                    "data": data
-                })
+                faction_name, url, name, screenshots = job
+
+                try:
+                    print(f"Picked up job: {name} | URL: {url}")
+                    data, sub_faction_name = parse_datacard(page, url, screenshots)
+                    result_queue.put({
+                        "faction": faction_name,
+                        "unit_name": name,
+                        "sub_faction_name": sub_faction_name,
+                        "data": data
+                    })
+                    print(f"Processed {name} for faction {sub_faction_name}")
+                except Exception as e:
+                    failed_units.append((name, url, str(e)))
+                    print(f"Failed to process: {name} | URL: {url} | Error: {e}")
+
             except Exception as e:
-                failed_units.append((name, url, str(e)))
-                print(f"Failed to process: {name} | URL: {url} | Error: {e}")
+                print(f"Failed to parse job: {job}")
 
             job_queue.task_done()
 
@@ -85,6 +93,75 @@ def load_retry_jobs(path):
 
     return [(item[1], item[0]) for item in data]
 
+
+
+def load_existing_output(path):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if isinstance(data, dict):
+                return data
+    except FileNotFoundError:
+        pass
+    except json.JSONDecodeError as e:
+        print(f"Warning: could not read existing JSON from {path}: {e}")
+
+    return {}
+
+def merge_with_change_tracking(old_manifest, new_manifest):
+    changes = []
+
+    for faction_name, new_faction in new_manifest.items():
+        print(f"Merging cards for {faction_name}")
+        if faction_name not in old_manifest:
+            old_manifest[faction_name] = {}
+
+        for section_name, new_section in new_faction.items():
+            if section_name not in old_manifest[faction_name]:
+                old_manifest[faction_name][section_name] = new_section
+                continue
+
+            if section_name in ("unit_cards", "detachment_cards"):
+                section_count = 0
+
+                old_cards = old_manifest[faction_name][section_name]
+                new_cards = new_section
+
+                old_only_keys = set(old_cards.keys()) - set(new_cards.keys())
+
+                for card_name in old_only_keys:
+                    changes.append({
+                        "type": "removed",
+                        "path": f"{faction_name}.{section_name}.{card_name}",
+                        card_name: old_cards[card_name]
+                    })
+                    del old_cards[card_name]
+
+                for card_name, new_card in new_cards.items():
+                    if card_name in old_cards:
+                        if old_cards[card_name] != new_card:
+                            changes.append({
+                                "type": "modified",
+                                "path": f"{faction_name}.{section_name}.{card_name}",
+                                card_name: old_cards[card_name]
+                            })
+
+                            old_cards[card_name] = new_card
+                    else:
+                        old_cards[card_name] = new_card
+                    
+                section_count = section_count + 1
+                if section_count % 10 == 0:
+                    print(f"Merged {section_count} cards from {section_name}")
+
+            else:
+                old_manifest[faction_name][section_name], new_changes = merge_with_change_tracking(old_manifest[faction_name][section_name], new_section)
+                changes.extend(new_changes)
+
+    print(f"Merged cards for {faction_name}")
+
+    return old_manifest, changes
+
 def get_dropdown_label(select_element):
     """Dynamically extracts the label from the parent element."""
     parent = select_element.parent
@@ -115,7 +192,7 @@ def build_detachment_subfaction_map(faction_name, detachment_select):
         if text.lower() == "no filter":
             continue
 
-        mapping[value] = current_subfaction
+        mapping[value] = current_subfaction.upper()
 
     return mapping
 
@@ -131,6 +208,25 @@ def get_detachment_identifier(cls):
             return right
 
     return None
+
+def set_default_manifest(manifest, faction_name, sub_faction_name):
+    if faction_name == sub_faction_name:
+        return manifest.setdefault(
+            sub_faction_name,
+            {
+                "unit_cards": {},
+                "detachment_cards": {}
+            }
+        )
+    else:
+        print(f"Adding new sub-faction {sub_faction_name}")
+        return set_default_manifest(manifest, faction_name, faction_name).setdefault(
+            sub_faction_name,
+            {
+                "unit_cards": {},
+                "detachment_cards": {}
+            }
+        )
 
 def run_retry_pipeline(retry_file):
     jobs = load_retry_jobs(retry_file)
@@ -152,13 +248,13 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
     factions_button = soup.find('div', class_='NavBtn_Factions')
     faction_container = factions_button.find_next_sibling('div', class_='NavDropdown-content')
     anchors = faction_container.find_all('a', href=True)
-    discovered_factions = [{"name": a.text.strip(), "path": (DOMAIN + a['href'])} 
+    discovered_factions = [{"name": utils.normalize_faction_name(a.text.strip()), "path": (DOMAIN + a['href'])} 
                             for a in anchors if "/factions/" in a['href']]
     
     if args.faction:
         discovered_factions = [
             f for f in discovered_factions
-            if f["name"].lower() == args.faction.lower()
+            if f["name"].upper() == utils.normalize_faction_name(args.faction)
         ]
 
         if not discovered_factions:
@@ -173,10 +269,10 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
         page.wait_for_selector("#tooltip_contentArmyList", state="attached", timeout=30000)
         
         sm_soup = BeautifulSoup(page.content(), 'html.parser')
-        selects = [s for s in sm_soup.find_all('select') 
-                    if s.get('class') and any('FilterSelect' in c for c in s['class'])]
+        selects = utils.get_filter_selects(sm_soup)
         
-        manifest_entry = {"units": [], "detachments": []}
+        units = []
+        detachments = []
         sub_filter_data = []
         sub_filter_key = None
 
@@ -226,12 +322,8 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
                                 if s.get('class') and any('FilterSelect' in c for c in s['class'])]
                 except: pass
 
-            for opt in selects[0].find_all('option'):
-                if opt.get('value') and 'no filter' not in opt.text.lower() and "no supplements" not in opt.text.lower():
-                    sub_filter_data.append({"id": opt['value'], "name": opt.text.strip()})
-            
-            if sub_filter_data:
-                manifest_entry[sub_filter_key] = sub_filter_data
+
+            utils.build_sub_faction_map(selects[0])
 
             detachment_subfaction_map = build_detachment_subfaction_map(faction['name'], selects[1])
 
@@ -267,7 +359,7 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
                     identifier = get_detachment_identifier(cls)
                     sub_faction = detachment_subfaction_map.get(identifier, faction['name'])
 
-                    manifest_entry["detachments"].append({
+                    detachments.append({
                         "name": name,
                         "identifier": identifier,
                         "sub_faction": sub_faction
@@ -282,46 +374,40 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
                 name = anchor.text.strip()
                 parent_classes = anchor.parent.get('class', []) if anchor.parent else []
                 if not any(cls in exclusion_set for cls in parent_classes) and name and not anchor['href'].startswith('#'):
-                    manifest_entry["units"].append({"unit_name": name, "href": anchor['href']})
+                    units.append({"unit_name": name, "href": anchor['href']})
         else:
             print(f"No units found for faction: {faction['name']}")
 
-        u_len = len(manifest_entry["units"])
-        d_len = len(manifest_entry["detachments"])
+        u_len = len(units)
+        d_len = len(detachments)
         print(f"Discovered: {faction['name']} | Units: {u_len}, Detachments: {d_len}")
 
         if u_len > 0 and not args.no_units:
-            for unit in manifest_entry["units"]:
+            for unit in units:
                 try:
-                    job_queue.put((faction["name"], DOMAIN + unit['href'], unit['unit_name'], args.screenshots))
+                    job_queue.put((faction['name'], DOMAIN + unit['href'], unit['unit_name'], args.screenshots))
                 except Exception as e:
                     failed_units.append({"unit_name": unit['unit_name'], "href": unit['href'], "error": str(e)})
                     print(f"Failed to process: {unit['unit_name']} | URL: {DOMAIN + unit['href']} | Error: {e}")
-            job_queue.join()
 
         if d_len > 0 and not args.no_detachments:
-            detachment_cards = {}
-            for detachment in manifest_entry["detachments"]:
+            for detachment in detachments:
                 try:
-                    # Why do some factions have to be so fucking weird?
-                    faction_name_str = detachment["sub_faction"]
-                    if (detachment["sub_faction"] == "Space Marines"):
-                        faction_name_str = "Adeptus Astartes"
-                    if (detachment["sub_faction"] == "Chaos Daemons"):
-                        faction_name_str = "Legiones_Daemonica"
-                    if (detachment["sub)faction"] == "Imperial Agents"):
-                        faction_name_str = "Agents of the Imperium"
+                    faction_name_str = utils.normalize_faction_name(detachment["sub_faction"])
+
                     print(f"Processing Detachment: {detachment['name']} for faction {faction_name_str}")
                     detachment_data = scrape_detachment(page, faction_name_str, detachment["name"], args.screenshots)
 
-                    detachment_cards[detachment["name"]] = detachment_data
+                    set_default_manifest(
+                        all_factions_manifest,
+                        faction['name'],
+                        faction_name_str
+                    )["detachment_cards"][detachment["name"]] = detachment_data
                 except Exception as e:
                     failed_detachments.append({"detachment_name": detachment['name'], "faction": faction['name'], "faction_path": faction['path'], "error": str(e)})
                     print(f"Failed to process Detachment: {detachment['name']} | Faction: {faction['name']} | Faction Path: {faction['path']} | Error: {e}")
 
-            manifest_entry["detachment_cards"] = detachment_cards
-
-        unit_cards = {}
+        job_queue.join()
 
         while not result_queue.empty():
             result = result_queue.get()
@@ -331,16 +417,15 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
                 result_queue.put(result)
                 break
 
-            unit_cards[result["unit_name"]] = result["data"]
-
-        if len(unit_cards) > 0:
-            manifest_entry["unit_cards"] = unit_cards
-
-        all_factions_manifest[faction["name"]] = manifest_entry
+            set_default_manifest(
+                all_factions_manifest,
+                faction['name'],
+                result['sub_faction_name']
+            )["unit_cards"][result["unit_name"]] = result["data"]
         
         # Logging
-        u_len = len(manifest_entry["units"])
-        d_len = len(manifest_entry["detachments"])
+        u_len = len(units)
+        d_len = len(detachments)
         print(f"Processed: {faction['name']} | Units: {u_len}, Detachments: {d_len}", end="")
         if sub_filter_key and sub_filter_data:
             print(f", {sub_filter_key}: {len(sub_filter_data)}")
@@ -348,8 +433,14 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
             print() 
 
     # --- STAGE 3: GENERATION ---
+    existing_manifest = load_existing_output(args.output_json)
+    merged_manifest, changes = merge_with_change_tracking(existing_manifest, all_factions_manifest)
+
     with open(args.output_json, "w", encoding="utf-8") as f:
-        json.dump(all_factions_manifest, f, indent=4, ensure_ascii=False)
+        json.dump(merged_manifest, f, indent=4, ensure_ascii=False)
+
+    with open("changes.json", "w", encoding="utf-8") as f:
+        json.dump(changes, f, indent=4, ensure_ascii=False)
 
 if __name__ == "__main__":
     args = parse_args()

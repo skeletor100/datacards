@@ -54,11 +54,11 @@ def get_output_path(page):
     faction = selected_text(page, "#faction-primary")
     unit = selected_text(page, "#unit-select")
 
-    secondary = page.locator("#faction-secondary")
+    secondary = page.locator("#sub-faction-select")
     parts = [safe_dir_name(faction)]
 
     if secondary.is_visible():
-        subfaction = selected_text(page, "#faction-secondary")
+        subfaction = selected_text(page, "#sub-faction-select")
         if subfaction not in NONE_LABELS:
             parts.append(safe_dir_name(subfaction))
 
@@ -75,12 +75,12 @@ def export_selected_subfaction(page):
         export_current_unit(page)
 
 def export_selected_faction(page):
-    secondary = page.locator("#faction-secondary")
+    secondary = page.locator("#sub-faction-select")
 
     if secondary.is_visible():
         options = secondary.locator("option")
         for i in range(options.count()):
-            page.select_option("#faction-secondary", index=i)
+            page.select_option("#sub-faction-select", index=i)
             wait_for_render(page)
             export_selected_subfaction(page)
     else:
@@ -109,8 +109,8 @@ def validate_args(args):
     if args.subFaction and not args.faction:
         raise SystemExit("--subFaction requires --faction")
 
-    if args.unit and not args.subFaction:
-        raise SystemExit("--unit requires --subFaction")
+    if args.unit and not args.faction:
+        raise SystemExit("--unit requires --faction")
 
 def main():
     args = parse_args()
@@ -134,10 +134,10 @@ def main():
             select_by_text(page, "#faction-primary", args.faction)
 
         if args.subFaction:
-            secondary = page.locator("#faction-secondary")
+            secondary = page.locator("#sub-faction-select")
             if not secondary.is_visible():
                 raise SystemExit("Selected faction has no visible sub-faction dropdown")
-            select_by_text(page, "#faction-secondary", args.subFaction)
+            select_by_text(page, "#sub-faction-select", args.subFaction)
 
         if args.unit:
             select_by_text(page, "#unit-select", args.unit)

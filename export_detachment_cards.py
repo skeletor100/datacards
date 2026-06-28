@@ -58,8 +58,8 @@ def select_text(page, sel, wanted):
     raise SystemExit(f'Could not find {wanted!r} in {sel}')
 def screenshot_visible_cards(page, outdir):
     faction = selected(page, "#faction-primary")
-    secondary = page.locator("#faction-secondary")
-    subfaction = selected(page, "#faction-secondary") if secondary.is_visible() else "None"
+    secondary = page.locator("#sub-faction")
+    subfaction = selected(page, "#sub-faction") if secondary.is_visible() else "None"
     det = selected(page, "#detachment")
 
     parts = [safe_dir(faction)]
@@ -101,12 +101,12 @@ def export_selected_subfaction(page, outdir):
         export_detachment(page, outdir)
 
 def export_faction(page, outdir):
-    secondary = page.locator("#faction-secondary")
+    secondary = page.locator("#sub-faction")
 
     if secondary.is_visible():
         opts = secondary.locator("option")
         for i in range(opts.count()):
-            page.select_option("#faction-secondary", index=i)
+            page.select_option("#sub-faction", index=i)
             wait(page)
             export_selected_subfaction(page, outdir)
     else:
@@ -138,10 +138,10 @@ def main():
             select_text(page, "#faction-primary", a.faction)
 
         if a.subFaction:
-            secondary = page.locator("#faction-secondary")
+            secondary = page.locator("#sub-faction")
             if not secondary.is_visible():
                 raise SystemExit("Selected faction has no visible sub-faction dropdown")
-            select_text(page, "#faction-secondary", a.subFaction)
+            select_text(page, "#sub-faction", a.subFaction)
 
         if a.detachment:
             select_text(page, "#detachment", a.detachment)

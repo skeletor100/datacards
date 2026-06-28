@@ -47,14 +47,16 @@
     .enh-name{font-weight:900;text-transform:uppercase;font-size:calc(var(--enh-fs,2.15cqw) * 1.5);letter-spacing:.02em;margin:.35cqw 0 .14cqw}
     .subrule-title{font-weight:900;text-transform:uppercase;font-size:calc(var(--rule-fs,2.4cqw) * 1.15);margin:.55cqw 0 .08cqw}.enh-grid{display:grid;grid-template-columns:1fr 1fr;gap:.85cqw 2.0cqw}.enh-card{border-top:.18cqw dotted #222;padding-top:.32cqw;min-width:0}
     .enh-text{font:var(--enh-fs,2.15cqw)/1.16 var(--font)}
-    .rule-table{
+    .rule-table,
+    .content-table{
       width:100%;
       border-collapse:collapse;
       margin:.35cqw 0;
       font:inherit;
     }
 
-    .rule-table td{
+    .rule-table td,
+    .content-table td{
       padding:.08cqw .6cqw .08cqw 0;
       font-weight:900;
       text-transform:uppercase;
@@ -139,108 +141,90 @@
   </style>
 </head>
 <body>
-  <div class="toolbar"><label>Faction <select id="faction-primary"></select></label><label>Sub-faction <select id="faction-secondary"></select></label><label>Detachment <select id="detachment"></select></label><label>Show <select id="show"><option value="all">Both cards</option><option value="rules">Rules card</option><option value="stratagems">Stratagems card</option></select></label></div>
+  <script src="./waha_content_render_utils.js"></script>
+  <div class="toolbar"><label>Faction <select id="faction-primary"></select></label><label>Sub-faction <select id="sub-faction"></select></label><label>Detachment <select id="detachment"></select></label><label>Show <select id="show"><option value="all">Both cards</option><option value="rules">Rules card</option><option value="stratagems">Stratagems card</option></select></label></div>
   <main id="app"></main>
 <script>
 
 let detachmentIndex = [];
 
-const NONE_SECONDARY = "__NONE__";
-const NONE_LABEL = "None";
-
-const FACTION_KEYWORD_ALIASES = {
-  "SPACE MARINES": "ADEPTUS ASTARTES",
-  "CHAOS DAEMONS": "LEGIONES DAEMONICA",
-  "IMPERIAL AGENTS": "AGENTS OF THE IMPERIUM"
-};
-
-function upper(value){
-  return String(value || '').trim().toUpperCase();
-}
-
-function getExpectedPrimaryKeyword(jsonFactionName){
-  const jsonFactionUpper = upper(jsonFactionName);
-  return FACTION_KEYWORD_ALIASES[jsonFactionUpper] || jsonFactionUpper;
-}
-
 function allDetachmentCards(){
   const rows = [];
 
-  for (const [outerFaction, outerData] of Object.entries(DATA || {})) {
-    const primaryFaction = getExpectedPrimaryKeyword(outerFaction);
-    const cards = outerData?.detachment_cards || {};
+  for (const [factionName, factionData] of Object.entries(DATA || {})) {
+    addDetachmentCards(rows, factionName, 'None', factionData);
 
-    for (const [detachmentKey, card] of Object.entries(cards)) {
-      if (!card?.faction) continue;
+    for (const [subFactionName, subFactionData] of Object.entries(factionData || {})) {
+      if (subFactionName === 'unit_cards') continue;
+      if (subFactionName === 'detachment_cards') continue;
 
-      const cardFaction = upper(card.faction);
-
-      const subFaction =
-        cardFaction && cardFaction !== primaryFaction
-          ? cardFaction
-          : NONE_SECONDARY;
-
-      rows.push({
-        outerFaction,
-        primaryFaction,
-        subFaction,
-        detachmentKey,
-        detachment: card.detachment || detachmentKey,
-        card
-      });
+      if (subFactionData && typeof subFactionData === 'object' && subFactionData.detachment_cards) {
+        addDetachmentCards(rows, factionName, subFactionName, subFactionData);
+      }
     }
   }
 
   return rows;
 }
 
+function addDetachmentCards(rows, factionName, subFactionName, factionData) {
+  const cards = factionData?.detachment_cards || {};
+
+  for (const [detachmentKey, card] of Object.entries(cards)) {
+    rows.push({
+      factionName,
+      subFactionName,
+      detachmentKey,
+      detachment: card.detachment || detachmentKey,
+      card
+    });
+  }
+}
+
 function populate(){
   detachmentIndex = allDetachmentCards();
 
-  const primaryValues = [...new Set(detachmentIndex.map(x => x.primaryFaction))]
+  const factionValues = [...new Set(detachmentIndex.map(x => x.factionName))]
     .sort();
 
-  $('#faction-primary').innerHTML = primaryValues
+  $('#faction-primary').innerHTML = factionValues
     .map(v => `<option value="${esc(v)}">${esc(v)}</option>`)
     .join('');
 
-  updateSecondary();
+  updateSubFactions();
 }
 
-function updateSecondary(){
-  const f1 = $('#faction-primary').value;
-  const matches = detachmentIndex.filter(x => x.primaryFaction === f1);
+function updateSubFactions(){
+  const factionName = $('#faction-primary').value;
 
-  const secondaryValues = [...new Set(matches.map(x => x.subFaction))]
+  const matches = detachmentIndex.filter(x => x.factionName === factionName);
+
+  const subFactionValues = [...new Set(matches.map(x => x.subFactionName))]
     .sort((a, b) => {
-      if (a === NONE_SECONDARY) return -1;
-      if (b === NONE_SECONDARY) return 1;
+      if (a === 'None') return -1;
+      if (b === 'None') return 1;
       return a.localeCompare(b);
     });
 
-  const hasRealSecondary = secondaryValues.some(v => v !== NONE_SECONDARY);
-  const secondary = $('#faction-secondary');
+  $('#sub-faction').innerHTML = subFactionValues
+    .map(v => `<option value="${esc(v)}">${esc(v)}</option>`)
+    .join('');
 
-  if (hasRealSecondary) {
-    secondary.hidden = false;
-    secondary.innerHTML = secondaryValues
-      .map(v => `<option value="${esc(v)}">${v === NONE_SECONDARY ? NONE_LABEL : esc(v)}</option>`)
-      .join('');
-  } else {
-    secondary.hidden = true;
-    secondary.innerHTML = `<option value="${NONE_SECONDARY}">${NONE_LABEL}</option>`;
-  }
+  $('#sub-faction').hidden =
+    subFactionValues.length <= 1 && subFactionValues[0] === 'None';
 
   updateDets();
 }
 
 function updateDets(){
-  const f1 = $('#faction-primary').value;
-  const secondary = $('#faction-secondary');
-  const f2 = secondary.hidden ? NONE_SECONDARY : secondary.value;
+  const factionName = $('#faction-primary').value;
+  const subFactionName = $('#sub-faction').value || 'None';
 
   const matches = detachmentIndex
-    .filter(x => x.primaryFaction === f1 && x.subFaction === f2)
+    .filter(x =>
+      x.factionName === factionName &&
+      x.subFactionName === subFactionName
+    )
     .sort((a, b) => a.detachment.localeCompare(b.detachment));
 
   $('#detachment').innerHTML = matches
@@ -261,49 +245,7 @@ function selectedCard(){
 const DATA_URL='units.json', MANIFEST_URL='detachment_css_manifest.json';
 let DATA={}, MANIFEST={};
 const $=s=>document.querySelector(s), app=$('#app');
-function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-function textRuns(block){ if(!block) return ''; const runs=Array.isArray(block.runs)?block.runs:[]; return runs.map(r=>`<span class="${esc((r.source_classes||[]).join(' '))}">${esc(r.text).trim()}</span>`).join(' ').replace(/\s+([,.;:])/g,'$1'); }
-function itemHtml(item){
-  const title = item.title
-    ? `<span class="li-title">${esc(item.title)}</span> `
-    : '';
-
-  const nested = Array.isArray(item.content)
-    ? item.content.map(blockHtml).join('')
-    : '';
-
-  return `<li>${title}${textRuns(item)}${nested}</li>`;
-}
-
-function blockHtml(block){
-  if(!block) return '';
-  if(Array.isArray(block)) return block.map(blockHtml).join('');
-
-  if(block.displayItem === 'subrule'){
-    return `<div class="subrule-title">${esc(block.title)}</div>${(block.content||[]).map(blockHtml).join('')}`;
-  }
-
-  if(block.displayItem === 'ul' || block.displayItem === 'ol'){
-    const tag = block.displayItem;
-    return `<${tag} class="rule-list">${(block.items || []).map(itemHtml).join('')}</${tag}>`;
-  }
-
-  if (block.displayItem === 'table') {
-    return `
-      <table class="rule-table">
-        <tbody>
-          ${(block.rows || []).map(row => `
-            <tr>
-              ${row.map(cell => `<td>${textRuns(cell)}</td>`).join('')}
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
-  }
-
-  return `<p>${textRuns(block)}</p>`;
-}
+// Generic content rendering helpers are provided by waha_content_render_utils.js.
 
 function render(){
   const card = selectedCard();
@@ -547,7 +489,7 @@ function applyShow(){
     requestAnimationFrame(fitAll);
   });
 }
-$('#faction-primary').addEventListener('change', updateSecondary); $('#faction-secondary').addEventListener('change', updateDets); $('#detachment').addEventListener('change', render); $('#show').addEventListener('change', applyShow);
+$('#faction-primary').addEventListener('change', updateSubFactions); $('#sub-faction').addEventListener('change', updateDets); $('#detachment').addEventListener('change', render); $('#show').addEventListener('change', applyShow);
 Promise.all([fetch(DATA_URL).then(r=>r.json()), fetch(MANIFEST_URL).then(r=>r.json()).catch(()=>({}))]).then(([d,m])=>{DATA=d;MANIFEST=m;populate();});
 </script>
 </body>

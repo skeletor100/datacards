@@ -81,28 +81,39 @@
       left:0;
       top:0;
       right:0;
-      height:26.0%;
+      height:var(--content-top, 26.0%);
+      overflow:hidden;
       background:
         linear-gradient(90deg, rgba(0,0,0,.9), rgba(0,0,0,.65) 42%, rgba(0,0,0,.25) 70%, rgba(0,0,0,.05)),
         linear-gradient(135deg, #111, #3a3a3a 60%, #181818);
     }
 
+    .header-content{
+      position:absolute;
+      left:2.55%;
+      top:3.2%;
+      width:78.2%;
+      z-index:3;
+      color:white;
+      transform-origin:top left;
+      transform:scale(var(--header-scale, 1));
+    }
+
     .top-banner{
       position:absolute;
       left:2.55%;
-      top:3.55%;
+      top:3.2%;
       width:78.2%;
-      height:11.25%;
+      height:clamp(58px, 7.15cqw, 126px);
       background:var(--banner);
-      color:white;
       clip-path: polygon(0 0, 100% 0, 100% 57%, 66% 57%, 61.2% 100%, 0 100%);
-      display:flex;
-      align-items:flex-start;
-      padding:1.05% 1.4%;
-      z-index:3;
+      z-index:0;
+      pointer-events:none;
     }
 
     .unit-title{
+      position:relative;
+      z-index:1;
       font-family: var(--conduit-stack);
       font-weight:900;
       text-transform:uppercase;
@@ -110,7 +121,9 @@
       line-height:.95;
       font-size: clamp(22px, 2.95cqw, 54px);
       white-space:nowrap;
+      width:max-content;
       max-width:90%;
+      padding:clamp(8px, 1.05cqw, 19px) clamp(10px, 1.4cqw, 25px) 0;
     }
 
     .unit-title .subtitle{
@@ -122,54 +135,31 @@
     }
 
     .stats-area{
-      position:absolute;
-      left:3.75%;
-      top:10.5%;
-      z-index:4;
+      position:relative;
+      z-index:1;
       display:grid;
       grid-template-columns: repeat(6, minmax(0, 1fr)) auto;
       column-gap:2.1%;
       row-gap:2.4%;
-      width:30.8%;
+      width:39.4%;
       align-items:start;
+      margin-left:clamp(10px, 1.4cqw, 25px);
+      margin-top:clamp(4px, .42cqw, 8px);
     }
     .stats-area.multi-profile{
-      width:62%;
+      width:79.3%;
       grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(18cqw, 34cqw);
       column-gap:.75%;
-      row-gap:.75cqw;
-    }
-
-    .stats-area.multi-profile .stat-label{
-      font-size:clamp(13px,1.05cqw,19px);
-    }
-
-    .stats-area.multi-profile .stat-box{
-      font-size:clamp(22px,2.15cqw,38px);
-    }
-
-    .stats-area.multi-profile .profile-name{
-      font-size:clamp(14px,1.18cqw,22px);
-      align-self:center;
-      padding-left:.6em;
-    }
-
-    .stats-area.multi-profile .stat-box{
-      font-size:clamp(22px,2.1cqw,38px);
-    }
-
-    .stats-area.multi-profile .stat-label{
-      font-size:clamp(13px,1.05cqw,19px);
-    }
-
-    .stats-area.multi-profile .invuln-wrap{
-      grid-column:3 / span 5;
-      margin-top:-.15cqw;
+      row-gap:.42cqw;
     }
 
     .profile-row{ display:contents; }
 
-    .stat-cell{ text-align:center; min-width:0; }
+    .stat-cell{
+      text-align:center;
+      min-width:0;
+      --stat-value-font: clamp(26px, 2.55vw, 42px);
+    }
     .stat-label{
       font-family: var(--conduit-stack);
       height:22px;
@@ -192,7 +182,7 @@
       align-items:center;
       color:var(--text);
       font-weight:900;
-      font-size: clamp(26px, 2.55vw, 42px);
+      font-size: var(--stat-value-font);
       line-height:1;
     }
     .profile-name{
@@ -209,23 +199,50 @@
       max-width:100%;
     }
 
-    .invuln-wrap{
-      grid-column:3 / span 5;
+    .stats-area.multi-profile .stat-label{
+      font-size:clamp(13px,1.05cqw,19px);
+    }
+
+    .stats-area.multi-profile .stat-cell{
+      --stat-value-font: clamp(22px,2.1cqw,38px);
+    }
+
+    .stats-area.multi-profile .stat-box{
+      font-size:var(--stat-value-font);
+    }
+
+    .stats-area.multi-profile .profile-name{
+      font-size: calc(1.25 * clamp(14px,1.18cqw,22px));
+      align-self:start;
+      padding-left:.6em;
+      /* Keep the profile name aligned with the stat-box row, not centered across
+         the combined stat + invulnerable-save callout height. */
+      margin-top:clamp(34px, 3.25cqw, 59px);
+    }
+
+    .stat-cell.stat-sv{
       position:relative;
-      width:max-content;
-      justify-self:start;
-      margin-top:.25cqw;
-      z-index:6;
+    }
+
+    .invuln-wrap{
+      margin-top:.22cqw;
+      display:flex;
+      align-items:flex-start;
+      justify-content:flex-start;
+      gap:.68cqw;
+      width:100%;
+      max-width:none;
+      text-align:left;
+      z-index:10;
     }
 
     .invuln-shield{
       position:relative;
-      width:4.25cqw;
-      height:4.65cqw;
-      min-width:54px;
-      min-height:59px;
-      max-width:76px;
-      max-height:83px;
+      flex:0 0 auto;
+      width:100%;
+      max-width:none;
+      min-width:32px;
+      aspect-ratio:1 / 1.12;
       background:var(--cream);
       color:var(--text);
       clip-path:polygon(0 0,100% 0,100% 57%,50% 100%,0 57%);
@@ -237,17 +254,15 @@
       top:34%;
       transform:translate(-50%, -50%);
       font-weight:900;
-      font-size:clamp(25px,2.35cqw,42px);
+      font-size:var(--stat-value-font);
       line-height:1;
     }
 
     .invuln-right{
-      position:absolute;
-      left:calc(100% + 1em);
-      top:0;
       display:flex;
       flex-direction:column;
       align-items:flex-start;
+      min-width:0;
     }
 
     .invuln-label{
@@ -256,17 +271,17 @@
       font-weight:900;
       text-transform:uppercase;
       margin:0;
-      padding:.66em 1.18em .62em 1.05em;
-      font-size:clamp(18px,1.48cqw,28px);
+      padding:.675em 1.08em .60em .99em;
+      font-size:clamp(15px,1.23cqw,22.5px);
       line-height:1;
       white-space:nowrap;
     }
 
     .invuln-comment{
-      margin-top:.22em;
-      margin-left:2em;      /* slight indent from the label */
+      margin-top:.18em;
+      margin-left:1.05em;
       color:#fff;
-      font-size:clamp(10px,.92cqw,16px);
+      font-size:clamp(12px,1.02cqw,18px);
       font-style:italic;
       white-space:nowrap;
       text-shadow:0 1px 2px rgba(0,0,0,.8);
@@ -276,11 +291,12 @@
       position:absolute;
       left:0;
       right:0;
-      top:26.0%;
+      top:var(--content-top, 26.0%);
       bottom:9.35%;
       display:grid;
       grid-template-columns: 61.7% 38.3%;
       border-top:3px solid var(--frame);
+      z-index: 2;
     }
     .col{
       overflow:hidden;
@@ -382,6 +398,12 @@
       padding:0;
     }
     .content-block li{ margin-bottom:.16em; }
+    .content-list{ margin:.35em 0 .4em 1.35em; padding:0; }
+    .content-table{ width:100%; border-collapse:collapse; margin:.35em 0; }
+    .content-table td{ padding:.08em .5em .08em 0; vertical-align:top; }
+    .subrule-title{ font-weight:900; text-transform:uppercase; margin:.55em 0 .08em; }
+    .kwb, .kwb2{ font-weight:900; text-transform:uppercase; }
+    .bluefont{ color:var(--text); font-weight:900; }
 
     .footer{
       position:absolute;
@@ -450,14 +472,6 @@
       background:var(--warn);
     }
 
-    .datasheet-card.has-multi-profile.has-invuln .main-frame{
-      top:34.5%;
-    }
-
-    .datasheet-card.has-multi-profile.has-invuln .art-zone{
-      height:34.5%;
-    }
-
     @media print{
       body{ background:white; padding:0; }
       .toolbar{ display:none; }
@@ -473,6 +487,7 @@
   </div>
   <div id="app"></div>
 
+  <script src="./waha_content_render_utils.js"></script>
   <script>
     const sampleCard = {
       "name": "Roboute Guilliman",
@@ -541,9 +556,13 @@
 
       root.innerHTML = `
         <div class="card-bg"></div>
-        <div class="art-zone"></div>
-        <div class="top-banner"><div class="unit-title">${renderTitle(card.name)}</div></div>
-        ${renderProfiles(card.profiles || [])}
+        <div class="art-zone">
+          <div class="top-banner"></div>
+          <div class="header-content">
+            <div class="unit-title">${renderTitle(card.name)}</div>
+            ${renderProfiles(card.profiles || [])}
+          </div>
+        </div>
         <main class="main-frame">
           <section class="col left-col">
             ${renderWeaponTable(ranged, 'RANGED WEAPONS', 'BS')}
@@ -577,36 +596,36 @@
 
     function renderProfiles(profiles){
       const labels = ['M','T','Sv','W','Ld','OC'];
-      const multi = profiles.length > 1;
+      const safeProfiles = profiles.length ? profiles : [{ name:'', stats:{} }];
+      const multi = safeProfiles.length > 1;
 
       return `<div class="stats-area ${multi ? 'multi-profile' : ''}">
-        ${profiles.map(p => `
+        ${safeProfiles.map(p => `
           <div class="profile-row">
             ${labels.map(label => `
               <div class="stat-cell stat-${label.toLowerCase()}">
                 <div class="stat-label">${esc(label)}</div>
                 <div class="stat-box">${esc(p.stats?.[label] ?? '')}</div>
+                ${label === 'Sv' ? renderProfileInvuln(p) : ''}
               </div>
             `).join('')}
             ${multi ? `<div class="profile-name">${esc(p.name || '')}</div>` : `<div></div>`}
           </div>
         `).join('')}
-        ${renderInvuln(profiles)}
       </div>`;
     }
 
-    function renderInvuln(profiles){
-      const p = profiles.find(x => String(x.invulnerable_save || '').trim());
-      if(!p) return '';
+    function renderProfileInvuln(profile){
+      const save = String(profile.invulnerable_save || '').trim();
+      if(!save) return '';
 
-      const comment = String(p.invulnerable_save_comment || '').trim();
+      const comment = String(profile.invulnerable_save_comment || '').trim();
 
       return `
         <div class="invuln-wrap">
           <div class="invuln-shield">
-            <span class="invuln-value">${esc(p.invulnerable_save)}</span>
+            <span class="invuln-value">${esc(save)}</span>
           </div>
-
           <div class="invuln-right">
             <div class="invuln-label">Invulnerable Save</div>
             ${comment ? `<div class="invuln-comment">${esc(comment)}</div>` : ''}
@@ -644,19 +663,7 @@
     }
 
     function renderAbilityItem(item){
-      return `<div class="ability-item">${item.title ? `<span class="ability-title">${esc(item.title)}:</span> ` : ''}<span class="content-block">${(item.content || []).map(renderDisplayItem).join('')}</span></div>`;
-    }
-
-    function renderDisplayItem(block){
-      const tag = String(block.displayItem || 'span').toLowerCase();
-      if(tag === 'ul' || tag === 'ol'){
-        const items = block.items || [];
-        return `<${tag}>${items.map(i => `<li>${i.title ? `<span class="ability-title">${esc(i.title)}:</span> ` : ''}${formatAbilityText(i.text || '')}</li>`).join('')}</${tag}>`;
-      }
-      if(tag === 'br') return '<br>';
-      const allowed = new Set(['p','span','strong','b','em','i','u','small']);
-      const safeTag = allowed.has(tag) ? tag : 'span';
-      return `<${safeTag}>${formatAbilityText(block.text || '')}</${safeTag}>`;
+      return `<div class="ability-item">${item.title ? `<span class="ability-title">${esc(item.title)}:</span> ` : ''}<span class="content-block">${(item.content || []).map(blockHtml).join('')}</span></div>`;
     }
 
     function renderKeywordGroups(groups){
@@ -683,39 +690,121 @@
       const left = card.querySelector('.left-col');
       const right = card.querySelector('.right-col');
       const footerBoxes = [...card.querySelectorAll('.keyword-box,.faction-box')];
+      const header = card.querySelector('.art-zone');
       const title = card.querySelector('.unit-title');
-      const checks = () => ({
-        left: left.scrollHeight > left.clientHeight + 1,
-        right: right.scrollHeight > right.clientHeight + 1,
-        footer: footerBoxes.some(x => x.scrollHeight > x.clientHeight + 1 || x.scrollWidth > x.clientWidth + 1),
-        title: title.scrollWidth > title.clientWidth + 1
-      });
+      const headerContent = card.querySelector('.header-content');
+      const stats = card.querySelector('.stats-area');
+      const topBanner = card.querySelector('.top-banner');
+      const isMulti = card.classList.contains('has-multi-profile');
 
-      for(let i=0;i<28;i++){
-        const c = checks();
-        if(!c.left && !c.right && !c.footer && !c.title) break;
-        const abilityFont = Math.max(0.76, 1 - i * 0.025);
-        const weaponFont = Math.max(0.68, 1 - i * 0.025);
-        const footerFont = Math.max(0.90, 1 - i * 0.015);
-        const titleFont = Math.max(0.86, 1 - i * 0.02);
-        if(c.left || c.right){
-          card.style.setProperty('--ability-font', `calc(${abilityFont} * clamp(17px,1.46cqw,27px))`);
-          card.style.setProperty('--ability-line', Math.max(1.08, 1.225 - i * 0.008));
-          card.style.setProperty('--ability-gap', `${Math.max(.34, .68 - i * .018)}em`);
-          card.style.setProperty('--weapon-font', `calc(${weaponFont} * clamp(16px,1.42cqw,26px))`);
-          card.style.setProperty('--weapon-row-pad-y', `${Math.max(.22, .50 - i * .018)}em`);
-          card.style.setProperty('--weapon-line', Math.max(0.92, 1.08 - i * 0.006));
+      let contentTop = 26.0;
+      let headerScale = 1;
+      const maxContentTop = isMulti ? 46.0 : 34.0;
+      const minContentTop = isMulti ? 26.0 : 26.0;
+      const headerBottomMargin = isMulti ? 6 : 18;
+
+      const setContentTop = value => {
+        contentTop = Math.max(minContentTop, Math.min(maxContentTop, value));
+        card.style.setProperty('--content-top', `${contentTop}%`);
+      };
+
+      const setHeaderScale = value => {
+        headerScale = Math.max(0.72, Math.min(1, value));
+        card.style.setProperty('--header-scale', headerScale);
+      };
+
+      const profileContentBottom = () => {
+        if(!header) return 0;
+        const h = header.getBoundingClientRect();
+        const visibleParts = [
+          ...header.querySelectorAll('.stat-cell, .profile-name, .invuln-wrap')
+        ];
+        if(!visibleParts.length) return 0;
+        return Math.max(...visibleParts.map(el => el.getBoundingClientRect().bottom - h.top));
+      };
+
+      const plaqueBottom = () => {
+        if(!topBanner || !header) return 0;
+        const h = header.getBoundingClientRect();
+        return topBanner.getBoundingClientRect().bottom - h.top;
+      };
+
+      const requiredContentTop = () => {
+        const cardRect = card.getBoundingClientRect();
+        const neededPx = Math.max(profileContentBottom(), plaqueBottom()) + headerBottomMargin;
+        return (neededPx / cardRect.height) * 100;
+      };
+
+      const leftOverflows = () => left.scrollHeight > left.clientHeight + 1;
+      const rightOverflows = () => right.scrollHeight > right.clientHeight + 1;
+      const footerOverflows = () => footerBoxes.some(x => x.scrollHeight > x.clientHeight + 1 || x.scrollWidth > x.clientWidth + 1);
+      const titleOverflows = () => title && headerContent && title.scrollWidth > headerContent.clientWidth + 1;
+      const headerOverflows = () => profileContentBottom() > header.clientHeight + 1;
+      
+      const shrinkColumns = iteration => {
+        const abilityFont = Math.max(0.74, 1 - iteration * 0.023);
+        const weaponFont = Math.max(0.66, 1 - iteration * 0.024);
+        card.style.setProperty('--ability-font', `calc(${abilityFont} * clamp(17px,1.46cqw,27px))`);
+        card.style.setProperty('--ability-line', Math.max(1.08, 1.225 - iteration * 0.008));
+        card.style.setProperty('--ability-gap', `${Math.max(.34, .68 - iteration * .018)}em`);
+        card.style.setProperty('--weapon-font', `calc(${weaponFont} * clamp(16px,1.42cqw,26px))`);
+        card.style.setProperty('--weapon-row-pad-y', `${Math.max(.22, .50 - iteration * .018)}em`);
+        card.style.setProperty('--weapon-line', Math.max(0.92, 1.08 - iteration * 0.006));
+      };
+
+      const shrinkFooter = iteration => {
+        const footerFont = Math.max(0.88, 1 - iteration * 0.014);
+        card.style.setProperty('--footer-font', `calc(${footerFont} * clamp(16px,1.38cqw,26px))`);
+      };
+
+      setHeaderScale(1);
+      setContentTop(minContentTop);
+
+      // First spend vertical space on the upper banner.  This keeps the title,
+      // stats and shields as large as possible, and only scales them down after
+      // the banner has reached its cap and the columns cannot give up more room.
+      for(let i=0;i<44;i++){
+        setContentTop(requiredContentTop());
+
+        if((leftOverflows() || rightOverflows()) && i < 34){
+          shrinkColumns(i + 1);
+          continue;
         }
-        if(c.footer){
-          card.style.setProperty('--footer-font', `calc(${footerFont} * clamp(16px,1.38cqw,26px))`);
+
+        if(footerOverflows()) shrinkFooter(i + 1);
+
+        if((headerOverflows() || titleOverflows()) && contentTop >= maxContentTop - 0.05){
+          setHeaderScale(1 - (i + 1) * 0.014);
+          setContentTop(requiredContentTop());
+          continue;
         }
-        if(c.title){
-          title.style.fontSize = `calc(${titleFont} * clamp(22px, 2.95cqw, 54px))`;
+
+        if(!leftOverflows() && !rightOverflows() && !footerOverflows() && !titleOverflows() && !headerOverflows()){
+          break;
+        }
+
+        // If columns still overflow even after some column compaction, very
+        // gradually reduce the header content. This is intentionally last.
+        if((leftOverflows() || rightOverflows()) && i >= 34){
+          setHeaderScale(1 - (i - 33) * 0.014);
+          setContentTop(requiredContentTop());
         }
       }
 
-      const final = checks();
-      const overflow = final.left || final.right || final.footer || final.title;
+      // Final pass: keep the expanded banner that is required by the current
+      // visible header content. Do not trim it below the standard top section;
+      // otherwise multi-profile cards appear to "solve" by shrinking the banner
+      // instead of preserving the profile/stat scale.
+      setContentTop(requiredContentTop());
+
+      const final = {
+        left: leftOverflows(),
+        right: rightOverflows(),
+        footer: footerOverflows(),
+        title: titleOverflows(),
+        header: headerOverflows()
+      };
+      const overflow = final.left || final.right || final.footer || final.title || final.header;
       card.classList.toggle('has-overflow', overflow);
       if(overflow){
         console.warn('Datasheet overflow after fitting:', final, card);
@@ -726,15 +815,6 @@
 
     function norm(v){ return String(v || '').trim().toUpperCase(); }
     function esc(v){ return String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
-    function formatAbilityText(text) {
-      const escaped = esc(text);
-
-      return escaped.replace(
-        /\b(?!CP\b)([A-Z][A-Z0-9]*(?:\s+[A-Z][A-Z0-9]*)*)\b/g,
-        "<strong>$1</strong>"
-      );
-    }
-
     let allCards = {};
     let currentCard = null;
     
@@ -750,109 +830,76 @@
 
     let cardIndex = [];
 
-    const FACTION_KEYWORD_ALIASES = {
-      "SPACE MARINES": "ADEPTUS ASTARTES",
-      "CHAOS DAEMONS": "LEGIONES DAEMONICA",
-      "IMPERIAL AGENTS": "AGENTS OF THE IMPERIUM"
-    };
-
-    function upper(value) {
-      return String(value || '').trim().toUpperCase();
-    }
-
-    function getExpectedPrimaryKeyword(jsonFactionName) {
-      const jsonFactionUpper = upper(jsonFactionName);
-      return FACTION_KEYWORD_ALIASES[jsonFactionUpper] || jsonFactionUpper;
-    }
-
     function buildCardSelector(data) {
       const toolbar = document.querySelector('.toolbar');
+      cardIndex = [];
 
-    cardIndex = [];
+      for (const [factionName, faction] of Object.entries(data)) {
+        addCards(factionName, 'None', faction);
 
-    const NONE_SECONDARY = "__NONE__";
-    const NONE_LABEL = "None";
-
-    for (const [jsonFactionName, faction] of Object.entries(data)) {
-      const primaryFaction = getExpectedPrimaryKeyword(jsonFactionName);
-
-      for (const [unitName, card] of Object.entries(faction.unit_cards || {})) {
-        const factionKeywords = card.faction_keywords || [];
-
-        const firstKeyword = upper(factionKeywords[0]);
-        const secondKeyword = upper(factionKeywords[1]);
-
-        const f1 = primaryFaction;
-
-        const f2 =
-          firstKeyword && firstKeyword !== primaryFaction
-            ? firstKeyword
-            : secondKeyword;
-
-        cardIndex.push({
-          f1,
-          f2: f2 || NONE_SECONDARY,
-          unitName,
-          card
-        });
+        for (const [subFactionName, subFaction] of Object.entries(faction)) {
+          if (subFactionName === 'unit_cards') continue;
+          if (subFaction && typeof subFaction === 'object' && subFaction.unit_cards) {
+            addCards(factionName, subFactionName, subFaction);
+          }
+        }
       }
-    }
+
+      function addCards(factionName, subFactionName, factionObj) {
+        for (const [unitName, card] of Object.entries(factionObj.unit_cards || {})) {
+          cardIndex.push({ factionName, subFactionName, unitName, card });
+        }
+      }
 
       toolbar.innerHTML = `
         <select id="faction-primary"></select>
-        <select id="faction-secondary"></select>
+        <select id="sub-faction-select"></select>
         <select id="unit-select"></select>
         <button onclick="window.print()">Print / Save PDF</button>
       `;
 
       const primary = document.getElementById('faction-primary');
-      const secondary = document.getElementById('faction-secondary');
+      const subFaction = document.getElementById('sub-faction-select');
       const unit = document.getElementById('unit-select');
 
-      const primaryValues = [...new Set(cardIndex.map(x => x.f1))].sort();
+      const factionValues = [...new Set(cardIndex.map(x => x.factionName))].sort();
 
-      primary.innerHTML = primaryValues
+      primary.innerHTML = factionValues
         .map(v => `<option value="${esc(v)}">${esc(v)}</option>`)
         .join('');
 
-      primary.addEventListener('change', updateSecondary);
-      secondary.addEventListener('change', updateUnits);
+      primary.addEventListener('change', updateSubFactions);
+      subFaction.addEventListener('change', updateUnits);
       unit.addEventListener('change', renderChosenUnit);
 
-      updateSecondary();
+      updateSubFactions();
 
-      function updateSecondary() {
-        const f1 = primary.value;
-        const matches = cardIndex.filter(x => x.f1 === f1);
+      function updateSubFactions() {
+        const factionName = primary.value;
+        const matches = cardIndex.filter(x => x.factionName === factionName);
 
-        const secondaryValues = [...new Set(matches.map(x => x.f2))].sort((a, b) => {
-          if (a === NONE_SECONDARY) return -1;
-          if (b === NONE_SECONDARY) return 1;
+        const subFactionValues = [...new Set(matches.map(x => x.subFactionName))].sort((a, b) => {
+          if (a === 'None') return -1;
+          if (b === 'None') return 1;
           return a.localeCompare(b);
         });
 
-        const hasRealSecondary = secondaryValues.some(v => v !== NONE_SECONDARY);
+        subFaction.innerHTML = subFactionValues
+          .map(v => `<option value="${esc(v)}">${esc(v)}</option>`)
+          .join('');
 
-        if (hasRealSecondary) {
-          secondary.hidden = false;
-          secondary.innerHTML = secondaryValues
-            .map(v => `<option value="${esc(v)}">${v === NONE_SECONDARY ? NONE_LABEL : esc(v)}</option>`)
-            .join('');
-        } else {
-          secondary.hidden = true;
-          secondary.innerHTML = `<option value="${NONE_SECONDARY}">${NONE_LABEL}</option>`;
-        }
+        subFaction.hidden = subFactionValues.length <= 1 && subFactionValues[0] === 'None';
 
         updateUnits();
       }
 
       function updateUnits() {
-        const f1 = primary.value;
-        const f2 = secondary.hidden ? NONE_SECONDARY : secondary.value;
+        const factionName = primary.value;
+        const subFactionName = subFaction.value || 'None';
 
         const matches = cardIndex.filter(x =>
-          x.f1 === f1 &&
-          x.f2 === f2
+          x.factionName === factionName &&
+          x.subFactionName === subFactionName
         );
 
         unit.innerHTML = matches
@@ -876,8 +923,13 @@
       }
     }
 
-    function renderSelectedCard(factionName, unitName) {
-      const card = allCards[factionName].unit_cards[unitName];
+    function renderSelectedCard(factionName, unitName, subFactionName = 'None') {
+      const faction = allCards[factionName];
+      const source = subFactionName === 'None' ? faction : faction?.[subFactionName];
+      const card = source?.unit_cards?.[unitName];
+
+      if (!card) return;
+
       currentCard = card;
 
       const app = document.getElementById('app');

@@ -52,6 +52,13 @@ def is_br(node):
     return isinstance(node, Tag) and node.name == "br"
 
 
+def is_paragraph_separator(node):
+    return (
+        isinstance(node, Tag)
+        and "dsLineHor" in node.get("class", [])
+    )
+
+
 def is_fluff_node(node):
     if not isinstance(node, Tag):
         return False
@@ -300,6 +307,11 @@ def extract_content_blocks(nodes):
         paragraph_nodes = []
 
     for node in nodes:
+        if is_paragraph_separator(node):
+            flush_paragraph()
+            br_count = 0
+            continue
+
         if is_br(node):
             br_count += 1
 
@@ -378,3 +390,50 @@ def find_section_by_anchor_prefix(soup, anchor_prefix):
         return None
 
     return anchor.find_parent("div", class_="BreakInsideAvoid")
+
+def get_filter_selects(soup):
+    return [
+        s
+        for s in soup.find_all("select")
+        if s.get("class") and any("FilterSelect" in c for c in s.get("class", []))
+    ]
+
+FACTION_NAME_ALIASES = {
+    "Space Marines": "Adeptus Astartes",
+    "Chaos Daemons": "Legiones Daemonica",
+    "Imperial Agents": "Agents of the Imperium",
+}
+
+def normalize_faction_name(name):
+    name = str(name or "").strip()
+    return FACTION_NAME_ALIASES.get(name, name).upper()
+
+def build_sub_faction_map(select):
+    no_filter_value = None
+    mapping = {}
+
+    for opt in select.find_all("option"):
+        name = opt.get_text(strip=True)
+        value = opt.get("value")
+
+        if not value:
+            continue
+
+        name_lower = name.lower()
+
+        if name_lower == "no filter":
+            no_filter_value = value
+            continue
+
+        if name_lower in ("no supplement", "no supplements"):
+            continue
+
+        mapping[value] = normalize_faction_name(name)
+
+    if not no_filter_value:
+        return {}
+
+    return {
+        f"{no_filter_value}{value}": faction_name
+        for value, faction_name in mapping.items()
+    }

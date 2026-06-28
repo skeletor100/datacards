@@ -5,6 +5,7 @@ import os
 import argparse
 
 from bs4 import BeautifulSoup, NavigableString, Tag
+import waha_parse_utils as utils
 from playwright.sync_api import sync_playwright
 
 
@@ -21,32 +22,37 @@ EXCLUDED_SECTION_TITLES = {
     "WARGEAR OPTIONS",
 }
 
-
 # =========================================================
 # TEXT CLEANING (UNCHANGED)
 # =========================================================
-def clean_text(element):
-    if not element:
-        return ""
 
-    text = element.get_text(" ", strip=True)
-    text = re.sub(r"\s+", " ", text)
-    return text.strip()
 
-def clean_text_from_string(value):
-    if not value:
-        return ""
+def extract_faction_name(soup, ds, sub_faction_map):
+    datasheet_classes = set(ds.get("class", []))
 
-    value = re.sub(r"\s+", " ", str(value))
-    return value.strip()
+    match = None
 
-def extract_faction_name(soup):
+    for class_name, faction_name in sub_faction_map.items():
+        if class_name not in datasheet_classes:
+            continue
+
+        if match is not None:
+            # Generic unit - belongs to the parent faction.
+            match = None
+            break
+
+        match = faction_name
+
+    if match is not None:
+        return match
+
+    # Fall back to the existing implementation.
     node = soup.select_one('[data-tooltip-content="#tooltip_contentFactionRules"]')
 
     if not node:
         return ""
 
-    return clean_text(node).upper()
+    return utils.normalize_faction_name(utils.clean_text(node))
 
 def extract_datacard(soup):
     candidates = soup.find_all(class_=lambda c: c and "datasheet" in c)
@@ -59,7 +65,7 @@ def extract_datacard(soup):
 
 def extract_name(ds):
     node = ds.select_one(".dsH2Header div")
-    return clean_text(node)
+    return utils.clean_text(node)
 
 
 def extract_profiles(ds):
@@ -69,7 +75,7 @@ def extract_profiles(ds):
 
     for index, block in enumerate(profile_blocks):
         values = [
-            clean_text(x)
+            utils.clean_text(x)
             for x in block.select(".dsCharValue")
         ]
 
@@ -77,7 +83,7 @@ def extract_profiles(ds):
             continue
 
         name_node = block.select_one(".dsModelName")
-        profile_name = clean_text(name_node)
+        profile_name = utils.clean_text(name_node)
 
         if not profile_name:
             profile_name = extract_name(ds)
@@ -98,12 +104,12 @@ def extract_profiles(ds):
                 classes = next_node.get("class", [])
 
                 if "dsInvulWrap" in classes:
-                    invuln = clean_text(
+                    invuln = utils.clean_text(
                         next_node.select_one(".dsCharInvulValue")
                     )
 
                 if "dsInvulComment" in classes:
-                    invulnComment = clean_text(
+                    invulnComment = utils.clean_text(
                         next_node
                     )
 
@@ -126,9 +132,9 @@ def extract_weapon_name_and_keywords(name_cell):
     keyword_nodes = name_cell.select(".kwb2")
 
     keywords = [
-        clean_text(node)
+        utils.clean_text(node)
         for node in keyword_nodes
-        if clean_text(node)
+        if utils.clean_text(node)
     ]
 
     # Remove keyword nodes so only the weapon name remains
@@ -136,7 +142,7 @@ def extract_weapon_name_and_keywords(name_cell):
     for node in cell_copy.select(".kwb2"):
         node.decompose()
 
-    name = clean_text(cell_copy)
+    name = utils.clean_text(cell_copy)
 
     return name, keywords
 
@@ -152,7 +158,7 @@ def extract_weapons(ds):
         return weapons
 
     for row in table.select("tr"):
-        header_text = clean_text(row)
+        header_text = utils.clean_text(row)
 
         if "RANGED WEAPONS" in header_text:
             current_type = "ranged"
@@ -186,12 +192,12 @@ def extract_weapons(ds):
             "type": current_type,
             "name": name,   
             "keywords": keywords,
-            "range": clean_text(cells[2]),
-            "A": clean_text(cells[3]),
-            current_hit_key: clean_text(cells[4]),
-            "S": clean_text(cells[5]),
-            "AP": clean_text(cells[6]),
-            "D": clean_text(cells[7]),
+            "range": utils.clean_text(cells[2]),
+            "A": utils.clean_text(cells[3]),
+            current_hit_key: utils.clean_text(cells[4]),
+            "S": utils.clean_text(cells[5]),
+            "AP": utils.clean_text(cells[6]),
+            "D": utils.clean_text(cells[7]),
         }
 
         weapons.append(weapon)
@@ -214,7 +220,7 @@ def extract_sectioned_blocks(container):
 
         if "dsHeader" in classes:
             current = {
-                "title": clean_text(child),
+                "title": utils.clean_text(child),
                 "items": []
             }
             sections.append(current)
@@ -227,7 +233,7 @@ def extract_sectioned_blocks(container):
                 }
                 sections.append(current)
 
-            current["items"].append(clean_text(child))
+            current["items"].append(utils.clean_text(child))
 
         elif child.name == "ul":
             if current is None:
@@ -237,7 +243,7 @@ def extract_sectioned_blocks(container):
                 }
                 sections.append(current)
 
-            current["items"].append(clean_text(child))
+            current["items"].append(utils.clean_text(child))
 
     return sections
 
@@ -256,15 +262,15 @@ def extract_keyword_list_from_block(block, prefix):
     for hidden in block_copy.find_all(style=lambda s: s and "display:none" in s.replace(" ", "").lower()):
         hidden.decompose()
 
-    text = clean_punctuation_spacing(block_copy.get_text(" ", strip=True))
+    text = utils.clean_punctuation_spacing(block_copy.get_text(" ", strip=True))
 
     if text.upper().startswith(prefix):
         text = text[len(prefix):].strip()
 
     return [
-        clean_punctuation_spacing(part)
+        utils.clean_punctuation_spacing(part)
         for part in text.split(",")
-        if clean_punctuation_spacing(part)
+        if utils.clean_punctuation_spacing(part)
     ]
 
 
@@ -286,7 +292,7 @@ def extract_keywords(ds):
     for child in block.children:
 
         if isinstance(child, NavigableString):
-            text = clean_punctuation_spacing(str(child))
+            text = utils.clean_punctuation_spacing(str(child))
 
             if not text:
                 continue
@@ -333,16 +339,10 @@ def should_keep_section(title):
     return title.upper() not in EXCLUDED_SECTION_TITLES
 
 
-def clean_punctuation_spacing(text):
-    text = clean_text_from_string(text)
-    text = re.sub(r"\s+([,.;:])", r"\1", text)
-    text = re.sub(r"([(\[])\s+", r"\1", text)
-    text = re.sub(r"\s+([)\]])", r"\1", text)
-    return text
 
 
 def split_csv_value(value):
-    value = clean_punctuation_spacing(value)
+    value = utils.clean_punctuation_spacing(value)
     return [
         item.strip()
         for item in value.split(",")
@@ -350,108 +350,10 @@ def split_csv_value(value):
     ]
 
 
-def parse_list_item(li):
-
-    bold = li.find("b")
-
-    title = ""
-
-    if bold:
-        title = clean_punctuation_spacing(
-            bold.get_text(" ", strip=True)
-        ).rstrip(":")
-
-        bold.extract()
-
-    return {
-        "title": title,
-        "text": clean_punctuation_spacing(
-            li.get_text(" ", strip=True)
-        )
-    }
 
 
-def parse_table(table):
-    rows = []
-
-    for tr in table.select("tr"):
-        cells = [
-            clean_punctuation_spacing(td.get_text(" ", strip=True))
-            for td in tr.find_all(["td", "th"], recursive=False)
-        ]
-
-        if any(cells):
-            rows.append(cells)
-
-    return {
-        "displayItem": "table",
-        "rows": rows
-    }
 
 
-def extract_content_blocks(nodes):
-    blocks = []
-
-    paragraph = []
-
-    def flush_paragraph():
-        nonlocal paragraph
-
-        text = clean_punctuation_spacing(" ".join(paragraph))
-
-        if text:
-            blocks.append({
-                "displayItem": "p",
-                "text": text
-            })
-
-        paragraph = []
-
-    for node in nodes:
-
-        if isinstance(node, NavigableString):
-            text = clean_punctuation_spacing(str(node))
-
-            if text:
-                paragraph.append(text)
-
-            continue
-
-        if not isinstance(node, Tag):
-            continue
-
-        # ------------------------------------------------
-        # Paragraph separator
-        # ------------------------------------------------
-
-        if "dsLineHor" in node.get("class", []):
-            flush_paragraph()
-            continue
-
-        # ------------------------------------------------
-        # Lists
-        # ------------------------------------------------
-
-        if node.name in ("ul", "ol"):
-            flush_paragraph()
-
-            blocks.append({
-                "displayItem": node.name,
-                "items": [
-                    parse_list_item(li)
-                    for li in node.find_all("li", recursive=False)
-                ]
-            })
-
-            continue
-
-        paragraph.append(
-            clean_punctuation_spacing(node.get_text(" ", strip=True))
-        )
-
-    flush_paragraph()
-
-    return blocks
 
 
 def extract_named_abilities(node):
@@ -468,7 +370,7 @@ def extract_named_abilities(node):
 
             abilities.append({
                 "title": current_title.rstrip(":"),
-                "content": extract_content_blocks(current_nodes)
+                "content": utils.extract_content_blocks(current_nodes)
             })
 
         current_title = None
@@ -478,7 +380,7 @@ def extract_named_abilities(node):
 
         if isinstance(child, Tag) and child.name == "b":
             flush()
-            current_title = clean_punctuation_spacing(
+            current_title = utils.clean_punctuation_spacing(
                 child.get_text(" ", strip=True)
             )
             continue
@@ -498,7 +400,7 @@ def extract_named_abilities(node):
 
 
 def parse_ability_section_item(node):
-    text = clean_punctuation_spacing(node.get_text(" ", strip=True))
+    text = utils.clean_punctuation_spacing(node.get_text(" ", strip=True))
 
     if text.upper().startswith("CORE:"):
         return {
@@ -516,13 +418,15 @@ def parse_ability_section_item(node):
 
     if named:
         return {
-            "kind": "named",
-            "values": named
+            "kind": "items",
+            "items": named
         }
 
     return {
-        "kind": "text",
-        "value": text
+        "kind": "items",
+        "items": [{
+            "content": utils.extract_content_blocks([node])
+        }]
     }
 
 
@@ -540,7 +444,7 @@ def extract_sections_from_container(container):
         classes = child.get("class", [])
 
         if "dsHeader" in classes:
-            title = clean_text(child)
+            title = utils.clean_text(child)
 
             if not should_keep_section(title):
                 current = None
@@ -567,24 +471,14 @@ def extract_sections_from_container(container):
             elif parsed["kind"] == "faction":
                 current["faction"].extend(parsed["values"])
 
-            elif parsed["kind"] == "named":
-                current["items"].extend(parsed["values"])
-
-            elif parsed["kind"] == "text":
-                current["items"].append({
-                    "content": [
-                        {
-                            "displayItem": "p",
-                            "text": parsed["value"]
-                        }
-                    ]
-                })
+            elif parsed["kind"] == "items":
+                current["items"].extend(parsed["items"])
 
         elif child.name == "ul":
             if current is None:
                 continue
 
-            text = clean_punctuation_spacing(child.get_text(" ", strip=True))
+            text = utils.clean_punctuation_spacing(child.get_text(" ", strip=True))
 
             if text:
                 current["items"].append({
@@ -694,7 +588,7 @@ def preprocess(img, max_width=1200, max_height=2000):
 # =========================================================
 # PIPELINE (PURE FETCH + PARSE ONLY)
 # =========================================================
-def run(page, url, screenshot):
+def run(page, url, screenshot, unit_subfaction_map=None):
     page.set_viewport_size({"width": 1600, "height": 2000})
 
     page.goto(url, wait_until="domcontentloaded")
@@ -741,36 +635,44 @@ def run(page, url, screenshot):
 
     soup = BeautifulSoup(html, "html.parser")
 
-    faction_name = extract_faction_name(soup)
+    if not unit_subfaction_map:
+        selects = utils.get_filter_selects(soup)
+
+        if len(selects) > 1:
+            unit_subfaction_map = utils.build_sub_faction_map(selects[0])
+        else:
+            unit_subfaction_map = {}
+
     ds = extract_datacard(soup)
+    faction_name = extract_faction_name(soup, ds, unit_subfaction_map)
     data = extract_all(ds, page)
 
-    # Why do some factions have to be so fucking weird?
-    if (faction_name == "SPACE MARINES"):
-        faction_name = "ADEPTUS ASTARTES"
-    if (faction_name == "CHAOS DAEMONS"):
-        faction_name = "LEGIONES DAEMONICA"
-    if (faction_name == "IMPERIAL AGENTS"):
-        faction_name = "AGENTS OF THE IMPERIUM"
-
-    faction_keywords_str = ""
-
-    # If a faction is made of sub-factions order them by faction then sub-faction
-    if (faction_name not in data["faction_keywords"]):
-        faction_keywords_str = f"{faction_name}/{"/".join(data["faction_keywords"])}"
-    else:
-        faction_keywords_str = "/".join(data["faction_keywords"])
-
-    faction_keywords_str = faction_keywords_str.replace(" ", "_")
-
-    print(f"Faction: {faction_name} | Keywords: {faction_keywords_str} | Unit: {data['name']}")
-
     if screenshot:
+        # Why do some factions have to be so fucking weird?
+        if (faction_name == "SPACE MARINES"):
+            faction_name = "ADEPTUS ASTARTES"
+        if (faction_name == "CHAOS DAEMONS"):
+            faction_name = "LEGIONES DAEMONICA"
+        if (faction_name == "IMPERIAL AGENTS"):
+            faction_name = "AGENTS OF THE IMPERIUM"
+
+        faction_keywords_str = ""
+
+        # If a faction is made of sub-factions order them by faction then sub-faction
+        if (faction_name not in data["faction_keywords"]):
+            faction_keywords_str = f"{faction_name}/{"/".join(data["faction_keywords"])}"
+        else:
+            faction_keywords_str = "/".join(data["faction_keywords"])
+
+        faction_keywords_str = faction_keywords_str.replace(" ", "_")
+
+        print(f"Faction: {faction_name} | Keywords: {faction_keywords_str} | Unit: {data['name']}")
+
         # ONLY NEW ADDITION (post-extraction safe zone)
         screenshot_datacard(page, url, data["name"], faction_keywords_str)
 
 
-    return data
+    return data, faction_name
 
 # =========================================================
 # SCREENSHOT STAGE (POST-EXTRACTION ONLY)
@@ -1008,11 +910,11 @@ if __name__ == "__main__":
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        data = run(page, args.url, args.screenshot)
+        data, faction_name  = run(page, args.url, args.screenshot)
 
         browser.close()
 
-    output_path = f"{data.get("faction_name")}_{data.get("name")}.json"
+    output_path = f"{faction_name}_{data.get("name")}.json"
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
