@@ -2,6 +2,7 @@ datacards_tts.json
 failed_units.json
 failed_detachments.json
 units.json
+detachment_css_manifest.json
 
 __pycache__/
 assets/

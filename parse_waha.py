@@ -68,6 +68,11 @@ def parse_args():
         help="Retry failed units from a JSON file"
     )
     parser.add_argument(
+        "--output-json",
+        default="units.json",
+        help="File to output JSON to"
+    )
+    parser.add_argument(
         "--screenshots",
         action="store_true",
         help="Take Waha screenshots"
@@ -344,7 +349,7 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
             print() 
 
     # --- STAGE 3: GENERATION ---
-    with open("units.json", "w", encoding="utf-8") as f:
+    with open(args.output_json, "w", encoding="utf-8") as f:
         json.dump(all_factions_manifest, f, indent=4, ensure_ascii=False)
 
 if __name__ == "__main__":
@@ -391,4 +396,4 @@ if __name__ == "__main__":
     elapsed = time.perf_counter() - start_time
     minutes = int(elapsed // 60)
     seconds = int(elapsed % 60)
-    print(f"Success! 'units.js' generated in {minutes} minutes and {seconds} seconds.")
+    print(f"Success! '{args.output_json}' generated in {minutes} minutes and {seconds} seconds.")

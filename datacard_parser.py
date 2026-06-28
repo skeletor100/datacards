@@ -369,6 +369,24 @@ def parse_list_item(li):
     }
 
 
+def parse_table(table):
+    rows = []
+
+    for tr in table.select("tr"):
+        cells = [
+            clean_punctuation_spacing(td.get_text(" ", strip=True))
+            for td in tr.find_all(["td", "th"], recursive=False)
+        ]
+
+        if any(cells):
+            rows.append(cells)
+
+    return {
+        "displayItem": "table",
+        "rows": rows
+    }
+
+
 def extract_content_blocks(nodes):
     blocks = []
 

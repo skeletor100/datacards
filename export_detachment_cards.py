@@ -5,7 +5,49 @@ BASE_URL='http://localhost:8000/detachment_index.html'
 OUTPUT_DIR=Path('rendered_cards')
 def safe(v): return re.sub(r'[<>:"/\\|?*\x00-\x1F]','',str(v)).strip()
 def safe_dir(v): return re.sub(r'\s+','_',safe(v))
-def wait(page): page.evaluate('''() => new Promise(r => requestAnimationFrame(()=>requestAnimationFrame(r)))''')
+def wait(page, stable_frames=5):
+    page.evaluate(
+        """async (stableFrames) => {
+            if (document.fonts)
+                await document.fonts.ready;
+
+            let last = "";
+            let stable = 0;
+
+            function snapshot() {
+                const body = document.body;
+
+                return JSON.stringify({
+                    width: body.scrollWidth,
+                    height: body.scrollHeight,
+                    textLength: body.innerText.length,
+                    htmlLength: body.innerHTML.length
+                });
+            }
+
+            return new Promise(resolve => {
+                function tick() {
+                    const current = snapshot();
+
+                    if (current === last) {
+                        stable++;
+                        if (stable >= stableFrames) {
+                            resolve();
+                            return;
+                        }
+                    } else {
+                        stable = 0;
+                        last = current;
+                    }
+
+                    requestAnimationFrame(tick);
+                }
+
+                requestAnimationFrame(tick);
+            });
+        }""",
+        stable_frames
+    )
 def selected(page, sel): return page.locator(f'{sel} option:checked').inner_text().strip()
 def select_text(page, sel, wanted):
     opts=page.locator(f'{sel} option'); w=wanted.strip().upper()
@@ -34,12 +76,9 @@ def screenshot_visible_cards(page, outdir):
         card = page.locator(f'.detachment-card[data-card="{name}"]')
 
         if card.count() == 0:
-            continue
-
-        try:
-            card.wait_for(state="visible", timeout=1000)
-        except Exception:
-            continue
+            if name == "stratagems":
+                continue
+            raise RuntimeError("Rules card was not rendered")
 
         card.screenshot(path=str(base / f"{name}.png"), type="png")
         print(f"Saved {base / f'{name}.png'}")

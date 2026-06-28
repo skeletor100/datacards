@@ -15,9 +15,65 @@
     #app{width:min(96vw,var(--card-w));margin:0 auto;display:grid;gap:24px}.hidden{display:none!important}
     .detachment-card{width:100%;aspect-ratio:3/2;background:var(--paper);border:4px solid var(--frame);position:relative;overflow:hidden;container-type:inline-size;box-shadow:0 12px 40px rgba(0,0,0,.45)}
     .detachment-card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 18% 22%,rgba(255,255,255,.35),transparent 28%),linear-gradient(90deg,rgba(0,0,0,.035),transparent 20%,transparent 80%,rgba(0,0,0,.07));pointer-events:none}
-    .header{position:absolute;left:4%;right:4%;top:3%;height:10.2%;background:var(--banner);color:#fff;padding:0 1.55%;text-transform:uppercase;font-weight:900;letter-spacing:.035em;line-height:.95}.header::after{content:"";position:absolute;left:1.55%;right:1.55%;top:50%;height:.42cqw;background:#fff;transform:translateY(-50%)}.kicker{position:absolute;left:1.55%;right:1.55%;top:12%;font-size:2.26cqw;line-height:1}.page-title{position:absolute;left:1.55%;right:1.55%;line-height:.9}.rule-card .page-title{font-size:2.94cqw; bottom:7%;}.strat-card .page-title{font-size:3.4cqw; bottom:11%;}
-    .content{position:absolute;left:4%;right:4%;top:16%;bottom:4%;overflow:hidden}.section-title{background:var(--frame);color:white;text-transform:uppercase;font-weight:900;letter-spacing:.04em;font-size:2.0cqw;padding:.35cqw 1cqw;margin-bottom:.75cqw}.rule-body{font:var(--rule-fs,1.62cqw)/1.20 var(--font)}.rule-name,.enh-name{font-weight:900;text-transform:uppercase;font-size:calc(var(--enh-fs,1.45cqw) * 1.38);letter-spacing:.02em;margin:.35cqw 0 .14cqw}.subrule-title{font-weight:900;text-transform:uppercase;font-size:calc(var(--rule-fs,1.62cqw) * 1.02);margin:.55cqw 0 .08cqw}.enh-grid{display:grid;grid-template-columns:1fr 1fr;gap:.85cqw 2.0cqw}.enh-card{border-top:.18cqw dotted #222;padding-top:.32cqw;min-width:0}.enh-text{font:var(--enh-fs,1.45cqw)/1.16 var(--font)}
-    .kwb,.kwb2{font-weight:900;text-transform:uppercase}.bluefont{color:#2d6c83}.tt,.kwbu{font-weight:900;text-transform:none;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:.12em} p{margin:.30cqw 0}.rule-card .content{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:.85cqw}.rules-zone,.enh-zone{min-height:0;overflow:hidden}.enh-zone{align-self:end}
+    .header{position:absolute;left:4%;right:4%;top:3%;height:10.2%;background:var(--banner);color:#fff;padding:0 1.55%;text-transform:uppercase;font-weight:900;letter-spacing:.035em;line-height:.95}.header::after{content:"";position:absolute;left:1.55%;right:1.55%;top:50%;height:.42cqw;background:#fff;transform:translateY(-50%)}.kicker{position:absolute;left:1.55%;right:1.55%;top:12%;font-size:2.26cqw;line-height:1}.page-title{position:absolute;left:1.55%;right:1.55%;line-height:.9}
+    .rule-card{
+      width:min(96vw,var(--strat-card-w));
+      aspect-ratio:2/3;
+      margin:0 auto;
+    }
+    .rule-card .header{
+      height:8.2%;
+    }
+    .rule-card .kicker{
+      font-size:4.2cqw;
+    }
+    .rule-card .page-title{
+      font-size:3.9cqw;
+      bottom:11%;
+    }
+    .strat-card .page-title{font-size:3.4cqw; bottom:11%;}
+    .content{position:absolute;left:4%;right:4%;top:16%;bottom:4%;overflow:hidden}
+    .section-title{background:var(--frame);color:white;text-transform:uppercase;font-weight:900;letter-spacing:.04em;font-size:3.0cqw;padding:.35cqw 1cqw;margin-bottom:.75cqw}
+    .rule-body{font:var(--rule-fs,2.4cqw)/1.20 var(--font)}
+    .rule-name,
+    .enh-name{font-weight:900;text-transform:uppercase;font-size:calc(var(--enh-fs,2.15cqw) * 1.5);letter-spacing:.02em;margin:.35cqw 0 .14cqw}
+    .subrule-title{font-weight:900;text-transform:uppercase;font-size:calc(var(--rule-fs,2.4cqw) * 1.15);margin:.55cqw 0 .08cqw}.enh-grid{display:grid;grid-template-columns:1fr 1fr;gap:.85cqw 2.0cqw}.enh-card{border-top:.18cqw dotted #222;padding-top:.32cqw;min-width:0}
+    .enh-text{font:var(--enh-fs,2.15cqw)/1.16 var(--font)}
+    .rule-table{
+      width:100%;
+      border-collapse:collapse;
+      margin:.35cqw 0;
+      font:inherit;
+    }
+
+    .rule-table td{
+      padding:.08cqw .6cqw .08cqw 0;
+      font-weight:900;
+      text-transform:uppercase;
+    }
+    .kwb,.kwb2{font-weight:900}.bluefont{color:#2d6c83}.tt,.kwbu{font-weight:900;text-transform:none;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:.12em} p{margin:.30cqw 0}
+    .rule-card .content{
+      top:12.2%;
+      bottom:3.2%;
+      display:grid;
+      grid-template-rows:var(--rules-row, auto) minmax(0, 1fr);
+      gap:1.1cqw;
+    }
+    .rules-zone,
+    .enh-zone{
+      min-height:0;
+      overflow:hidden;
+      position:relative;
+    }
+    .rules-fit,
+    .enh-fit{
+      transform-origin:top left;
+      width:100%;
+    }
+    .enh-zone{
+      display:grid;
+      grid-template-rows:auto minmax(0,1fr);
+    }
     .strat-card{width:min(96vw,var(--strat-card-w));aspect-ratio:2/3;margin:0 auto}.strat-card .header{height:8.2%;}.strat-card .kicker{font-size:3.7cqw}.strat-card .page-title{font-size:3.2cqw}.strat-card .content{top:12.2%;bottom:3.2%}
     .strat-grid{
       display: grid;
@@ -204,7 +260,11 @@ function itemHtml(item){
     ? `<span class="li-title">${esc(item.title)}</span> `
     : '';
 
-  return `<li>${title}${textRuns(item)}</li>`;
+  const nested = Array.isArray(item.content)
+    ? item.content.map(blockHtml).join('')
+    : '';
+
+  return `<li>${title}${textRuns(item)}${nested}</li>`;
 }
 
 function blockHtml(block){
@@ -215,8 +275,23 @@ function blockHtml(block){
     return `<div class="subrule-title">${esc(block.title)}</div>${(block.content||[]).map(blockHtml).join('')}`;
   }
 
-  if(block.displayItem === 'ul'){
-    return `<ul class="rule-list">${(block.items || []).map(itemHtml).join('')}</ul>`;
+  if(block.displayItem === 'ul' || block.displayItem === 'ol'){
+    const tag = block.displayItem;
+    return `<${tag} class="rule-list">${(block.items || []).map(itemHtml).join('')}</${tag}>`;
+  }
+
+  if (block.displayItem === 'table') {
+    return `
+      <table class="rule-table">
+        <tbody>
+          ${(block.rows || []).map(row => `
+            <tr>
+              ${row.map(cell => `<td>${textRuns(cell)}</td>`).join('')}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
   }
 
   return `<p>${textRuns(block)}</p>`;
@@ -231,8 +306,6 @@ function render(){
   }
 
   app.innerHTML = renderRules(card) + renderStrats(card);
-  fitAll();
-  requestAnimationFrame(fitAll);
   applyShow();
 }
 function colourClass(cls){return cls||'str10ColorEither'}
@@ -290,14 +363,29 @@ function renderRules(card){
     <article class="detachment-card rule-card" data-card="rules">
       ${cardHeader(card,'Detachment Rules')}
       <div class="content">
-        <div class="rules-zone">${rules}</div>
-        <section class="enh-zone">
+        <div class="rules-zone">
+          <div class="rules-fit">${rules}</div>
+        </div>
+        <div class="enh-zone">
           <div class="section-title" style="${bannerStyle}">Enhancements</div>
-          <div class="enh-grid">${enh}</div>
-        </section>
+          <div class="enh-fit">
+            <div class="enh-grid">${enh}</div>
+          </div>
+        </div>
       </div>
     </article>
   `;
+}
+function fieldHtml(val){
+  if (!val) return '';
+
+  if (Array.isArray(val)) return val.map(fieldHtml).join('');
+
+  if (val.displayItem === 'p') {
+    return textRuns(val);
+  }
+
+  return blockHtml(val);
 }
 function renderStrat(s,det){
   const color=colourClass(s.color_class); const icons=(s.icon_classes&&s.icon_classes.length?s.icon_classes:['str10Any']).concat(['CP:'+s.cp]);
@@ -306,7 +394,10 @@ function renderStrat(s,det){
       ? `<div class="diamond-slot"><div class="diamond"><div class="cp">${esc(i.slice(3)||'1CP')}</div></div></div>`
       : `<div class="diamond-slot"><div class="diamond"><div class="phase-icon" ${iconStyle(i)}></div></div></div>`
   ).join('');
-  const field=(label,val)=> val?`<div class="strat-field"><span class="label">${label}:</span>${textRuns(val)}</div>`:'';
+  const field = (label, val) =>
+    val
+      ? `<div class="strat-field"><span class="label">${label}:</span>${fieldHtml(val)}</div>`
+      : '';
   return `<section class="strat ${color}"><div class="strat-icons">${iconHtml}</div><div class="strat-body"><div class="strat-name">${esc(s.name)}</div><div class="strat-type">${esc(det)} – ${esc(s.type||'Stratagem')}</div><div class="dotline"></div><div class="strat-text">${field('WHEN',s.when)}${field('TARGET',s.target)}${field('EFFECT',s.effect)}${field('RESTRICTIONS',s.restrictions)}</div></div></section>`;
 }
 function splitStrats(strats){
@@ -341,16 +432,66 @@ function renderStrats(card){
 }
 function pxToCqw(card, px){ return (px / card.getBoundingClientRect().width) * 100; }
 function overflowing(el){ return el && (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1); }
+function fitBox(box, inner){
+  if (!box || !inner) return;
+
+  inner.style.transform = '';
+  inner.style.width = '100%';
+
+  const availableW = box.clientWidth;
+  const availableH = box.clientHeight;
+
+  const neededW = inner.scrollWidth;
+  const neededH = inner.scrollHeight;
+
+  if (!availableW || !availableH || !neededW || !neededH) return;
+
+  const scale = Math.min(
+    1,
+    availableW / neededW,
+    availableH / neededH
+  );
+
+  inner.style.transform = `scale(${scale})`;
+  inner.style.width = `${100 / scale}%`;
+}
+
 function fitRulesCard(card){
-  card.style.setProperty('--rule-fs','1.62cqw');
-  card.style.setProperty('--enh-fs','1.45cqw');
-  const rules=card.querySelector('.rules-zone'), enh=card.querySelector('.enh-zone');
-  for(let i=0;i<34 && (overflowing(rules)||overflowing(enh)||overflowing(card.querySelector('.content')));i++){
-    const rule=parseFloat(getComputedStyle(card).getPropertyValue('--rule-fs')) || 1.62;
-    const enf=parseFloat(getComputedStyle(card).getPropertyValue('--enh-fs')) || 1.45;
-    if(overflowing(rules) && rule>.98) card.style.setProperty('--rule-fs',(rule-.045)+'cqw');
-    if((overflowing(enh)||overflowing(card.querySelector('.content'))) && enf>.86) card.style.setProperty('--enh-fs',(enf-.045)+'cqw');
-  }
+  card.style.setProperty('--rule-fs','2.4cqw');
+  card.style.setProperty('--enh-fs','2.15cqw');
+
+  const content = card.querySelector('.content');
+  const rulesZone = card.querySelector('.rules-zone');
+  const rulesFit = card.querySelector('.rules-fit');
+  const enhZone = card.querySelector('.enh-zone');
+  const enhFit = card.querySelector('.enh-fit');
+  const enhTitle = enhZone?.querySelector('.section-title');
+
+  if (!content || !rulesZone || !rulesFit || !enhZone || !enhFit) return;
+
+  rulesFit.style.transform = '';
+  rulesFit.style.width = '100%';
+  enhFit.style.transform = '';
+  enhFit.style.width = '100%';
+
+  card.style.setProperty('--rules-row', 'auto');
+
+  const contentH = content.clientHeight;
+  const gap = parseFloat(getComputedStyle(content).rowGap) || 0;
+  const naturalRulesH = rulesFit.scrollHeight;
+
+  const minEnhH = Math.max(
+    contentH * 0.34,
+    (enhTitle?.offsetHeight || 0) + 160
+  );
+
+  const maxRulesH = Math.max(0, contentH - gap - minEnhH);
+  const rulesH = Math.min(naturalRulesH, maxRulesH);
+
+  card.style.setProperty('--rules-row', `${rulesH}px`);
+
+  fitBox(rulesZone, rulesFit);
+  fitBox(enhZone, enhFit);
 }
 function fitStratagems(card){
   const grid = card.querySelector('.strat-grid');
@@ -386,7 +527,18 @@ function fitAll(){
   document.querySelectorAll('.rule-card').forEach(fitRulesCard);
   document.querySelectorAll('.strat-card').forEach(fitStratagems);
 }
-function applyShow(){ const v=$('#show').value; document.querySelectorAll('.detachment-card').forEach(c=>c.classList.toggle('hidden',v!=='all'&&c.dataset.card!==v)); }
+function applyShow(){
+  const v = $('#show').value;
+
+  document.querySelectorAll('.detachment-card').forEach(c =>
+    c.classList.toggle('hidden', v !== 'all' && c.dataset.card !== v)
+  );
+
+  requestAnimationFrame(() => {
+    fitAll();
+    requestAnimationFrame(fitAll);
+  });
+}
 $('#faction-primary').addEventListener('change', updateSecondary); $('#faction-secondary').addEventListener('change', updateDets); $('#detachment').addEventListener('change', render); $('#show').addEventListener('change', applyShow);
 Promise.all([fetch(DATA_URL).then(r=>r.json()), fetch(MANIFEST_URL).then(r=>r.json()).catch(()=>({}))]).then(([d,m])=>{DATA=d;MANIFEST=m;populate();});
 </script>

@@ -172,8 +172,51 @@ def paragraph_block_from_nodes(nodes):
     }
 
 
+def parse_table(table):
+    inner = table.find("table")
+    if inner:
+        table = inner
+
+    rows = []
+
+    for tr in table.find_all("tr", recursive=False):
+        cells = []
+
+        for cell in tr.find_all(["td", "th"], recursive=False):
+            if cell.find("table"):
+                continue
+
+            runs = extract_text_runs(cell)
+            if runs:
+                cells.append({"runs": runs})
+
+        if cells:
+            rows.append(cells)
+
+    if not rows:
+        tbody = table.find("tbody", recursive=False)
+        if tbody:
+            for tr in tbody.find_all("tr", recursive=False):
+                cells = []
+                for cell in tr.find_all(["td", "th"], recursive=False):
+                    if cell.find("table"):
+                        continue
+
+                    runs = extract_text_runs(cell)
+                    if runs:
+                        cells.append({"runs": runs})
+
+                if cells:
+                    rows.append(cells)
+
+    return {
+        "displayItem": "table",
+        "rows": rows
+    }
+
+
 def parse_list_item(li):
-    bold = li.find("b")
+    bold = li.find("b", recursive=False)
     title = ""
 
     if bold:
@@ -182,10 +225,33 @@ def parse_list_item(li):
         ).rstrip(":")
         bold.extract()
 
-    return {
+    runs = []
+    content = []
+
+    for child in li.children:
+        if is_ignorable_node(child):
+            continue
+
+        if isinstance(child, Tag) and child.name in ("ul", "ol"):
+            content.append({
+                "displayItem": child.name,
+                "items": [
+                    parse_list_item(sub_li)
+                    for sub_li in child.find_all("li", recursive=False)
+                ]
+            })
+        else:
+            runs.extend(extract_text_runs(child))
+
+    item = {
         "title": title,
-        "text": clean_punctuation_spacing(li.get_text(" ", strip=True))
+        "runs": merge_adjacent_runs(runs)
     }
+
+    if content:
+        item["content"] = content
+
+    return item
 
 
 def attach_paragraphs_to_custom_subrules(blocks):
@@ -265,16 +331,21 @@ def extract_content_blocks(nodes):
 
             continue
 
+        if isinstance(node, Tag):
+            table = node if node.name == "table" else node.find("table")
+
+            if table:
+                flush_paragraph()
+                blocks.append(parse_table(table))
+                continue
+
         if isinstance(node, Tag) and node.name in ("ul", "ol"):
             flush_paragraph()
 
             blocks.append({
                 "displayItem": node.name,
                 "items": [
-                    {
-                        "title": parse_list_item(li)["title"],
-                        "runs": extract_text_runs(li)
-                    }
+                    parse_list_item(li)
                     for li in node.find_all("li", recursive=False)
                 ]
             })
@@ -307,7 +378,7 @@ def extract_subrule_from_table(block):
     content_nodes = []
 
     for node in title_node.next_siblings:
-        if is_ignorable_node(node):
+        if is_ignorable_node(node) and not is_br(node):
             continue
         content_nodes.append(node)
 
@@ -335,7 +406,7 @@ def extract_detachment_rules(soup):
             if isinstance(node, Tag) and node.name in ("h2", "h3"):
                 break
 
-            if is_ignorable_node(node):
+            if is_ignorable_node(node) and not is_br(node):
                 continue
 
             if isinstance(node, Tag) and node.select_one(".impact18"):
