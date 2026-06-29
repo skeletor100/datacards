@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Army Rules Card Renderer</title>
+  <style>
+    :root{
+      --card-w:1800px; --card-h:1200px; --strat-card-w:1200px; --strat-card-h:1800px; --paper:#ece9df; --ink:#111; --banner:#084563;
+      --frame:#4b6262; --green:#22796c; --blue:#096691; --red:#bf0d12;
+      --font:"Conduit ITC","ConduitITC","Bahnschrift Condensed","Aptos Narrow","Arial Narrow",Arial,sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:#242424;color:var(--ink);font-family:var(--font);padding:24px}
+    .toolbar{max-width:var(--strat-card-w);margin:0 auto 16px;color:#ddd;font:14px Arial,sans-serif;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .toolbar select,.toolbar button{padding:6px 8px}
+    .toolbar label{display:flex;gap:6px;align-items:center}
+    #app{width:min(96vw,var(--strat-card-w));margin:0 auto;display:grid;gap:24px}
+    .hidden{display:none!important}
+
+    .detachment-card{
+      width:1200px;
+      height:1800px;
+      background:var(--paper);
+      border:4px solid var(--frame);
+      position:relative;
+      overflow:hidden;
+      container-type:inline-size;
+      box-shadow:0 12px 40px rgba(0,0,0,.45);
+    }
+    .detachment-card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 18% 22%,rgba(255,255,255,.35),transparent 28%),linear-gradient(90deg,rgba(0,0,0,.035),transparent 20%,transparent 80%,rgba(0,0,0,.07));pointer-events:none}
+    .header{position:absolute;left:4%;right:4%;top:3%;height:8.2%;background:var(--banner);color:#fff;padding:0 1.55%;text-transform:uppercase;font-weight:900;letter-spacing:.035em;line-height:.95}
+    .header::after{content:"";position:absolute;left:1.55%;right:1.55%;top:50%;height:.42cqw;background:#fff;transform:translateY(-50%)}
+    .kicker{position:absolute;left:1.55%;right:1.55%;top:12%;font-size:3.7cqw;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:clip}
+    .page-title{position:absolute;left:1.55%;right:1.55%;bottom:11%;font-size:3.2cqw;line-height:.9}
+
+    .army-rules-card .content{position:absolute;left:4%;right:4%;top:12.2%;bottom:3.2%;overflow:hidden}
+    .army-rules-fit{transform-origin:top left;width:100%}
+    .section-title{background:var(--frame);color:white;text-transform:uppercase;font-weight:900;letter-spacing:.04em;font-size:3.0cqw;padding:.35cqw 1cqw;margin:0 0 .75cqw}
+    .army-rule{break-inside:avoid;margin:0 0 1.05cqw}
+    .rule-body{font:var(--rule-fs,2.4cqw)/1.20 var(--font)}
+    .subrule-title{font-weight:900;text-transform:uppercase;font-size:calc(var(--rule-fs,2.4cqw) * 1.15);margin:.55cqw 0 .08cqw}
+    .impact18{font-weight:900;text-transform:uppercase;font-size:calc(var(--rule-fs,2.4cqw) * 1.22);letter-spacing:.02em}
+
+    .cs-rule{display:grid;grid-template-columns:minmax(5.5cqw,auto) 1fr;column-gap:.85cqw;align-items:start;border-top:.18cqw dotted #222;padding-top:.45cqw;margin:.55cqw 0 .7cqw;break-inside:avoid}
+    .cs-req{min-width:5.5cqw;min-height:4.2cqw;display:flex;align-items:flex-start;justify-content:center;font-weight:900;text-transform:uppercase;font-size:1.55cqw;line-height:1;padding-top:.15cqw}
+    .cs-content{min-width:0}
+    .cs-title{font-weight:900;text-transform:uppercase;font-size:calc(var(--rule-fs,2.4cqw) * 1.05);letter-spacing:.02em;margin:0 0 .12cqw}
+    .cruD6wrap{display:inline-flex;align-items:center;justify-content:center;min-width:3.2cqw;min-height:3.2cqw;font-weight:900}
+    .cruD1,.cruD2,.cruD3,.cruD4,.cruD5,.cruD6{width:3.0cqw;height:3.0cqw;display:inline-block;background-position:center;background-repeat:no-repeat;background-size:contain;vertical-align:middle}
+    .content-list{margin:.35cqw 0 .55cqw 1.8cqw;padding:0}
+    .content-list li{margin:.16cqw 0}
+    .li-title{font-weight:900;text-transform:uppercase}
+    .rule-table,.content-table{width:100%;border-collapse:collapse;margin:.35cqw 0;font:inherit}
+    .rule-table td{padding:.08cqw .6cqw .08cqw 0;font-weight:900;text-transform:uppercase}
+    .content-table td{padding:.08cqw .6cqw .08cqw 0;vertical-align:top}
+    .content-table p{margin:.20cqw 0;text-transform:none;font-weight:400}
+    .content-table p.impact18{font-weight:900;text-transform:uppercase;line-height:1.05;margin:.08cqw 0 .24cqw;white-space:nowrap;overflow-wrap:normal;word-break:keep-all;hyphens:none;max-width:none;width:max-content;display:block}
+    .content-table p.impact18 span{white-space:nowrap;overflow-wrap:normal;word-break:keep-all}
+    .content-table td:has(> p.impact18){min-width:max-content;overflow:visible}
+    .kwb,.kwb2{font-weight:900}
+    .bluefont{color:#2d6c83}
+    .tt,.kwbu{font-weight:900;text-transform:none;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:.12em}
+    p{margin:.30cqw 0}
+
+    @media print{
+      body{background:white;padding:0}
+      .toolbar{display:none}
+      #app{width:1200px;gap:0}
+      .detachment-card{box-shadow:none;page-break-after:always}
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <label>Faction <select id="faction"></select></label>
+    <label id="subfaction-row" class="hidden">Sub-faction <select id="subfaction"></select></label>
+    <label><input id="all-factions" type="checkbox" /> Render all factions</label>
+  </div>
+  <main id="app"></main>
+<script>
+function esc(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function textRuns(block) {
+  if (!block) return '';
+
+  const runs = Array.isArray(block.runs) ? block.runs : [];
+
+  return runs
+    .map(run => {
+      const classes = esc((run.source_classes || []).join(' '));
+      const text = esc(run.text);
+
+      return `<span class="${classes}">${text}</span>`;
+    })
+    .join('')
+    .replace(/\s+([,.;:])/g, '$1');
+}
+
+function blockAttrs(block) {
+  const classes = Array.isArray(block.classes) ? block.classes.filter(Boolean) : [];
+  const classAttr = classes.length ? ` class="${esc(classes.join(' '))}"` : '';
+  const styleAttr = block.style ? ` style="${esc(block.style)}"` : '';
+  return `${classAttr}${styleAttr}`;
+}
+
+function imageSrc(block) {
+  const src = block?.src || '';
+  if (!src) return '';
+
+  // The manifest localizes Wahapedia direct <img> assets, keyed by original src.
+  // Fall back to the original src so the renderer still works if a manifest is
+  // missing or has not yet been rebuilt with the new parser output.
+  return MANIFEST.direct_image_assets?.[src]?.asset
+    || MANIFEST.direct_image_assets?.[src]?.url
+    || src;
+}
+
+function renderImageBlock(block) {
+  const src = imageSrc(block);
+  if (!src) return '';
+
+  const attrs = [
+    `src="${esc(src)}"`,
+    `alt="${esc(block.alt || '')}"`,
+  ];
+
+  const classes = Array.isArray(block.classes) ? block.classes.filter(Boolean) : [];
+  if (classes.length) attrs.push(`class="${esc(classes.join(' '))}"`);
+  if (block.style) attrs.push(`style="${esc(block.style)}"`);
+
+  return `<img ${attrs.join(' ')}>`;
+}
+
+
+function inlineBlockHtml(block) {
+  if (!block) return '';
+  if (block.displayItem === 'img') return renderImageBlock(block);
+  if (block.displayItem === 'element') return renderElementBlock(block);
+  const classes = Array.isArray(block.classes) ? block.classes.filter(Boolean) : [];
+  const classAttr = classes.length ? ` class="${esc(classes.join(' '))}"` : '';
+  return `<span${classAttr}>${textRuns(block)}</span>`;
+}
+
+function shouldKeepOwnBlock(block) {
+  if (!block || Array.isArray(block)) return true;
+  if (block.displayItem === 'br') return true;
+  if (block.displayItem && block.displayItem !== 'p' && block.displayItem !== 'span') return true;
+
+  const classes = Array.isArray(block.classes) ? block.classes : [];
+  const style = String(block.style || '').toLowerCase().replace(/\s+/g, '');
+
+  // Wahapedia often stores a heading-like line as displayItem:p with impact18
+  // and display:block. Keep those as their own paragraphs, but do not force
+  // every parsed p fragment onto a new line; many are really inline spans.
+  if (classes.includes('impact18')) return true;
+  if (block.source_tag === 'p' && style.includes('display:block')) return true;
+
+  return false;
+}
+
+function richBlockSequenceHtml(blocks) {
+  const out = [];
+  let inline = '';
+
+  const flushInline = () => {
+    if (!inline) return;
+    out.push(`<p>${inline}</p>`);
+    inline = '';
+  };
+
+  for (const block of (blocks || [])) {
+    if (!block) continue;
+
+    if (block.displayItem === 'br') {
+      flushInline();
+      out.push('<br>');
+      continue;
+    }
+
+    if (shouldKeepOwnBlock(block)) {
+      flushInline();
+      out.push(blockHtml(block));
+      continue;
+    }
+
+    inline += inlineBlockHtml(block);
+  }
+
+  flushInline();
+  return out.join('');
+}
+
+function contentItemHtml(item) {
+  const title = item.title
+    ? `<span class="li-title">${esc(item.title)}</span> `
+    : '';
+
+  const nested = Array.isArray(item.content)
+    ? item.content.map(blockHtml).join('')
+    : '';
+
+  return `<li>${title}${textRuns(item)}${nested}</li>`;
+}
+
+
+function safeElementTag(tag) {
+  const allowed = new Set(['div','span','i','b','em','strong','small']);
+  tag = String(tag || 'div').toLowerCase();
+  return allowed.has(tag) ? tag : 'div';
+}
+
+function attrHtml(attrs) {
+  if (!attrs || typeof attrs !== 'object') return '';
+  const allowed = new Set(['id','name','title','colspan','rowspan','aria-label','role']);
+  return Object.entries(attrs)
+    .filter(([key, value]) => allowed.has(String(key).toLowerCase()) && value != null)
+    .map(([key, value]) => ` ${esc(key)}="${esc(value)}"`)
+    .join('');
+}
+
+function renderElementBlock(block) {
+  const tag = safeElementTag(block.tag || block.source_tag || 'div');
+  const children = Array.isArray(block.children) ? block.children : [];
+  const inner = children.map(blockHtml).join('') || textRuns(block);
+  return `<${tag}${blockAttrs(block)}${attrHtml(block.attrs)}>${inner}</${tag}>`;
+}
+
+function blockHtml(block) {
+  if (!block) return '';
+
+  if (Array.isArray(block)) {
+    return block.map(blockHtml).join('');
+  }
+
+  if (block.displayItem === 'img') {
+    return renderImageBlock(block);
+  }
+
+  if (block.displayItem === 'element') {
+    return renderElementBlock(block);
+  }
+
+  if (block.displayItem === 'cs_rule') {
+    const reqHtml = block.requirement_html
+      ? String(block.requirement_html)
+          .replace(/<script[\s\S]*?<\/script>/gi, '')
+          .replace(/\son\w+=("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+      : esc(block.requirement || '');
+
+    return `
+      <div class="cs-rule">
+        <div class="cs-req">${reqHtml}</div>
+        <div class="cs-content">
+          <div class="cs-title">${esc(block.title)}</div>
+          ${(block.content || []).map(blockHtml).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  if (block.displayItem === 'subrule') {
+    return `
+      <div class="subrule-title">${esc(block.title)}</div>
+      ${(block.content || []).map(blockHtml).join('')}
+    `;
+  }
+
+  if (block.displayItem === 'ul' || block.displayItem === 'ol') {
+    const tag = block.displayItem;
+
+    return `
+      <${tag} class="content-list">
+        ${(block.items || []).map(contentItemHtml).join('')}
+      </${tag}>
+    `;
+  }
+
+  if (block.displayItem === 'table') {
+    const cellHtml = cell => {
+      if (!cell) return '';
+
+      // Some Wahapedia table cells contain rich block content, e.g. multiple
+      // paragraphs where only the first paragraph has classes such as impact18.
+      // Rendering those cells with textRuns(cell) flattens all child runs into
+      // one span and loses both paragraph breaks and block-scoped classes.
+      if (Array.isArray(cell.content)) {
+        return richBlockSequenceHtml(cell.content);
+      }
+
+      if (Array.isArray(cell)) {
+        return cell.map(blockHtml).join('');
+      }
+
+      return textRuns(cell);
+    };
+
+    const tdAttrs = cell => {
+      if (!cell || typeof cell !== 'object' || Array.isArray(cell)) return '';
+      const attrs = [];
+      const classes = Array.isArray(cell.classes) ? cell.classes.filter(Boolean) : [];
+      if (classes.length) attrs.push(`class="${esc(classes.join(' '))}"`);
+      if (cell.style) attrs.push(`style="${esc(cell.style)}"`);
+      if (cell.colspan) attrs.push(`colspan="${esc(cell.colspan)}"`);
+      if (cell.rowspan) attrs.push(`rowspan="${esc(cell.rowspan)}"`);
+      return attrs.length ? ' ' + attrs.join(' ') : '';
+    };
+
+    return `
+      <table class="content-table">
+        <tbody>
+          ${(block.rows || []).map(row => `
+            <tr>
+              ${row.map(cell => `<td${tdAttrs(cell)}>${cellHtml(cell)}</td>`).join('')}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  if (block.displayItem === 'br') {
+    return '<br>';
+  }
+
+  const allowed = new Set([
+    'p',
+    'span',
+    'strong',
+    'b',
+    'em',
+    'i',
+    'u',
+    'small',
+  ]);
+
+  const tag = String(block.displayItem || 'span').toLowerCase();
+  const safeTag = allowed.has(tag) ? tag : 'span';
+
+  return `<${safeTag}${blockAttrs(block)}>${textRuns(block)}</${safeTag}>`;
+}
+
+const DATA_URLS = ['units.json', 'units(3).json'];
+const MANIFEST_URLS = ['detachment_css_manifest.json', 'detachment_css_manifest(2).json'];
+let DATA = {};
+let MANIFEST = {};
+const $ = s => document.querySelector(s);
+const app = $('#app');
+
+async function fetchFirst(urls, fallback) {
+  for (const url of urls) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) return await res.json();
+    } catch (err) {}
+  }
+  return fallback;
+}
+
+
+function cssUrl(value) {
+  return String(value || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '');
+}
+
+
+function selectorForClassKey(key) {
+  const classes = String(key || '').trim().split(/\s+/).filter(Boolean);
+  if (!classes.length) return '';
+  return classes.map(cls => `.${CSS.escape(cls)}`).join('');
+}
+
+function snapshotCss(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return '';
+  const pairs = [];
+
+  const add = (prop, value) => {
+    if (!value || value === 'none' || value === 'normal' || value === 'auto' || value === '0px') return;
+    pairs.push(`${prop}:${value}`);
+  };
+
+  add('width', snapshot.width);
+  add('height', snapshot.height);
+  add('color', snapshot.color);
+  add('background-color', snapshot.backgroundColor && snapshot.backgroundColor !== 'rgba(0, 0, 0, 0)' ? snapshot.backgroundColor : '');
+  add('background-size', snapshot.backgroundSize);
+  add('background-repeat', snapshot.backgroundRepeat);
+  add('background-position', snapshot.backgroundPosition);
+  add('filter', snapshot.filter);
+
+  const bg = snapshot.backgroundImageAsset || snapshot.backgroundImageUrl || snapshot.backgroundImageAssets?.[0] || snapshot.backgroundImageUrls?.[0];
+  if (bg) pairs.push(`background-image:url('${cssUrl(bg)}')`);
+
+  const mask = snapshot.maskImageAsset || snapshot.maskImageUrl || snapshot.maskImageAssets?.[0] || snapshot.maskImageUrls?.[0];
+  if (mask) pairs.push(`mask-image:url('${cssUrl(mask)}')`);
+
+  const webkitMask = snapshot.webkitMaskImageAsset || snapshot.webkitMaskImageUrl || snapshot.webkitMaskImageAssets?.[0] || snapshot.webkitMaskImageUrls?.[0];
+  if (webkitMask) pairs.push(`-webkit-mask-image:url('${cssUrl(webkitMask)}')`);
+
+  const contentAsset = snapshot.contentAsset || snapshot.contentUrl || snapshot.contentAssets?.[0] || snapshot.contentUrls?.[0];
+  if (contentAsset) pairs.push(`content:url('${cssUrl(contentAsset)}')`);
+  else if (snapshot.content && snapshot.content !== 'none') pairs.push(`content:${snapshot.content}`);
+
+  return pairs.join(';');
+}
+
+function pushManifestStyleRule(rules, selector, snapshot) {
+  const css = snapshotCss(snapshot);
+  if (selector && css) rules.push(`${selector}{${css}}`);
+}
+
+function applyManifestAssetCss() {
+  const old = document.getElementById('manifest-asset-css');
+  if (old) old.remove();
+
+  const rules = [];
+
+  // Simple icon map, e.g. extra_icons.cruD1 or extra_icons.aeMovement.
+  for (const [key, snapshot] of Object.entries(MANIFEST.extra_icons || {})) {
+    pushManifestStyleRule(rules, selectorForClassKey(key), snapshot);
+  }
+
+  // Richer class snapshots, including nested element/before/after data and
+  // localized background/mask/content assets.
+  for (const [key, entry] of Object.entries(MANIFEST.asset_candidate_styles || {})) {
+    const selector = selectorForClassKey(key);
+    if (!selector) continue;
+
+    if (entry?.element || entry?.before || entry?.after) {
+      pushManifestStyleRule(rules, selector, entry.element);
+      pushManifestStyleRule(rules, `${selector}::before`, entry.before);
+      pushManifestStyleRule(rules, `${selector}::after`, entry.after);
+    } else {
+      pushManifestStyleRule(rules, selector, entry);
+    }
+  }
+
+  if (!rules.length) return;
+  const style = document.createElement('style');
+  style.id = 'manifest-asset-css';
+  style.textContent = rules.join('\n');
+  document.head.appendChild(style);
+}
+
+function headingStyleFromClasses(classes) {
+  classes = Array.isArray(classes) ? classes : [];
+  const style = { color:'#fff' };
+
+  for (const cls of classes) {
+    const s = MANIFEST.heading_classes?.[cls];
+    if (!s) continue;
+    if (s.backgroundColor && s.backgroundColor !== 'rgba(0, 0, 0, 0)') style.background = s.backgroundColor;
+  }
+
+  return Object.entries(style).map(([k,v]) => `${k}:${v}`).join(';');
+}
+
+function factionTheme(factionData, inheritedThemeData) {
+  const firstRule = Object.values(factionData?.army_rules || {})[0];
+  const fromHeading = headingStyleFromClasses(firstRule?.heading_class || []);
+  if (fromHeading.includes('background:')) return fromHeading;
+
+  const firstUnit = Object.values(factionData?.unit_cards || {})[0]
+    || Object.values(inheritedThemeData?.unit_cards || {})[0];
+  const banner = firstUnit?.theme?.banner;
+  return banner ? `background:${banner};color:#fff` : 'color:#fff';
+}
+
+const STRUCTURAL_KEYS = new Set([
+  'unit_cards',
+  'detachment_cards',
+  'army_rules',
+  'theme',
+]);
+
+function hasArmyRules(node) {
+  return node?.army_rules && Object.keys(node.army_rules).length > 0;
+}
+
+function isFactionChildNode(childName, childNode) {
+  return !STRUCTURAL_KEYS.has(childName)
+    && childNode
+    && typeof childNode === 'object'
+    && !Array.isArray(childNode)
+    && hasArmyRules(childNode);
+}
+
+function topLevelFactionRows() {
+  return Object.entries(DATA || {})
+    .filter(([name, node]) => node && typeof node === 'object' && !Array.isArray(node))
+    .map(([name, node]) => {
+      const inheritedThemeData = node.unit_cards ? node : null;
+      const subfactions = Object.entries(node)
+        .filter(([childName, childNode]) => isFactionChildNode(childName, childNode))
+        .map(([childName, childNode]) => ({
+          id: `${name}::${childName}`,
+          parentId: name,
+          factionName: childName,
+          displayName: childName,
+          factionData: childNode,
+          inheritedThemeData,
+          isSubfaction: true,
+        }))
+        .sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+      return {
+        id: name,
+        factionName: name,
+        displayName: name,
+        factionData: node,
+        inheritedThemeData,
+        hasOwnRules: hasArmyRules(node),
+        subfactions,
+      };
+    })
+    .filter(row => row.hasOwnRules || row.subfactions.length)
+    .sort((a, b) => a.displayName.localeCompare(b.displayName));
+}
+
+function allArmyRuleRows() {
+  return topLevelFactionRows().flatMap(row => {
+    const rows = [];
+    if (row.hasOwnRules) rows.push(row);
+    rows.push(...row.subfactions);
+    return rows;
+  });
+}
+
+function selectedTopLevelFaction() {
+  const id = $('#faction').value;
+  return topLevelFactionRows().find(x => x.id === id);
+}
+
+function syncSubfactionDropdown() {
+  const row = selectedTopLevelFaction();
+  const subRow = $('#subfaction-row');
+  const subSelect = $('#subfaction');
+  const options = [];
+
+  if (row?.hasOwnRules) {
+    options.push(`<option value="__parent__">${esc(row.displayName)}</option>`);
+  }
+
+  for (const sub of row?.subfactions || []) {
+    options.push(`<option value="${esc(sub.id)}">${esc(sub.displayName)}</option>`);
+  }
+
+  subSelect.innerHTML = options.join('');
+  subRow.classList.toggle('hidden', !row || row.subfactions.length === 0);
+  subSelect.disabled = $('#all-factions').checked || !row || row.subfactions.length === 0;
+}
+
+function populate() {
+  const rows = topLevelFactionRows();
+  $('#faction').innerHTML = rows.map(x => `<option value="${esc(x.id)}">${esc(x.displayName)}</option>`).join('');
+  syncSubfactionDropdown();
+  render();
+}
+
+function selectedFactionRows() {
+  if ($('#all-factions').checked) return allArmyRuleRows();
+
+  const row = selectedTopLevelFaction();
+  if (!row) return [];
+
+  const subValue = $('#subfaction').value;
+  if (row.subfactions.length && subValue !== '__parent__') {
+    const sub = row.subfactions.find(x => x.id === subValue);
+    if (sub) return [sub];
+  }
+
+  if (row.hasOwnRules) return [row];
+  return row.subfactions.length ? [row.subfactions[0]] : [];
+}
+
+function cardHeader(factionName, factionData, inheritedThemeData) {
+  return `
+    <div class="header" style="${factionTheme(factionData, inheritedThemeData)}">
+      <div class="kicker">${esc(factionName)}</div>
+      <div class="page-title">Army Rules</div>
+    </div>`;
+}
+
+function renderArmyRule(rule) {
+  return `
+    <section class="army-rule">
+      <div class="section-title" style="${headingStyleFromClasses(rule.heading_class)}">${esc(rule.name)}</div>
+      <div class="rule-body">${(rule.content || []).map(blockHtml).join('')}</div>
+    </section>`;
+}
+
+function renderArmyRulesCard(row) {
+  const { factionName, displayName, factionData, inheritedThemeData } = row;
+  const rules = Object.values(factionData?.army_rules || {});
+  return `
+    <article class="detachment-card army-rules-card" data-faction="${esc(displayName)}">
+      ${cardHeader(factionName, factionData, inheritedThemeData)}
+      <div class="content">
+        <div class="army-rules-fit">
+          ${rules.map(renderArmyRule).join('')}
+        </div>
+      </div>
+    </article>`;
+}
+
+function render() {
+  app.innerHTML = selectedFactionRows()
+    .map(renderArmyRulesCard)
+    .join('');
+
+  requestAnimationFrame(() => {
+    fitAll();
+    requestAnimationFrame(fitAll);
+  });
+}
+
+function fitBox(box, inner) {
+  if (!box || !inner) return;
+
+  inner.style.transform = '';
+  inner.style.width = '100%';
+
+  const availableW = box.clientWidth;
+  const availableH = box.clientHeight;
+  const neededW = inner.scrollWidth;
+  const neededH = inner.scrollHeight;
+
+  if (!availableW || !availableH || !neededW || !neededH) return;
+
+  const scale = Math.min(1, availableW / neededW, availableH / neededH);
+  inner.style.transform = `scale(${scale})`;
+  inner.style.width = `${100 / scale}%`;
+}
+
+function fitArmyRulesCard(card) {
+  card.style.setProperty('--rule-fs', '2.4cqw');
+  const content = card.querySelector('.content');
+  const fit = card.querySelector('.army-rules-fit');
+  if (!content || !fit) return;
+
+  fit.style.transform = '';
+  fit.style.width = '100%';
+
+  for (let pass = 0; pass < 90 && fit.scrollHeight > content.clientHeight + 1; pass++) {
+    const fs = parseFloat(getComputedStyle(card).getPropertyValue('--rule-fs')) || 2.4;
+    if (fs <= 0.92) break;
+    card.style.setProperty('--rule-fs', (fs - 0.035) + 'cqw');
+  }
+
+  fitBox(content, fit);
+}
+
+function fitAll() {
+  document.querySelectorAll('.army-rules-card').forEach(fitArmyRulesCard);
+}
+
+$('#faction').addEventListener('change', () => {
+  syncSubfactionDropdown();
+  render();
+});
+$('#subfaction').addEventListener('change', render);
+$('#all-factions').addEventListener('change', () => {
+  const disabled = $('#all-factions').checked;
+  $('#faction').disabled = disabled;
+  syncSubfactionDropdown();
+  render();
+});
+
+Promise.all([
+  fetchFirst(DATA_URLS, {}),
+  fetchFirst(MANIFEST_URLS, {})
+]).then(([d, m]) => {
+  DATA = d;
+  MANIFEST = m;
+  applyManifestAssetCss();
+  populate();
+});
+</script>
+</body>
+</html>

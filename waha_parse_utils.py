@@ -6,6 +6,9 @@ INLINE_RENDER_CLASSES = {
     "kwb",
     "kwb2",
     "bluefont",
+    "aeText",
+    "tt",
+    "kwbu",
 }
 
 
@@ -30,6 +33,34 @@ def clean_punctuation_spacing(text):
     text = re.sub(r"([(\[])\s+", r"\1", text)
     text = re.sub(r"\s+([)\]])", r"\1", text)
     return text
+
+
+def normalize_inline_text(value):
+    """Normalize inline text without stripping meaningful edge spaces.
+
+    Text nodes next to styled inline tags often contain significant leading or
+    trailing spaces, e.g. ``If your Army Faction is <span>ADEPTA</span>``.
+    Stripping each individual NavigableString loses separators between runs.
+    """
+    return re.sub(r"\s+", " ", str(value or ""))
+
+
+def clean_inline_punctuation_spacing(text):
+    """Clean punctuation spacing inside a run while preserving edge spaces."""
+    text = normalize_inline_text(text)
+
+    leading_space = text.startswith(" ")
+    trailing_space = text.endswith(" ")
+
+    core = text.strip()
+    if not core:
+        return " " if leading_space or trailing_space else ""
+
+    core = re.sub(r"\s+([,.;:])", r"\1", core)
+    core = re.sub(r"([(\[])\s+", r"\1", core)
+    core = re.sub(r"\s+([)\]])", r"\1", core)
+
+    return (" " if leading_space else "") + core + (" " if trailing_space else "")
 
 
 def norm(value: str) -> str:
@@ -95,7 +126,7 @@ def is_ignorable_node(node):
 def filtered_inline_classes(classes):
     return [
         c for c in classes
-        if c in INLINE_RENDER_CLASSES
+        if c in INLINE_RENDER_CLASSES or c.startswith("tooltip")
     ]
 
 
@@ -110,7 +141,7 @@ def merge_adjacent_runs(runs):
             merged
             and merged[-1].get("source_classes", []) == run.get("source_classes", [])
         ):
-            merged[-1]["text"] = clean_punctuation_spacing(
+            merged[-1]["text"] = clean_inline_punctuation_spacing(
                 merged[-1]["text"] + " " + run["text"]
             )
         else:
@@ -123,8 +154,8 @@ def extract_text_runs(node, inherited_classes=None):
     inherited_classes = inherited_classes or []
 
     if isinstance(node, NavigableString):
-        text = clean_punctuation_spacing(str(node))
-        if not text:
+        text = clean_inline_punctuation_spacing(str(node))
+        if not text.strip():
             return []
 
         source_classes = filtered_inline_classes(inherited_classes)
@@ -160,8 +191,41 @@ def runs_to_text(runs):
     )
 
 
+def source_metadata_from_node(node):
+    """Return source markup metadata that may matter to renderers.
+
+    This intentionally keeps presentational Wahapedia classes such as
+    ``impact18`` at the block level. The parser does not have to decide that
+    impact18 means "title"; it only preserves enough information for a renderer
+    or a later semantic pass to make that decision.
+    """
+    if not isinstance(node, Tag):
+        return {}
+
+    metadata = {
+        "source_tag": node.name,
+        "classes": node.get("class", []),
+        "style": node.get("style", ""),
+    }
+
+    attrs = {}
+    for key in ("id", "name", "title", "colspan", "rowspan"):
+        value = node.get(key)
+        if value is not None:
+            attrs[key] = value
+
+    if attrs:
+        metadata["attrs"] = attrs
+
+    return metadata
+
+
 def paragraph_block_from_nodes(nodes):
     runs = []
+    source_node = None
+
+    if len(nodes) == 1 and isinstance(nodes[0], Tag):
+        source_node = nodes[0]
 
     for node in nodes:
         if is_ignorable_node(node):
@@ -174,9 +238,27 @@ def paragraph_block_from_nodes(nodes):
     if not runs:
         return None
 
-    return {
+    block = {
         "displayItem": "p",
         "runs": runs,
+    }
+
+    # Preserve original block-level context for renderers. For example:
+    # <p class="impact18">Dacatarai Stance</p>
+    # becomes a paragraph with classes ["impact18"], rather than anonymous text.
+    if source_node is not None:
+        block.update(source_metadata_from_node(source_node))
+
+    return block
+
+
+def parse_image(img):
+    return {
+        "displayItem": "img",
+        "src": img.get("src"),
+        "alt": img.get("alt", ""),
+        "classes": img.get("class", []),
+        "style": img.get("style", ""),
     }
 
 
@@ -187,40 +269,79 @@ def parse_table(table):
 
     rows = []
 
-    for tr in table.find_all("tr", recursive=False):
+    def parse_row(tr):
         cells = []
 
         for cell in tr.find_all(["td", "th"], recursive=False):
+            # Some Wahapedia layout tables wrap a real content table. Those
+            # wrappers are handled by the `inner = table.find("table")` logic
+            # above, so nested-table cells here should not become empty cells.
             if cell.find("table"):
                 continue
 
-            runs = extract_text_runs(cell)
-            if runs:
-                cells.append({"runs": runs})
+            cells.append({
+                # existing renderer compatibility
+                "runs": extract_text_runs(cell),
 
+                # richer future renderer data
+                "content": extract_cell_blocks(cell),
+                "colspan": cell.get("colspan"),
+                "rowspan": cell.get("rowspan"),
+                "classes": cell.get("class", []),
+                "style": cell.get("style", ""),
+            })
+
+        return cells
+
+    for tr in table.find_all("tr", recursive=False):
+        cells = parse_row(tr)
         if cells:
             rows.append(cells)
 
-    if not rows:
-        tbody = table.find("tbody", recursive=False)
-        if tbody:
-            for tr in tbody.find_all("tr", recursive=False):
-                cells = []
-
-                for cell in tr.find_all(["td", "th"], recursive=False):
-                    if cell.find("table"):
-                        continue
-
-                    runs = extract_text_runs(cell)
-                    if runs:
-                        cells.append({"runs": runs})
-
-                if cells:
-                    rows.append(cells)
+    # Wahapedia often emits multiple direct <tbody> elements, and the first
+    # can be empty. Parse all direct tbodies instead of only table.find(...).
+    for tbody in table.find_all("tbody", recursive=False):
+        for tr in tbody.find_all("tr", recursive=False):
+            cells = parse_row(tr)
+            if cells:
+                rows.append(cells)
 
     return {
         "displayItem": "table",
+        "classes": table.get("class", []),
+        "style": table.get("style", ""),
+        "attrs": {
+            "border": table.get("border"),
+            "bordercolor": table.get("bordercolor"),
+            "cellpadding": table.get("cellpadding"),
+            "cellspacing": table.get("cellspacing"),
+            "width": table.get("width"),
+            "max-width": table.get("max-width"),
+        },
         "rows": rows,
+    }
+
+
+def parse_cs_rule_wrapper(node):
+    name_el = node.select_one(".stratName_CS")
+    text_el = node.select_one(".stratText_CS")
+
+    if not name_el or not text_el:
+        return None
+
+    title_span = name_el.find("span")
+    title = clean_text(title_span or name_el)
+
+    req_el = name_el.select_one(".cruD6wrap")
+
+    return {
+        "displayItem": "cs_rule",
+        "title": title,
+        "requirement": clean_text(req_el) if req_el else "",
+        "requirement_classes": req_el.get("class", []) if req_el else [],
+        "requirement_html": str(req_el) if req_el else "",
+        "content": extract_content_blocks(list(text_el.children)),
+        "classes": node.get("class", []),
     }
 
 
@@ -255,6 +376,9 @@ def parse_list_item(li):
     item = {
         "title": title,
         "runs": merge_adjacent_runs(runs),
+        "source_tag": li.name,
+        "classes": li.get("class", []),
+        "style": li.get("style", ""),
     }
 
     if content:
@@ -290,6 +414,86 @@ def attach_paragraphs_to_custom_subrules(blocks):
         i += 1
 
     return out
+
+
+def extract_cell_blocks(cell):
+    blocks = []
+    inline_nodes = []
+    br_count = 0
+
+    def flush_inline():
+        nonlocal inline_nodes
+
+        paragraph = paragraph_block_from_nodes(inline_nodes)
+        if paragraph:
+            blocks.append(paragraph)
+
+        inline_nodes = []
+
+    def append_block_paragraph(node):
+        paragraph = paragraph_block_from_nodes([node])
+        if paragraph:
+            blocks.append(paragraph)
+
+    for child in cell.children:
+        if is_ignorable_node(child) and not is_br(child):
+            continue
+
+        if is_br(child):
+            br_count += 1
+
+            # Wahapedia uses <br><br> inside cells to separate logical
+            # paragraphs (for example TRIGGER and EFFECT text). A single
+            # <br> is usually only a soft line break, so do not split there.
+            if br_count >= 2:
+                flush_inline()
+                br_count = 0
+
+            continue
+
+        br_count = 0
+
+        if isinstance(child, Tag) and child.name == "img":
+            flush_inline()
+            blocks.append(parse_image(child))
+            continue
+
+        if isinstance(child, Tag) and child.find("img"):
+            flush_inline()
+            imgs = child.find_all("img")
+            for img in imgs:
+                blocks.append(parse_image(img))
+            continue
+
+        if isinstance(child, Tag) and child.name == "table":
+            flush_inline()
+            blocks.append(parse_table(child))
+            continue
+
+        if isinstance(child, Tag) and child.name in ("ul", "ol"):
+            flush_inline()
+            blocks.append({
+                "displayItem": child.name,
+                "items": [
+                    parse_list_item(li)
+                    for li in child.find_all("li", recursive=False)
+                ],
+            })
+            continue
+
+        # Real block tags should remain separate blocks, but inline tags and
+        # text nodes that are direct children of the cell belong to the same
+        # paragraph until a block element or <br><br> separates them.
+        if isinstance(child, Tag) and child.name in ("p", "div"):
+            flush_inline()
+            append_block_paragraph(child)
+            continue
+
+        inline_nodes.append(child)
+
+    flush_inline()
+
+    return blocks
 
 
 def extract_content_blocks(nodes):
@@ -345,13 +549,10 @@ def extract_content_blocks(nodes):
 
             continue
 
-        if isinstance(node, Tag):
-            table = node if node.name == "table" else node.find("table")
-
-            if table:
-                flush_paragraph()
-                blocks.append(parse_table(table))
-                continue
+        if isinstance(node, Tag) and node.name == "table":
+            flush_paragraph()
+            blocks.append(parse_table(node))
+            continue
 
         if isinstance(node, Tag) and node.name in ("ul", "ol"):
             flush_paragraph()
@@ -364,6 +565,28 @@ def extract_content_blocks(nodes):
                 ],
             })
 
+            continue
+
+        if (
+            isinstance(node, Tag)
+            and "stratWrapper_CS" in node.get("class", [])
+        ):
+            flush_paragraph()
+
+            parsed = parse_cs_rule_wrapper(node)
+            if parsed:
+                blocks.append(parsed)
+
+            continue
+
+        if isinstance(node, Tag) and node.name == "div":
+            # Complex Wahapedia rule bodies, such as Aeldari Battle Focus, put
+            # prose, nested tables, section labels and multiple card tables
+            # inside Columns2/BreakInsideAvoid div wrappers. Parse those
+            # children in order instead of collapsing the whole div to the
+            # first nested table.
+            flush_paragraph()
+            blocks.extend(extract_content_blocks(list(node.children)))
             continue
 
         paragraph_nodes.append(node)

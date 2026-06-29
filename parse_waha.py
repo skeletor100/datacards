@@ -4,6 +4,7 @@ from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 from datacard_parser import run as parse_datacard
 from detachment_scraper import run as scrape_detachment
+from army_rules_scraper import run as scrape_army_rules
 import time
 
 import waha_parse_utils as utils
@@ -29,11 +30,11 @@ def worker(failed_units):
                 break
 
             try:
-                faction_name, url, name, screenshots = job
+                faction_name, url, name, screenshots, subfaction_map = job
 
                 try:
                     print(f"Picked up job: {name} | URL: {url}")
-                    data, sub_faction_name = parse_datacard(page, url, screenshots)
+                    data, sub_faction_name = parse_datacard(page, url, screenshots, subfaction_map)
                     result_queue.put({
                         "faction": faction_name,
                         "unit_name": name,
@@ -122,22 +123,26 @@ def load_existing_output(path):
 
     return {}
 
-def merge_with_change_tracking(old_manifest, new_manifest):
+def merge_with_change_tracking(old_manifest, new_manifest, sections_to_merge=None):
     changes = []
+    tracked_sections = {"unit_cards", "detachment_cards", "army_rules"}
+
 
     for faction_name, new_faction in new_manifest.items():
         print(f"Merging cards for {faction_name}")
         if faction_name not in old_manifest:
             old_manifest[faction_name] = {}
 
-        print(f"Handling section {new_faction}")
-
         for section_name, new_section in new_faction.items():
+            if sections_to_merge is not None and section_name in tracked_sections and section_name not in sections_to_merge:
+                print(f"Skipping merge for {faction_name}.{section_name}; section was not gathered in this run")
+                continue
+
             if section_name not in old_manifest[faction_name]:
                 old_manifest[faction_name][section_name] = new_section
                 continue
 
-            if section_name in ("unit_cards", "detachment_cards"):
+            if section_name in tracked_sections:
                 section_count = 0
 
                 old_cards = old_manifest[faction_name][section_name]
@@ -173,7 +178,8 @@ def merge_with_change_tracking(old_manifest, new_manifest):
             else:
                 merged_section, new_changes = merge_with_change_tracking(
                     {section_name: old_manifest[faction_name][section_name]},
-                    {section_name: new_section}
+                    {section_name: new_section},
+                    sections_to_merge=sections_to_merge
                 )
 
                 old_manifest[faction_name][section_name] = merged_section[section_name]
@@ -191,6 +197,68 @@ def get_dropdown_label(select_element):
     select_text = select_element.get_text()
     label = full_text.replace(select_text, "").replace(":", "").strip()
     return label or "SubFilter"
+
+
+def resolve_sub_faction_from_heading(heading, faction_name, sub_faction_map):
+    heading_norm = utils.normalize_faction_name(heading)
+
+    candidates = {
+        utils.normalize_faction_name(faction_name),
+        *[
+            utils.normalize_faction_name(name)
+            for name in sub_faction_map.values()
+        ],
+    }
+
+    for candidate in sorted(candidates, key=len, reverse=True):
+        if candidate in heading_norm:
+            return candidate
+
+    return utils.normalize_faction_name(faction_name)
+
+
+def discover_army_rules_from_contents(container_soup, faction_name, sub_faction_map):
+    sections = []
+
+    for link in container_soup.select(
+        "div.i10 > a[href^='#Army-Rules'], "
+        "div.i30 > a[href^='#Army-Rules']"
+    ):
+        row = link.find_parent("div")
+        classes = row.get("class", [])
+        anchor = link["href"].lstrip("#")
+
+        if "i10" in classes:
+            sub_faction = utils.normalize_faction_name(faction_name)
+
+        elif "i30" in classes:
+            heading_row = row.find_previous(
+                lambda tag: (
+                    tag.name == "div"
+                    and "i10" in tag.get("class", [])
+                    and "clFl" in tag.get("class", [])
+                )
+            )
+
+            if not heading_row:
+                continue
+
+            sub_faction = resolve_sub_faction_from_heading(
+                heading_row.get_text(" ", strip=True),
+                faction_name,
+                sub_faction_map
+            )
+
+        else:
+            continue
+
+        sections.append({
+            "sub_faction": sub_faction,
+            "anchor": anchor,
+        })
+
+    return sections
+
 
 def build_detachment_subfaction_map(faction_name, detachment_select):
     mapping = {}
@@ -231,13 +299,44 @@ def get_detachment_identifier(cls):
 
     return None
 
+def discover_detachments_from_contents(container_soup, faction_name, detachment_subfaction_map):
+    detachments = []
+
+    for link in container_soup.select("div.i30 > a[href^='#Detachment-Rule']"):
+        row = link.find_parent("div")
+        cls = " ".join(row.get("class", []))
+
+        identifier = get_detachment_identifier(cls)
+        sub_faction = detachment_subfaction_map.get(identifier, faction_name)
+
+        heading_row = row.find_previous(
+            lambda tag: (
+                tag.name == "div"
+                and "i10" in tag.get("class", [])
+                and "clFl" in tag.get("class", [])
+            )
+        )
+
+        if not heading_row:
+            continue
+
+        detachments.append({
+            "name": heading_row.get_text(" ", strip=True),
+            "identifier": identifier,
+            "sub_faction": sub_faction,
+            "anchor": link["href"].lstrip("#"),
+        })
+
+    return detachments
+
 def set_default_manifest(manifest, faction_name, sub_faction_name):
     if faction_name == sub_faction_name:
         return manifest.setdefault(
             sub_faction_name,
             {
                 "unit_cards": {},
-                "detachment_cards": {}
+                "detachment_cards": {},
+                "army_rules": {}
             }
         )
     else:
@@ -245,7 +344,8 @@ def set_default_manifest(manifest, faction_name, sub_faction_name):
             sub_faction_name,
             {
                 "unit_cards": {},
-                "detachment_cards": {}
+                "detachment_cards": {},
+                "army_rules": {}
             }
         )
 
@@ -301,6 +401,7 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
         sub_filter_data = []
         sub_filter_key = None
 
+        subfaction_map = None
         detachment_subfaction_map = {}
 
         # Handle Sub-Filter ONLY if multiple dropdowns exist
@@ -348,49 +449,58 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
                 except: pass
 
 
-            utils.build_sub_faction_map(selects[0])
+            subfaction_map = utils.build_sub_faction_map(selects[0])
 
             detachment_subfaction_map = build_detachment_subfaction_map(faction['name'], selects[1])
 
             
 
         # Extract Detachments
-        contents = page.locator("div.contents_header").first
+        contents = sm_soup.select_one("div.contents_header")
 
-        container = contents.locator(
-            "xpath=ancestor::div[contains(@class,'BreakInsideAvoid')]"
-        ).first
-
-        headers = container.locator(
-            "div.i10 a[href^='#'], div.i30 a[href^='#']"
+        container_soup = contents.find_parent(
+            "div",
+            class_=lambda c: c and "BreakInsideAvoid" in c
         )
-        count = headers.count()
 
-        detachments = []
-        name = None
+        detachments = discover_detachments_from_contents(
+            container_soup,
+            faction["name"],
+            detachment_subfaction_map
+        )
 
-        for i in range(count):
-            h = headers.nth(i)
+        army_rule_sections = discover_army_rules_from_contents(
+            container_soup,
+            faction["name"],
+            subfaction_map
+        )
 
-            text = h.inner_text().strip()
-            cls = h.locator("..").get_attribute("class") or ""
+        for section in army_rule_sections:
+            try:
+                faction_name_str = section["sub_faction"]
 
-            if "i10" in cls:
-                name = text
-                continue
+                rules = scrape_army_rules(
+                    page,
+                    section["anchor"]
+                )
 
-            if "i30" in cls:
-                if name and text == "Detachment Rule":
-                    identifier = get_detachment_identifier(cls)
-                    sub_faction = detachment_subfaction_map.get(identifier, faction['name'])
+                army_rules = set_default_manifest(
+                    all_factions_manifest,
+                    faction["name"],
+                    faction_name_str
+                )["army_rules"]
 
-                    detachments.append({
-                        "name": name,
-                        "identifier": identifier,
-                        "sub_faction": sub_faction
-                    })
-                name = None
+                for rule in rules:
+                    army_rules[rule["name"]] = rule
 
+            except Exception as e:
+                print(
+                    f"Failed to process Army Rules: "
+                    f"Faction: {faction['name']} | "
+                    f"Sub-faction: {section['sub_faction']} | "
+                    f"Anchor: {section['anchor']} | "
+                    f"Error: {e}"
+                )
 
         # Extract Units
         warehouse = sm_soup.find(id="tooltip_contentArmyList")
@@ -410,7 +520,7 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
         if u_len > 0 and not args.no_units:
             for unit in units:
                 try:
-                    job_queue.put((faction['name'], DOMAIN + unit['href'], unit['unit_name'], args.screenshots))
+                    job_queue.put((faction['name'], DOMAIN + unit['href'], unit['unit_name'], args.screenshots, subfaction_map))
                 except Exception as e:
                     failed_units.append({"unit_name": unit['unit_name'], "href": unit['href'], "error": str(e)})
                     print(f"Failed to process: {unit['unit_name']} | URL: {DOMAIN + unit['href']} | Error: {e}")
@@ -461,11 +571,21 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
         json.dump(all_factions_manifest, f, indent=4, ensure_ascii=False)
 
     # --- STAGE 3: GENERATION ---
-    merge_and_write_json(args.output_json, all_factions_manifest)
+    sections_to_merge = {"army_rules"}
+    if not args.no_units:
+        sections_to_merge.add("unit_cards")
+    if not args.no_detachments:
+        sections_to_merge.add("detachment_cards")
 
-def merge_and_write_json(output_json, new_json):
+    merge_and_write_json(args.output_json, all_factions_manifest, sections_to_merge=sections_to_merge)
+
+def merge_and_write_json(output_json, new_json, sections_to_merge=None):
     existing_manifest = load_existing_output(output_json)
-    merged_manifest, changes = merge_with_change_tracking(existing_manifest, new_json)
+    merged_manifest, changes = merge_with_change_tracking(
+        existing_manifest,
+        new_json,
+        sections_to_merge=sections_to_merge
+    )
 
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(merged_manifest, f, indent=4, ensure_ascii=False)
