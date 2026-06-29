@@ -79,6 +79,19 @@ def normalise_anchor_name(name):
     )
 
 
+
+BLOCK_SOURCE_TAGS = {
+    "address", "article", "aside", "blockquote", "dd", "details", "dialog",
+    "div", "dl", "dt", "fieldset", "figcaption", "figure", "footer",
+    "form", "h1", "h2", "h3", "h4", "h5", "h6", "header", "hr",
+    "li", "main", "nav", "ol", "p", "pre", "section", "table", "ul",
+}
+
+
+def is_block_source_tag(node):
+    return isinstance(node, Tag) and node.name in BLOCK_SOURCE_TAGS
+
+
 def is_br(node):
     return isinstance(node, Tag) and node.name == "br"
 
@@ -248,6 +261,12 @@ def paragraph_block_from_nodes(nodes):
     # becomes a paragraph with classes ["impact18"], rather than anonymous text.
     if source_node is not None:
         block.update(source_metadata_from_node(source_node))
+
+        # Tell renderers this came from a real block-level source element.
+        # This lets table-cell rendering keep blocks like <div class="cruWarpChargeWrap">
+        # separate from following inline prose without hard-coding that class.
+        if is_block_source_tag(source_node):
+            block["is_block"] = True
 
     return block
 

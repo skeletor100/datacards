@@ -15,12 +15,91 @@ function textRuns(block) {
   return runs
     .map(run => {
       const classes = esc((run.source_classes || []).join(' '));
-      const text = esc(run.text).trim();
+      const text = esc(run.text);
 
       return `<span class="${classes}">${text}</span>`;
     })
-    .join(' ')
+    .join('')
     .replace(/\s+([,.;:])/g, '$1');
+}
+
+function blockAttrs(block) {
+  const classes = Array.isArray(block?.classes) ? block.classes.filter(Boolean) : [];
+  const classAttr = classes.length ? ` class="${esc(classes.join(' '))}"` : '';
+  const styleAttr = block?.style ? ` style="${esc(block.style)}"` : '';
+  return `${classAttr}${styleAttr}`;
+}
+
+function renderImageBlock(block) {
+  const src = block?.src || '';
+  if (!src) return '';
+
+  const attrs = [
+    `src="${esc(src)}"`,
+    `alt="${esc(block.alt || '')}"`,
+  ];
+
+  const classes = Array.isArray(block.classes) ? block.classes.filter(Boolean) : [];
+  if (classes.length) attrs.push(`class="${esc(classes.join(' '))}"`);
+  if (block.style) attrs.push(`style="${esc(block.style)}"`);
+
+  return `<img ${attrs.join(' ')}>`;
+}
+
+function inlineBlockHtml(block) {
+  if (!block) return '';
+  if (block.displayItem === 'img') return renderImageBlock(block);
+
+  const classes = Array.isArray(block.classes) ? block.classes.filter(Boolean) : [];
+  const classAttr = classes.length ? ` class="${esc(classes.join(' '))}"` : '';
+  return `<span${classAttr}>${textRuns(block)}</span>`;
+}
+
+function shouldKeepOwnBlock(block) {
+  if (!block || Array.isArray(block)) return true;
+  if (block.displayItem === 'br') return true;
+  if (block.is_block) return true;
+  if (block.displayItem && block.displayItem !== 'p' && block.displayItem !== 'span') return true;
+
+  const classes = Array.isArray(block.classes) ? block.classes : [];
+  const style = String(block.style || '').toLowerCase().replace(/\s+/g, '');
+
+  if (classes.includes('impact18')) return true;
+  if (block.source_tag === 'p' && style.includes('display:block')) return true;
+
+  return false;
+}
+
+function richBlockSequenceHtml(blocks) {
+  const out = [];
+  let inline = '';
+
+  const flushInline = () => {
+    if (!inline) return;
+    out.push(`<p>${inline}</p>`);
+    inline = '';
+  };
+
+  for (const block of (blocks || [])) {
+    if (!block) continue;
+
+    if (block.displayItem === 'br') {
+      flushInline();
+      out.push('<br>');
+      continue;
+    }
+
+    if (shouldKeepOwnBlock(block)) {
+      flushInline();
+      out.push(blockHtml(block));
+      continue;
+    }
+
+    inline += inlineBlockHtml(block);
+  }
+
+  flushInline();
+  return out.join('');
 }
 
 function contentItemHtml(item) {
@@ -42,6 +121,10 @@ function blockHtml(block) {
     return block.map(blockHtml).join('');
   }
 
+  if (block.displayItem === 'img') {
+    return renderImageBlock(block);
+  }
+
   if (block.displayItem === 'subrule') {
     return `
       <div class="subrule-title">${esc(block.title)}</div>
@@ -60,12 +143,37 @@ function blockHtml(block) {
   }
 
   if (block.displayItem === 'table') {
+    const cellHtml = cell => {
+      if (!cell) return '';
+
+      if (Array.isArray(cell.content)) {
+        return richBlockSequenceHtml(cell.content);
+      }
+
+      if (Array.isArray(cell)) {
+        return cell.map(blockHtml).join('');
+      }
+
+      return textRuns(cell);
+    };
+
+    const tdAttrs = cell => {
+      if (!cell || typeof cell !== 'object' || Array.isArray(cell)) return '';
+      const attrs = [];
+      const classes = Array.isArray(cell.classes) ? cell.classes.filter(Boolean) : [];
+      if (classes.length) attrs.push(`class="${esc(classes.join(' '))}"`);
+      if (cell.style) attrs.push(`style="${esc(cell.style)}"`);
+      if (cell.colspan) attrs.push(`colspan="${esc(cell.colspan)}"`);
+      if (cell.rowspan) attrs.push(`rowspan="${esc(cell.rowspan)}"`);
+      return attrs.length ? ' ' + attrs.join(' ') : '';
+    };
+
     return `
       <table class="content-table">
         <tbody>
           ${(block.rows || []).map(row => `
             <tr>
-              ${row.map(cell => `<td>${textRuns(cell)}</td>`).join('')}
+              ${row.map(cell => `<td${tdAttrs(cell)}>${cellHtml(cell)}</td>`).join('')}
             </tr>
           `).join('')}
         </tbody>
@@ -91,5 +199,5 @@ function blockHtml(block) {
   const tag = String(block.displayItem || 'span').toLowerCase();
   const safeTag = allowed.has(tag) ? tag : 'span';
 
-  return `<${safeTag}>${textRuns(block)}</${safeTag}>`;
+  return `<${safeTag}${blockAttrs(block)}>${textRuns(block)}</${safeTag}>`;
 }

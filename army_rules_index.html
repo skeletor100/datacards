@@ -152,6 +152,7 @@ function inlineBlockHtml(block) {
 function shouldKeepOwnBlock(block) {
   if (!block || Array.isArray(block)) return true;
   if (block.displayItem === 'br') return true;
+  if (block.is_block) return true;
   if (block.displayItem && block.displayItem !== 'p' && block.displayItem !== 'span') return true;
 
   const classes = Array.isArray(block.classes) ? block.classes : [];
