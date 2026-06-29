@@ -61,6 +61,16 @@
     .kwb,.kwb2{font-weight:900}
     .bluefont{color:#2d6c83}
     .tt,.kwbu{font-weight:900;text-transform:none;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:.12em}
+
+    /* Targeted shim for preserved Wahapedia warp-charge widgets.
+       The manifest supplies the real cruWarpChargeTS background image; this CSS
+       only controls card-local sizing/positioning and readable text colour. */
+    .content-table .cruWarpChargeWrap{position:relative!important;display:block!important;width:100%!important;min-width:0!important;height:1.72em!important;min-height:1.72em!important;margin:.20cqw 0 .40cqw!important;background:rgb(0,60,112)!important;color:rgb(192,217,236)!important;overflow:visible!important;font-size:calc(var(--rule-fs,2.4cqw) * .82)!important;line-height:1!important;font-weight:900!important;text-transform:uppercase!important}
+    .content-table .cruWarpChargeName{position:absolute!important;left:.55em!important;top:50%!important;transform:translateY(-50%)!important;color:rgb(192,217,236)!important;font-size:1.08em!important;line-height:1!important;white-space:nowrap!important}
+    .content-table .cruWarpChargeName span{color:inherit!important;font-size:inherit!important;line-height:inherit!important}
+    .content-table .cruWarpChargeTS{position:absolute!important;right:-.10em!important;top:50%!important;transform:translateY(-50%)!important;width:2.25em!important;height:2.42em!important;background-color:transparent!important;background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important;color:rgb(192,217,236)!important;display:flex!important;align-items:center!important;justify-content:center!important;line-height:1!important;overflow:visible!important}
+    .content-table .cruWarpChargeTSNumber{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:100%!important;color:rgb(192,217,236)!important;font-size:1.42em!important;line-height:1!important;font-weight:900!important;text-align:center!important;text-shadow:0 1px 1px rgba(0,0,0,.45)!important}
+    .content-table .cruWarpChargeTSNumber span{color:inherit!important;font-size:inherit!important;line-height:inherit!important}
     p{margin:.30cqw 0}
 
     @media print{

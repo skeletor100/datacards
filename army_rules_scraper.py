@@ -73,6 +73,22 @@ def _find_army_rules_container(anchor):
     return None
 
 
+
+def _is_rule_heading(node):
+    return (
+        isinstance(node, Tag)
+        and node.name in ("h2", "h3", "h4")
+        and "outline_header" not in node.get("class", [])
+        and not node.find_parent(class_="str10Wrap")
+    )
+
+
+def _contains_rule_heading(node):
+    if not isinstance(node, Tag):
+        return False
+    return any(_is_rule_heading(h) for h in node.find_all(["h2", "h3", "h4"]))
+
+
 def _extract_rule_cards(container):
     rules = []
 
@@ -88,7 +104,7 @@ def _extract_rule_cards(container):
         content_nodes = []
 
         for node in heading.next_siblings:
-            if isinstance(node, Tag) and node.name in ("h2", "h3", "h4"):
+            if _is_rule_heading(node) or _contains_rule_heading(node):
                 break
 
             if utils.is_ignorable_node(node) and not utils.is_br(node):

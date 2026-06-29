@@ -56,6 +56,28 @@ function inlineBlockHtml(block) {
   return `<span${classAttr}>${textRuns(block)}</span>`;
 }
 
+function safeElementTag(tag) {
+  const allowed = new Set(['div','span','i','b','em','strong','small','a']);
+  tag = String(tag || 'div').toLowerCase();
+  return allowed.has(tag) ? tag : 'div';
+}
+
+function attrHtml(attrs) {
+  if (!attrs || typeof attrs !== 'object') return '';
+  const allowed = new Set(['id','name','title','aria-label','role']);
+  return Object.entries(attrs)
+    .filter(([key, value]) => allowed.has(String(key).toLowerCase()) && value != null)
+    .map(([key, value]) => ` ${esc(key)}="${esc(value)}"`)
+    .join('');
+}
+
+function renderElementBlock(block) {
+  const tag = safeElementTag(block.tag || block.source_tag || 'div');
+  const children = Array.isArray(block.children) ? block.children : [];
+  const inner = children.map(blockHtml).join('') || textRuns(block);
+  return `<${tag}${blockAttrs(block)}${attrHtml(block.attrs)}>${inner}</${tag}>`;
+}
+
 function shouldKeepOwnBlock(block) {
   if (!block || Array.isArray(block)) return true;
   if (block.displayItem === 'br') return true;
@@ -113,29 +135,6 @@ function contentItemHtml(item) {
     : '';
 
   return `<li>${title}${textRuns(item)}${nested}</li>`;
-}
-
-
-function safeElementTag(tag) {
-  const allowed = new Set(['div','span','i','b','em','strong','small','a']);
-  tag = String(tag || 'div').toLowerCase();
-  return allowed.has(tag) ? tag : 'div';
-}
-
-function attrHtml(attrs) {
-  if (!attrs || typeof attrs !== 'object') return '';
-  const allowed = new Set(['id','name','title','aria-label','role']);
-  return Object.entries(attrs)
-    .filter(([key, value]) => allowed.has(String(key).toLowerCase()) && value != null)
-    .map(([key, value]) => ` ${esc(key)}="${esc(value)}"`)
-    .join('');
-}
-
-function renderElementBlock(block) {
-  const tag = safeElementTag(block.tag || block.source_tag || 'div');
-  const children = Array.isArray(block.children) ? block.children : [];
-  const inner = children.map(blockHtml).join('') || textRuns(block);
-  return `<${tag}${blockAttrs(block)}${attrHtml(block.attrs)}>${inner}</${tag}>`;
 }
 
 function blockHtml(block) {

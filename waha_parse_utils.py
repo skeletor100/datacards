@@ -281,17 +281,15 @@ def parse_image(img):
     }
 
 
-
-VISUAL_ELEMENT_CLASS_PREFIXES = (
-    "cru",
-    "ae",
-    "str10",
-)
-
-VISUAL_ELEMENT_CLASS_PARTS = (
-    "Diamond",
-    "Circle",
-    "WarpCharge",
+VISUAL_WIDGET_CLASS_MARKERS = (
+    "cruWarpCharge",
+    "redDiamond",
+    "bluCircle",
+    "aeMovement",
+    "aeShooting",
+    "aeCharge",
+    "aeFight",
+    "aeCommand",
 )
 
 LAYOUT_WRAPPER_CLASSES = {
@@ -300,62 +298,39 @@ LAYOUT_WRAPPER_CLASSES = {
     "frameLight",
     "Corner16",
     "Corner16_in",
-    "dsCharWrap",
 }
 
 
-def is_visual_element_class(class_name):
-    class_name = str(class_name or "")
-    return (
-        class_name.startswith(VISUAL_ELEMENT_CLASS_PREFIXES)
-        or any(part in class_name for part in VISUAL_ELEMENT_CLASS_PARTS)
-    )
+def is_visual_widget_node(node):
+    """Return True only for compact class-driven visual widgets.
 
-
-def has_visual_element_class(node):
-    if not isinstance(node, Tag):
-        return False
-    return any(is_visual_element_class(cls) for cls in node.get("class", []))
-
-
-def should_preserve_visual_element(node):
-    """Return True for compact class-driven visual widgets only.
-
-    This deliberately does *not* preserve layout wrappers such as
-    BreakInsideAvoid/Columns2, especially when they contain tables. Those must be
-    unwrapped and parsed normally, otherwise Wahapedia's page layout CSS is
-    reproduced inside the generated cards and the content overlaps.
+    This deliberately excludes Wahapedia layout containers such as
+    BreakInsideAvoid/Corner16. Those wrappers should be parsed through; keeping
+    them recreates the source page layout inside the card renderer and causes
+    overlap/collapse.
     """
     if not isinstance(node, Tag):
         return False
 
-    if node.name not in ("div", "span"):
+    classes = node.get("class", []) or []
+    class_text = " ".join(classes)
+
+    if any(cls in LAYOUT_WRAPPER_CLASSES for cls in classes):
         return False
 
-    classes = set(node.get("class", []))
-    style = (node.get("style") or "").replace(" ", "").lower()
-
-    # Any wrapper around a table is layout, not an atomic visual widget.
-    if node.find("table"):
-        return False
-
-    # Known layout/frame wrappers should be unwrapped unless they also carry a
-    # genuine visual class. This prevents preserving BreakInsideAvoid trees.
-    if classes & LAYOUT_WRAPPER_CLASSES and not has_visual_element_class(node):
-        return False
-
-    if has_visual_element_class(node):
+    if any(marker in class_text for marker in VISUAL_WIDGET_CLASS_MARKERS):
         return True
 
-    # Dice/plus image wrappers in Wahapedia are often classless inline-block divs.
-    if node.name == "div" and node.find("img") and "display:inline-block" in style:
+    # Inline-block wrappers whose only real purpose is to position dice/plus
+    # images should keep their DOM wrapper so spacing remains faithful.
+    style = (node.get("style") or "").replace(" ", "").lower()
+    if node.name == "div" and "display:inline-block" in style and node.find("img"):
         return True
 
     return False
 
 
-def parse_element(node):
-    """Preserve a compact visual DOM fragment for class-driven rendering."""
+def parse_visual_element(node):
     children = []
 
     for child in node.children:
@@ -368,40 +343,26 @@ def parse_element(node):
                 })
             continue
 
-        if not isinstance(child, Tag):
-            continue
-
-        if is_ignorable_node(child) and not is_br(child):
-            continue
-
-        if is_br(child):
-            children.append({"displayItem": "br"})
+        if not isinstance(child, Tag) or is_ignorable_node(child):
             continue
 
         if child.name == "img":
             children.append(parse_image(child))
             continue
 
-        if child.name == "table":
-            children.append(parse_table(child))
-            continue
+        if is_visual_widget_node(child) or child.name in ("div", "span", "i", "b", "em", "strong", "small", "a"):
+            if child.find(True) or child.get("class") or child.get("style"):
+                children.append(parse_visual_element(child))
+                continue
 
-        if child.name in ("ul", "ol"):
-            children.append({
-                "displayItem": child.name,
-                "items": [
-                    parse_list_item(li)
-                    for li in child.find_all("li", recursive=False)
-                ],
-                "classes": child.get("class", []),
-                "style": child.get("style", ""),
-            })
-            continue
-
-        # Once a visual widget is being preserved, keep its nested element
-        # structure. This preserves children such as cruWarpChargeName and
-        # cruWarpChargeTSNumber without hard-coding those class names.
-        children.append(parse_element(child))
+        runs = extract_text_runs(child)
+        if runs:
+            block = {
+                "displayItem": "span",
+                "runs": runs,
+            }
+            block.update(source_metadata_from_node(child))
+            children.append(block)
 
     block = {
         "displayItem": "element",
@@ -413,7 +374,7 @@ def parse_element(node):
     }
 
     attrs = {}
-    for key in ("id", "name", "title", "role", "aria-label"):
+    for key in ("id", "name", "title", "aria-label", "role"):
         value = node.get(key)
         if value is not None:
             attrs[key] = value
@@ -421,6 +382,7 @@ def parse_element(node):
         block["attrs"] = attrs
 
     return block
+
 
 def parse_table(table):
     inner = table.find("table")
@@ -613,9 +575,9 @@ def extract_cell_blocks(cell):
 
         br_count = 0
 
-        if isinstance(child, Tag) and should_preserve_visual_element(child):
+        if isinstance(child, Tag) and is_visual_widget_node(child):
             flush_inline()
-            blocks.append(parse_element(child))
+            blocks.append(parse_visual_element(child))
             continue
 
         if isinstance(child, Tag) and child.name == "img":
@@ -745,15 +707,12 @@ def extract_content_blocks(nodes):
             continue
 
         if isinstance(node, Tag) and node.name == "div":
+            # Preserve compact visual widgets, but unwrap page/layout containers
+            # such as BreakInsideAvoid, Columns2, Corner16, etc.
             flush_paragraph()
-
-            if should_preserve_visual_element(node):
-                blocks.append(parse_element(node))
+            if is_visual_widget_node(node):
+                blocks.append(parse_visual_element(node))
             else:
-                # Complex Wahapedia rule bodies and layout wrappers such as
-                # Columns2/BreakInsideAvoid contain prose, nested tables and
-                # card tables. Unwrap those containers and parse their children
-                # in order instead of preserving the layout wrapper itself.
                 blocks.extend(extract_content_blocks(list(node.children)))
             continue
 
