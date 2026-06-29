@@ -76,6 +76,10 @@ def parse_args():
         help="Retry failed units from a JSON file"
     )
     parser.add_argument(
+        "--remerge",
+        help="Retry failed units from a JSON file"
+    )
+    parser.add_argument(
         "--output-json",
         default="units.json",
         help="File to output JSON to"
@@ -84,6 +88,16 @@ def parse_args():
         "--screenshots",
         action="store_true",
         help="Take Waha screenshots"
+    )
+    parser.add_argument(
+        "--forgeworld",
+        action="store_true",
+        help="Include ForgeWorld units"
+    )
+    parser.add_argument(
+        "--legends",
+        action="store_true",
+        help="Include Legends units"
     )
     return parser.parse_args()
 
@@ -115,6 +129,8 @@ def merge_with_change_tracking(old_manifest, new_manifest):
         print(f"Merging cards for {faction_name}")
         if faction_name not in old_manifest:
             old_manifest[faction_name] = {}
+
+        print(f"Handling section {new_faction}")
 
         for section_name, new_section in new_faction.items():
             if section_name not in old_manifest[faction_name]:
@@ -155,7 +171,13 @@ def merge_with_change_tracking(old_manifest, new_manifest):
                     print(f"Merged {section_count} cards from {section_name}")
 
             else:
-                old_manifest[faction_name][section_name], new_changes = merge_with_change_tracking(old_manifest[faction_name][section_name], new_section)
+                merged_section, new_changes = merge_with_change_tracking(
+                    {section_name: old_manifest[faction_name][section_name]},
+                    {section_name: new_section}
+                )
+
+                old_manifest[faction_name][section_name] = merged_section[section_name]
+
                 changes.extend(new_changes)
 
     print(f"Merged cards for {faction_name}")
@@ -219,7 +241,6 @@ def set_default_manifest(manifest, faction_name, sub_faction_name):
             }
         )
     else:
-        print(f"Adding new sub-faction {sub_faction_name}")
         return set_default_manifest(manifest, faction_name, faction_name).setdefault(
             sub_faction_name,
             {
@@ -241,6 +262,10 @@ def run_retry_pipeline(retry_file):
 def run_full_pipeline(page, failed_units, failed_detachments, args):
     all_factions_manifest = {}
     exclusion_set = {'sForgeWorld', 'sLegendary', 'datasheetsCollated'}
+    if args.forgeworld:
+        exclusion_set.discard('sForgeWorld')
+    if args.legends:
+        exclusion_set.discard('sLegendary')
 
     # --- STAGE 1: FACTION DISCOVERY ---
     page.goto(f"{DOMAIN}/wh40k10ed/the-rules/quick-start-guide/")
@@ -432,11 +457,17 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
         else:
             print() 
 
-    # --- STAGE 3: GENERATION ---
-    existing_manifest = load_existing_output(args.output_json)
-    merged_manifest, changes = merge_with_change_tracking(existing_manifest, all_factions_manifest)
+    with open("tmp.json", "w", encoding="utf-8") as f:
+        json.dump(all_factions_manifest, f, indent=4, ensure_ascii=False)
 
-    with open(args.output_json, "w", encoding="utf-8") as f:
+    # --- STAGE 3: GENERATION ---
+    merge_and_write_json(args.output_json, all_factions_manifest)
+
+def merge_and_write_json(output_json, new_json):
+    existing_manifest = load_existing_output(output_json)
+    merged_manifest, changes = merge_with_change_tracking(existing_manifest, new_json)
+
+    with open(output_json, "w", encoding="utf-8") as f:
         json.dump(merged_manifest, f, indent=4, ensure_ascii=False)
 
     with open("changes.json", "w", encoding="utf-8") as f:
@@ -466,6 +497,9 @@ if __name__ == "__main__":
 
         if (args.retry):
             run_retry_pipeline(args.retry)
+        elif (args.remerge):
+            new_manifest = load_existing_output(args.remerge)
+            merge_and_write_json(args.output_json, new_manifest)
         else:
             run_full_pipeline(page, failed_units, failed_detachments, args)
 

@@ -322,48 +322,6 @@ def run(page, faction_name, detachment_name, take_screenshot):
         }
     """)
 
-    # Extract Detachments
-    contents = page.locator("div.contents_header").first
-
-    container = contents.locator(
-        "xpath=ancestor::div[contains(@class,'BreakInsideAvoid')]"
-    ).first
-
-    headers = container.locator(
-        "div.i10 a[href^='#'], div.i30 a[href^='#'], div.i50 a[href^='#']"
-    )
-    count = headers.count()
-
-    detachmentDetails = []
-    detachment_found = False
-    detachment_rule_names = []
-    has_enhancements = False
-    has_stratagems = False
-
-    for i in range(count):
-        h = headers.nth(i)
-
-        text = h.inner_text().strip()
-        cls = h.locator("..").get_attribute("class") or ""
-
-        if "i10" in cls:
-            if detachment_found:
-                break
-            else:
-                if text == detachment_name:
-                    detachment_found = True
-            continue
-
-        if detachment_found and "i30" in cls:
-            if text == "Enhancements":
-                has_enhancements = True
-            if text == "Stratagems":
-                has_stratagems = True
-            continue
-
-        if detachment_found and "i50" in cls:
-            detachment_rule_names.append(text)
-            continue
 
     html = page.content()
 
@@ -372,15 +330,10 @@ def run(page, faction_name, detachment_name, take_screenshot):
         "html.parser"
     )
 
-
     detachment_block = extract_detachment_block(
         page,
         detachment_anchor
-    )
-
-
-    data = []
-    
+    )    
 
     data = extract_detachment_data(
         detachment_block,
@@ -388,21 +341,62 @@ def run(page, faction_name, detachment_name, take_screenshot):
         detachment_name
     )
 
-
     print(
         f"Faction: {faction_name} | Detachment: {detachment_anchor}"
     )
 
 
     if take_screenshot:
+        # Extract Detachments
+        contents = page.locator("div.contents_header").first
+
+        container = contents.locator(
+            "xpath=ancestor::div[contains(@class,'BreakInsideAvoid')]"
+        ).first
+
+        headers = container.locator(
+            "div.i10 a[href^='#'], div.i30 a[href^='#'], div.i50 a[href^='#']"
+        )
+        count = headers.count()
+        detachment_rule_names = []
+
+        for i in range(count):
+            h = headers.nth(i)
+
+            text = h.inner_text().strip()
+            cls = h.locator("..").get_attribute("class") or ""
+
+            if "i10" in cls:
+                if detachment_found:
+                    break
+                else:
+                    if text == detachment_name:
+                        detachment_found = True
+                continue
+
+            if detachment_found and "i30" in cls:
+                if text == "Enhancements":
+                    has_enhancements = True
+                if text == "Stratagems":
+                    has_stratagems = True
+                continue
+
+            if detachment_found and "i50" in cls:
+                detachment_rule_names.append(text)
+                continue
+
+        rules = []
+        for rule in data["rules"]:
+            rules.append(rule["name"])
+
         screenshot_detachment(
             page,
             detachment_block,
             faction_name,
             detachment_anchor,
-            detachment_rule_names,
-            has_enhancements,
-            has_stratagems
+            rules,
+            len(data["enhancements"]) > 0,
+            len(data["stratagems"] > 0)
         )
 
     return data

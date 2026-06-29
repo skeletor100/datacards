@@ -26,7 +26,6 @@ def main():
     parser.add_argument("--subFaction")
     parser.add_argument("--scale", type=float, default=2)
     parser.add_argument("--headed", action="store_true")
-    parser.add_argument("--parallel", action="store_true")
 
     args = parser.parse_args()
 
@@ -43,13 +42,10 @@ def main():
     if not jobs:
         raise SystemExit("Nothing to export: both --no-units and --no-detachments were set")
 
-    if args.parallel:
-        processes = [subprocess.Popen(cmd) for cmd in jobs]
-        exit_codes = [p.wait() for p in processes]
-        raise SystemExit(max(exit_codes))
-    else:
-        for cmd in jobs:
-            subprocess.run(cmd, check=True)
+
+    processes = [subprocess.Popen(cmd) for cmd in jobs]
+    exit_codes = [p.wait() for p in processes]
+    raise SystemExit(max(exit_codes))
 
 if __name__ == "__main__":
     main()
