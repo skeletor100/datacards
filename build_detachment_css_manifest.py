@@ -631,10 +631,39 @@ def read_asset_candidate_styles(page, class_sets):
 
             function snapshot(style) {
                 const out = {
+                    display: style.display,
+                    position: style.position,
+                    boxSizing: style.boxSizing,
+
                     width: style.width,
                     height: style.height,
+                    minWidth: style.minWidth,
+                    minHeight: style.minHeight,
+                    maxWidth: style.maxWidth,
+                    maxHeight: style.maxHeight,
+
+                    margin: style.margin,
+                    padding: style.padding,
+
                     color: style.color,
                     backgroundColor: style.backgroundColor,
+
+                    fontFamily: style.fontFamily,
+                    fontSize: style.fontSize,
+                    fontWeight: style.fontWeight,
+                    lineHeight: style.lineHeight,
+                    textAlign: style.textAlign,
+                    textTransform: style.textTransform,
+                    whiteSpace: style.whiteSpace,
+
+                    flexDirection: style.flexDirection,
+                    alignItems: style.alignItems,
+                    justifyContent: style.justifyContent,
+
+                    overflow: style.overflow,
+                    overflowX: style.overflowX,
+                    overflowY: style.overflowY,
+
                     backgroundSize: style.backgroundSize,
                     backgroundRepeat: style.backgroundRepeat,
                     backgroundPosition: style.backgroundPosition,
@@ -648,8 +677,7 @@ def read_asset_candidate_styles(page, class_sets):
                     borderStyle: style.borderStyle,
                     borderColor: style.borderColor,
                     clipPath: style.clipPath,
-                    transform: style.transform
-                };
+                    transform: style.transform};
 
                 for (const field of fields) {
                     out[field] = style[field] || "";

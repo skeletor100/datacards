@@ -46,6 +46,12 @@ function renderImageBlock(block) {
   return `<img ${attrs.join(' ')}>`;
 }
 
+function renderContentImageBlock(block) {
+  const image = renderImageBlock(block);
+  if (!image) return '';
+  return `<div class="content-image">${image}</div>`;
+}
+
 function inlineBlockHtml(block) {
   if (!block) return '';
   if (block.displayItem === 'img') return renderImageBlock(block);
@@ -218,7 +224,7 @@ function blockHtml(block) {
   }
 
   if (block.displayItem === 'img') {
-    return renderImageBlock(block);
+    return renderContentImageBlock(block);
   }
 
   if (block.displayItem === 'element') {

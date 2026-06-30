@@ -290,6 +290,7 @@ VISUAL_WIDGET_CLASS_MARKERS = (
     "aeCharge",
     "aeFight",
     "aeCommand",
+    "dsCha",
 )
 
 LAYOUT_WRAPPER_CLASSES = {
@@ -384,6 +385,34 @@ def parse_visual_element(node):
     return block
 
 
+def sanitize_style(style, *, allow_layout=True):
+    if not style:
+        return ""
+
+    blocked = {
+        "font-size",
+        "font-family",
+        "line-height",
+        "width",
+        "height",
+    }
+
+    parts = []
+    for decl in style.split(";"):
+        if ":" not in decl:
+            continue
+        prop, value = decl.split(":", 1)
+        prop = prop.strip().lower()
+        value = value.strip()
+
+        if prop in blocked:
+            continue
+
+        parts.append(f"{prop}:{value}")
+
+    return ";".join(parts)
+
+
 def parse_table(table):
     inner = table.find("table")
     if inner:
@@ -410,7 +439,7 @@ def parse_table(table):
                 "colspan": cell.get("colspan"),
                 "rowspan": cell.get("rowspan"),
                 "classes": cell.get("class", []),
-                "style": cell.get("style", ""),
+                "style": sanitize_style(cell.get("style", "")),
             })
 
         return cells
@@ -431,7 +460,7 @@ def parse_table(table):
     return {
         "displayItem": "table",
         "classes": table.get("class", []),
-        "style": table.get("style", ""),
+        "style": sanitize_style(table.get("style", "")),
         "attrs": {
             "border": table.get("border"),
             "bordercolor": table.get("bordercolor"),
@@ -523,14 +552,29 @@ def attach_paragraphs_to_custom_subrules(blocks):
                 block.get("source") == "h_custom"
                 or block.get("source") == "hi_custom"
             )
-            and i + 1 < len(blocks)
-            and blocks[i + 1].get("displayItem") == "p"
         ):
             block = dict(block)
-            block["content"] = [blocks[i + 1]]
-            out.append(block)
-            i += 2
-            continue
+            content = []
+            j = i + 1
+
+            # Wahapedia often uses an inline custom heading followed by multiple
+            # sibling blocks: prose, then direct image wrappers such as
+            # <div class="img-opa"><img ...></div>. Keep those siblings inside
+            # the custom subrule until the next parsed subrule boundary.
+            while j < len(blocks):
+                next_block = blocks[j]
+
+                if next_block.get("displayItem") == "subrule":
+                    break
+
+                content.append(next_block)
+                j += 1
+
+            if content:
+                block["content"] = content
+                out.append(block)
+                i = j
+                continue
 
         out.append(block)
         i += 1
@@ -623,6 +667,22 @@ def extract_cell_blocks(cell):
     return blocks
 
 
+def should_preserve_styled_block(node):
+    if not isinstance(node, Tag):
+        return False
+
+    classes = node.get("class", []) or []
+
+    # Never preserve layout wrappers
+    if any(cls in LAYOUT_WRAPPER_CLASSES for cls in classes):
+        return False
+
+    style = node.get("style") or ""
+
+    # Preserve intentionally styled headings/blocks
+    return bool(style.strip())
+
+
 def extract_content_blocks(nodes):
     blocks = []
     paragraph_nodes = []
@@ -676,6 +736,11 @@ def extract_content_blocks(nodes):
 
             continue
 
+        if isinstance(node, Tag) and node.name == "img":
+            flush_paragraph()
+            blocks.append(parse_image(node))
+            continue
+
         if isinstance(node, Tag) and node.name == "table":
             flush_paragraph()
             blocks.append(parse_table(node))
@@ -707,13 +772,17 @@ def extract_content_blocks(nodes):
             continue
 
         if isinstance(node, Tag) and node.name == "div":
-            # Preserve compact visual widgets, but unwrap page/layout containers
-            # such as BreakInsideAvoid, Columns2, Corner16, etc.
             flush_paragraph()
+
             if is_visual_widget_node(node):
                 blocks.append(parse_visual_element(node))
+            elif should_preserve_styled_block(node):
+                paragraph = paragraph_block_from_nodes([node])
+                if paragraph:
+                    blocks.append(paragraph)
             else:
                 blocks.extend(extract_content_blocks(list(node.children)))
+
             continue
 
         paragraph_nodes.append(node)
