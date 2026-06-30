@@ -638,7 +638,17 @@ def read_asset_candidate_styles(page, class_sets):
                     backgroundSize: style.backgroundSize,
                     backgroundRepeat: style.backgroundRepeat,
                     backgroundPosition: style.backgroundPosition,
-                    filter: style.filter
+                    filter: style.filter,
+                    borderRadius: style.borderRadius,
+                    borderTopLeftRadius: style.borderTopLeftRadius,
+                    borderTopRightRadius: style.borderTopRightRadius,
+                    borderBottomRightRadius: style.borderBottomRightRadius,
+                    borderBottomLeftRadius: style.borderBottomLeftRadius,
+                    borderWidth: style.borderWidth,
+                    borderStyle: style.borderStyle,
+                    borderColor: style.borderColor,
+                    clipPath: style.clipPath,
+                    transform: style.transform
                 };
 
                 for (const field of fields) {

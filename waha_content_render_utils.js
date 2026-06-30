@@ -93,6 +93,35 @@ function shouldKeepOwnBlock(block) {
   return false;
 }
 
+
+function isActionIconBlock(block) {
+  if (!block || block.displayItem !== 'element') return false;
+  const classes = Array.isArray(block.classes) ? block.classes : [];
+  return classes.includes('redDiamondLeft');
+}
+
+function renderActionEntry(iconBlocks, textBlocks) {
+  const iconsHtml = iconBlocks.map(blockHtml).join('');
+  const textHtml = textBlocks.map(block => {
+    if (!block) return '';
+    if (block.displayItem === 'br') return '';
+    if (block.displayItem === 'p') return blockHtml(block);
+    if (block.displayItem === 'span') return `<p>${inlineBlockHtml(block)}</p>`;
+    return blockHtml(block);
+  }).join('');
+
+  if (!textHtml) {
+    return `<div class="action-icons action-icons-standalone">${iconsHtml}</div>`;
+  }
+
+  return `
+    <div class="action-entry">
+      <div class="action-icons">${iconsHtml}</div>
+      <div class="action-text">${textHtml}</div>
+    </div>
+  `;
+}
+
 function richBlockSequenceHtml(blocks) {
   const out = [];
   let inline = '';
@@ -103,12 +132,56 @@ function richBlockSequenceHtml(blocks) {
     inline = '';
   };
 
-  for (const block of (blocks || [])) {
+  const list = blocks || [];
+
+  for (let i = 0; i < list.length; i++) {
+    const block = list[i];
     if (!block) continue;
 
     if (block.displayItem === 'br') {
       flushInline();
       out.push('<br>');
+      continue;
+    }
+
+    // Wahapedia action cards use one or more redDiamondLeft icon widgets as a
+    // left rail for the following TRIGGER/EFFECT text. Render those together so
+    // the icon rail reserves horizontal space instead of overlapping prose.
+    if (isActionIconBlock(block)) {
+      flushInline();
+
+      const icons = [];
+      while (i < list.length && isActionIconBlock(list[i])) {
+        icons.push(list[i]);
+        i++;
+      }
+
+      const textBlocks = [];
+      while (i < list.length) {
+        const next = list[i];
+        if (!next) {
+          i++;
+          continue;
+        }
+
+        if (next.displayItem === 'br') {
+          i++;
+          continue;
+        }
+
+        if (isActionIconBlock(next)) break;
+
+        const isInlineParagraph = next.displayItem === 'p' && !shouldKeepOwnBlock(next);
+        const isInlineSpan = next.displayItem === 'span' && !shouldKeepOwnBlock(next);
+
+        if (!isInlineParagraph && !isInlineSpan) break;
+
+        textBlocks.push(next);
+        i++;
+      }
+
+      i--;
+      out.push(renderActionEntry(icons, textBlocks));
       continue;
     }
 

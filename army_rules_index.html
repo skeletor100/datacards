@@ -71,6 +71,25 @@
     .content-table .cruWarpChargeTS{position:absolute!important;right:-.10em!important;top:50%!important;transform:translateY(-50%)!important;width:2.25em!important;height:2.42em!important;background-color:transparent!important;background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important;color:rgb(192,217,236)!important;display:flex!important;align-items:center!important;justify-content:center!important;line-height:1!important;overflow:visible!important}
     .content-table .cruWarpChargeTSNumber{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:100%!important;color:rgb(192,217,236)!important;font-size:1.42em!important;line-height:1!important;font-weight:900!important;text-align:center!important;text-shadow:0 1px 1px rgba(0,0,0,.45)!important}
     .content-table .cruWarpChargeTSNumber span{color:inherit!important;font-size:inherit!important;line-height:inherit!important}
+
+    /* Action-entry icon rail: one or more redDiamondLeft widgets define the
+       left margin for the following TRIGGER/EFFECT text. */
+    .content-table .action-entry{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:.62cqw;align-items:start;margin:.25cqw 0 .42cqw;clear:both}
+    .content-table .action-icons{display:flex;gap:.18cqw;align-items:flex-start;justify-content:flex-start;min-width:max-content;padding-top:.05cqw}
+    .content-table .action-icons-standalone{margin:.25cqw 0 .35cqw}
+    .content-table .action-text{min-width:0}
+    .content-table .action-text p{margin:0 0 .38cqw;text-transform:none;font-weight:400}
+    .content-table .action-text p:last-child{margin-bottom:0}
+
+    /* Targeted visual shim for Wahapedia action icons. The manifest can still
+       supply background/mask assets for the inner glyphs; these rules provide
+       the card-local rail sizing, centering and oval/circle presentation. */
+    .content-table .redDiamondLeft{position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;width:2.75cqw!important;height:3.55cqw!important;min-width:2.75cqw!important;min-height:3.55cqw!important;margin:0!important;overflow:visible!important;background:transparent!important;line-height:1!important}
+    .content-table .bluCircle2{position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;width:2.20cqw!important;height:3.12cqw!important;border-radius:999px!important;background-color:rgb(22,105,114)!important;overflow:hidden!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important}
+    .content-table .bluCircle2 > div[class^="ae"]{display:flex!important;align-items:center!important;justify-content:center!important;width:1.55cqw!important;height:1.55cqw!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;color:#fff!important;line-height:1!important}
+    .content-table .bluCircle2 > div[class^="ae"]::before,
+    .content-table .bluCircle2 > div[class^="ae"]::after{display:block!important;width:1.55cqw!important;height:1.55cqw!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important}
+
     p{margin:.30cqw 0}
 
     @media print{
@@ -177,6 +196,35 @@ function shouldKeepOwnBlock(block) {
   return false;
 }
 
+
+function isActionIconBlock(block) {
+  if (!block || block.displayItem !== 'element') return false;
+  const classes = Array.isArray(block.classes) ? block.classes : [];
+  return classes.includes('redDiamondLeft');
+}
+
+function renderActionEntry(iconBlocks, textBlocks) {
+  const iconsHtml = iconBlocks.map(blockHtml).join('');
+  const textHtml = textBlocks.map(block => {
+    if (!block) return '';
+    if (block.displayItem === 'br') return '';
+    if (block.displayItem === 'p') return blockHtml(block);
+    if (block.displayItem === 'span') return `<p>${inlineBlockHtml(block)}</p>`;
+    return blockHtml(block);
+  }).join('');
+
+  if (!textHtml) {
+    return `<div class="action-icons action-icons-standalone">${iconsHtml}</div>`;
+  }
+
+  return `
+    <div class="action-entry">
+      <div class="action-icons">${iconsHtml}</div>
+      <div class="action-text">${textHtml}</div>
+    </div>
+  `;
+}
+
 function richBlockSequenceHtml(blocks) {
   const out = [];
   let inline = '';
@@ -187,12 +235,56 @@ function richBlockSequenceHtml(blocks) {
     inline = '';
   };
 
-  for (const block of (blocks || [])) {
+  const list = blocks || [];
+
+  for (let i = 0; i < list.length; i++) {
+    const block = list[i];
     if (!block) continue;
 
     if (block.displayItem === 'br') {
       flushInline();
       out.push('<br>');
+      continue;
+    }
+
+    // Wahapedia action cards use one or more redDiamondLeft icon widgets as a
+    // left rail for the following TRIGGER/EFFECT text. Render those together so
+    // the icon rail reserves horizontal space instead of overlapping prose.
+    if (isActionIconBlock(block)) {
+      flushInline();
+
+      const icons = [];
+      while (i < list.length && isActionIconBlock(list[i])) {
+        icons.push(list[i]);
+        i++;
+      }
+
+      const textBlocks = [];
+      while (i < list.length) {
+        const next = list[i];
+        if (!next) {
+          i++;
+          continue;
+        }
+
+        if (next.displayItem === 'br') {
+          i++;
+          continue;
+        }
+
+        if (isActionIconBlock(next)) break;
+
+        const isInlineParagraph = next.displayItem === 'p' && !shouldKeepOwnBlock(next);
+        const isInlineSpan = next.displayItem === 'span' && !shouldKeepOwnBlock(next);
+
+        if (!isInlineParagraph && !isInlineSpan) break;
+
+        textBlocks.push(next);
+        i++;
+      }
+
+      i--;
+      out.push(renderActionEntry(icons, textBlocks));
       continue;
     }
 
@@ -404,6 +496,8 @@ function snapshotCss(snapshot) {
   add('background-repeat', snapshot.backgroundRepeat);
   add('background-position', snapshot.backgroundPosition);
   add('filter', snapshot.filter);
+  add('border-radius', snapshot.borderRadius);
+  add('clip-path', snapshot.clipPath);
 
   const bg = snapshot.backgroundImageAsset || snapshot.backgroundImageUrl || snapshot.backgroundImageAssets?.[0] || snapshot.backgroundImageUrls?.[0];
   if (bg) pairs.push(`background-image:url('${cssUrl(bg)}')`);
