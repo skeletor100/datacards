@@ -75,15 +75,18 @@
     /* Action-entry icon rail: one or more redDiamondLeft widgets define the
        left margin for the following TRIGGER/EFFECT text. */
     .content-table .action-entry{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:.62cqw;align-items:start;margin:.25cqw 0 .42cqw;clear:both}
-    .content-table .action-icons{display:flex;gap:.18cqw;align-items:flex-start;justify-content:flex-start;min-width:max-content;padding-top:.05cqw}
+    .content-table .action-icons{--action-icon-scale:2.8;display:flex;gap:.27cqw;align-items:flex-start;justify-content:flex-start;min-width:max-content;padding-top:.05cqw}
     .content-table .action-icons-standalone{margin:.25cqw 0 .35cqw}
+    .content-table .action-icon-unit{width:calc(2.75cqw * var(--action-icon-scale));height:calc(3.55cqw * var(--action-icon-scale));min-width:calc(2.75cqw * var(--action-icon-scale));min-height:calc(3.55cqw * var(--action-icon-scale));display:flex;align-items:center;justify-content:center;overflow:visible}
+    .content-table .action-icon-unit > .redDiamondLeft{transform:scale(var(--action-icon-scale));transform-origin:center center}
     .content-table .action-text{min-width:0}
     .content-table .action-text p{margin:0 0 .38cqw;text-transform:none;font-weight:400}
     .content-table .action-text p:last-child{margin-bottom:0}
 
     /* Targeted visual shim for Wahapedia action icons. The manifest can still
        supply background/mask assets for the inner glyphs; these rules provide
-       the card-local rail sizing, centering and oval/circle presentation. */
+       the unscaled base presentation. The common .action-icon-unit frame above
+       controls overall scaling for the complete icon group. */
     .content-table .redDiamondLeft{position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;width:2.75cqw!important;height:3.55cqw!important;min-width:2.75cqw!important;min-height:3.55cqw!important;margin:0!important;overflow:visible!important;background:transparent!important;line-height:1!important}
     .content-table .bluCircle2{position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;width:2.20cqw!important;height:3.12cqw!important;border-radius:999px!important;background-color:rgb(22,105,114)!important;overflow:hidden!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important}
     .content-table .bluCircle2 > div[class^="ae"]{display:flex!important;align-items:center!important;justify-content:center!important;width:1.55cqw!important;height:1.55cqw!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;color:#fff!important;line-height:1!important}
@@ -204,7 +207,7 @@ function isActionIconBlock(block) {
 }
 
 function renderActionEntry(iconBlocks, textBlocks) {
-  const iconsHtml = iconBlocks.map(blockHtml).join('');
+  const iconsHtml = iconBlocks.map(block => `<div class="action-icon-unit">${blockHtml(block)}</div>`).join('');
   const textHtml = textBlocks.map(block => {
     if (!block) return '';
     if (block.displayItem === 'br') return '';
