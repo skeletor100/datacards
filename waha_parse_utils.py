@@ -154,8 +154,13 @@ def merge_adjacent_runs(runs):
             merged
             and merged[-1].get("source_classes", []) == run.get("source_classes", [])
         ):
+            # Do not inject an extra separator here. Meaningful spaces between
+            # inline tags are represented by real NavigableString nodes, e.g.
+            # <span>LEAGUES</span> <span>OF</span> <span>VOTANN</span>.
+            # Adding a synthetic space while also preserving those text nodes can
+            # create unwanted spacing elsewhere.
             merged[-1]["text"] = clean_inline_punctuation_spacing(
-                merged[-1]["text"] + " " + run["text"]
+                merged[-1]["text"] + run["text"]
             )
         else:
             merged.append(run)
@@ -168,8 +173,16 @@ def extract_text_runs(node, inherited_classes=None):
 
     if isinstance(node, NavigableString):
         text = clean_inline_punctuation_spacing(str(node))
+
+        # Preserve whitespace-only text nodes as a single separating space.
+        # Wahapedia uses literal spaces between adjacent styled inline spans,
+        # e.g. <span>LEAGUES</span> <span>OF</span> <span>VOTANN</span>.
+        # Dropping those nodes turns the rendered text into LEAGUESOFVOTANN.
         if not text.strip():
-            return []
+            if str(node).strip() == "":
+                text = " "
+            else:
+                return []
 
         source_classes = filtered_inline_classes(inherited_classes)
 
@@ -241,7 +254,8 @@ def paragraph_block_from_nodes(nodes):
         source_node = nodes[0]
 
     for node in nodes:
-        if is_ignorable_node(node):
+        # Let extract_text_runs preserve separator spaces between inline siblings.
+        if is_ignorable_node(node) and not isinstance(node, NavigableString):
             continue
 
         runs.extend(extract_text_runs(node))
@@ -510,7 +524,8 @@ def parse_list_item(li):
     content = []
 
     for child in li.children:
-        if is_ignorable_node(child):
+        # Let extract_text_runs preserve separator spaces between inline siblings.
+        if is_ignorable_node(child) and not isinstance(child, NavigableString):
             continue
 
         if isinstance(child, Tag) and child.name in ("ul", "ol"):
@@ -602,7 +617,13 @@ def extract_cell_blocks(cell):
             blocks.append(paragraph)
 
     for child in cell.children:
-        if is_ignorable_node(child) and not is_br(child):
+        # Preserve whitespace-only text nodes between inline siblings, e.g.
+        # <span>LEAGUES</span> <span>OF</span> <span>VOTANN</span>.
+        if (
+            is_ignorable_node(child)
+            and not is_br(child)
+            and not isinstance(child, NavigableString)
+        ):
             continue
 
         if is_br(child):
@@ -714,7 +735,9 @@ def extract_content_blocks(nodes):
 
         br_count = 0
 
-        if is_ignorable_node(node):
+        # Preserve whitespace-only text nodes between inline siblings.
+        # These are significant separators in Wahapedia's inline markup.
+        if is_ignorable_node(node) and not isinstance(node, NavigableString):
             continue
 
         if (

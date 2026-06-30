@@ -68,6 +68,14 @@
     .bluefont{color:#2d6c83}
     .tt,.kwbu{font-weight:900;text-transform:none;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:.12em}
 
+    .content-table td[style*="background-color"] {
+        color: #fff;
+    }
+
+    .content-table td[style*="background-color"] * {
+        color: inherit;
+    }
+
     /* Targeted shim for preserved Wahapedia warp-charge widgets.
        The manifest supplies the real cruWarpChargeTS background image; this CSS
        only controls card-local sizing/positioning and readable text colour. */
@@ -190,6 +198,78 @@
     .content-table .bluCircle2 > div[class^="ae"]{display:flex!important;align-items:center!important;justify-content:center!important;width:1.55cqw!important;height:1.55cqw!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;color:#fff!important;line-height:1!important}
     .content-table .bluCircle2 > div[class^="ae"]::before,
     .content-table .bluCircle2 > div[class^="ae"]::after{display:block!important;width:1.55cqw!important;height:1.55cqw!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important}
+
+    /* Scoped reconstruction/tuning of Wahapedia action icons:
+      <div class="redDiamondLeft"><div class="bluCircle2"><div class="aeMovement"></div></div></div>
+      Only applies to action-entry icon rails. */
+    .content-table .action-entry .action-icon-unit {
+      --action-icon-scale: 2.8;
+      width: calc(2.75cqw * var(--action-icon-scale));
+      height: calc(3.55cqw * var(--action-icon-scale));
+      min-width: calc(2.75cqw * var(--action-icon-scale));
+      min-height: calc(3.55cqw * var(--action-icon-scale));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: visible;
+    }
+
+    .content-table .action-entry .redDiamondLeft {
+      position: relative !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 2.75cqw !important;
+      height: 3.55cqw !important;
+      min-width: 2.75cqw !important;
+      min-height: 3.55cqw !important;
+      margin: 0 !important;
+      overflow: visible !important;
+      background: transparent !important;
+      line-height: 1 !important;
+      transform: scale(var(--action-icon-scale));
+      transform-origin: center center;
+    }
+
+    /* Inner blue oval/circle. */
+    .content-table .action-entry .bluCircle2 {
+      position: relative !important;
+      z-index: 1;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 2.05cqw !important;
+      height: 2.70cqw !important;
+      border-radius: 999px !important;
+      background-color: rgb(22,105,114) !important;
+      overflow: hidden !important;
+      background-position: center !important;
+      background-repeat: no-repeat !important;
+      background-size: contain !important;
+    }
+
+    /* Inner glyph, e.g. aeMovement / aeShooting / aeCharge / aeFight. */
+    .content-table .action-entry .bluCircle2 > div[class^="ae"] {
+      display: block !important;
+      width: 1.42cqw !important;
+      height: 1.42cqw !important;
+      background-position: center !important;
+      background-repeat: no-repeat !important;
+      background-size: contain !important;
+      color: #fff !important;
+      line-height: 1 !important;
+      z-index: 2;
+    }
+
+    .content-table .action-entry .bluCircle2 > div[class^="ae"]::before,
+    .content-table .action-entry .bluCircle2 > div[class^="ae"]::after {
+      display: block !important;
+      width: 1.42cqw !important;
+      height: 1.42cqw !important;
+      background-position: center !important;
+      background-repeat: no-repeat !important;
+      background-size: contain !important;
+    }
 
     p{margin:.30cqw 0}
 
@@ -933,7 +1013,9 @@ function fitArmyRulesCard(card) {
   fit.style.transform = '';
   fit.style.width = '100%';
 
-  for (let pass = 0; pass < 90 && fit.scrollHeight > content.clientHeight + 1; pass++) {
+  const FIT_BOTTOM_PAD = 12;
+
+  for (let pass = 0; pass < 90 && fit.scrollHeight > content.clientHeight - FIT_BOTTOM_PAD; pass++) {
     const fs = parseFloat(getComputedStyle(card).getPropertyValue('--rule-fs')) || 2.4;
     if (fs <= 0.92) break;
     card.style.setProperty('--rule-fs', (fs - 0.035) + 'cqw');
