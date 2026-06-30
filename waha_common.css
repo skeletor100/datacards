@@ -1,0 +1,40 @@
+/* Shared Wahapedia renderer primitives.
+   Keep this file to cross-renderer text/content behavior only.
+   Card geometry and renderer-specific layout stays in each HTML file. */
+
+
+/* Wahapedia inline/text classes such as .kwb, .kwb2, .kwbu, .tt,
+   .bluefont and .aeText are emitted from detachment_css_manifest.json
+   at runtime by applyManifestInlineTextCss(). */
+
+/* Semantic inline tags/classes emitted by parser fixes. */
+.italic,
+.em,
+i,
+em {
+  font-style: italic;
+}
+
+.bold,
+.strong,
+b,
+strong {
+  font-weight: 900;
+}
+
+/* Wahapedia often gives table header/category cells a dark background
+   without an explicit text colour. Keep them readable in every renderer. */
+.content-table td[style*="background-color"] {
+  color: #fff;
+}
+
+.content-table td[style*="background-color"] * {
+  color: inherit;
+}
+
+/* Shared image safety. */
+.content-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}

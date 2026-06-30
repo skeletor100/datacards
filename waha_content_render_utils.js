@@ -307,3 +307,85 @@ function blockHtml(block) {
 
   return `<${safeTag}${blockAttrs(block)}>${textRuns(block)}</${safeTag}>`;
 }
+
+/* Emit only safe Wahapedia inline/text classes from detachment_css_manifest.json.
+   This deliberately excludes layout/widget classes and computed geometry. */
+const MANIFEST_INLINE_TEXT_CLASS_WHITELIST = new Set([
+  // Order matters: generic tooltip-link classes must be emitted before
+  // stronger semantic classes such as .kwb/.kwb2, and .bluefont must be
+  // emitted after .kwb2 so explicit blue keyword spans keep their colour.
+  'kwbu',
+  'tt',
+  'kwb',
+  'kwb2',
+  'bluefont',
+  'aeText'
+]);
+
+function manifestInlineTextSnapshot(manifest, className) {
+  const inline = manifest?.inline_classes || {};
+
+  if (inline[className]) return inline[className];
+
+  // Some manifest entries are recorded as full class sets rather than as
+  // standalone classes, e.g. "bluefont kwb2" or "kwbu tooltip00001 tt".
+  // Only use a combined snapshot when the requested class is the leading
+  // class in that set. This prevents .kwbu/.tt from inheriting the blue,
+  // bold, uppercase styling from entries such as
+  // "bluefont kwb2 kwbu tooltip00002 tt".
+  for (const [key, snapshot] of Object.entries(inline)) {
+    const classes = String(key || '').trim().split(/\s+/).filter(Boolean);
+    if (classes[0] === className) return snapshot;
+  }
+
+  // Fallback for manifests that only have richer asset_candidate_styles.
+  const entry = manifest?.asset_candidate_styles?.[className];
+  if (entry?.element) return entry.element;
+  if (entry && typeof entry === 'object') return entry;
+
+  return null;
+}
+
+function manifestInlineTextCss(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return '';
+
+  const pairs = [];
+
+  const add = (prop, value) => {
+    if (!value || value === 'normal' || value === 'auto' || value === '0px') return;
+    if (prop === 'color' && value === 'rgba(0, 0, 0, 0)') return;
+    if (prop === 'background-color' && value === 'rgba(0, 0, 0, 0)') return;
+    pairs.push(`${prop}:${value}`);
+  };
+
+  // Text-only properties. Do not emit width/height/display/margins/flex/etc.
+  add('color', snapshot.color);
+  add('font-weight', snapshot.fontWeight);
+  add('font-style', snapshot.fontStyle);
+  add('text-transform', snapshot.textTransform);
+  add('text-decoration', snapshot.textDecoration);
+  add('text-decoration-style', snapshot.textDecorationStyle);
+  add('text-underline-offset', snapshot.textUnderlineOffset);
+
+  return pairs.join(';');
+}
+
+function applyManifestInlineTextCss(manifest) {
+  const old = document.getElementById('manifest-inline-text-css');
+  if (old) old.remove();
+
+  const rules = [];
+
+  for (const className of MANIFEST_INLINE_TEXT_CLASS_WHITELIST) {
+    const snapshot = manifestInlineTextSnapshot(manifest, className);
+    const css = manifestInlineTextCss(snapshot);
+    if (css) rules.push(`.${CSS.escape(className)}{${css}}`);
+  }
+
+  if (!rules.length) return;
+
+  const style = document.createElement('style');
+  style.id = 'manifest-inline-text-css';
+  style.textContent = rules.join('\n');
+  document.head.appendChild(style);
+}

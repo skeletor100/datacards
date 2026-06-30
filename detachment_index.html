@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Detachment Card Renderer</title>
+  <link rel="stylesheet" href="./waha_common.css" />
   <style>
     :root{
       --card-w:1800px; --card-h:1200px; --strat-card-w:1200px; --strat-card-h:1800px; --paper:#ece9df; --ink:#111; --banner:#084563;
@@ -61,7 +62,7 @@
       font-weight:900;
       text-transform:uppercase;
     }
-    .kwb,.kwb2{font-weight:900}.bluefont{color:#2d6c83}.tt,.kwbu{font-weight:900;text-transform:none;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:.12em} p{margin:.30cqw 0}
+     p{margin:.30cqw 0}
     .rule-card .content{
       top:12.2%;
       bottom:3.2%;
@@ -490,7 +491,7 @@ function applyShow(){
   });
 }
 $('#faction-primary').addEventListener('change', updateSubFactions); $('#sub-faction').addEventListener('change', updateDets); $('#detachment').addEventListener('change', render); $('#show').addEventListener('change', applyShow);
-Promise.all([fetch(DATA_URL).then(r=>r.json()), fetch(MANIFEST_URL).then(r=>r.json()).catch(()=>({}))]).then(([d,m])=>{DATA=d;MANIFEST=m;populate();});
+Promise.all([fetch(DATA_URL).then(r=>r.json()), fetch(MANIFEST_URL).then(r=>r.json()).catch(()=>({}))]).then(([d,m])=>{DATA=d;MANIFEST=m;applyManifestInlineTextCss(MANIFEST);populate();});
 </script>
 </body>
 </html>

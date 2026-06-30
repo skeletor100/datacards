@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Datasheet Renderer V2.1 - Geometry Pass</title>
+  <link rel="stylesheet" href="./waha_common.css" />
   <style>
     :root{
       --card-w: 1800px;
@@ -402,10 +403,7 @@
     .content-table{ width:100%; border-collapse:collapse; margin:.35em 0; }
     .content-table td{ padding:.08em .5em .08em 0; vertical-align:top; }
     .subrule-title{ font-weight:900; text-transform:uppercase; margin:.55em 0 .08em; }
-    .kwb, .kwb2{ font-weight:900; text-transform:uppercase; }
-    .bluefont{ color:var(--text); font-weight:900; }
-
-    .footer{
+.footer{
       position:absolute;
       left:2.35%;
       right:2.35%;
@@ -820,11 +818,20 @@
     
 
     async function loadCards() {
-      const response = await fetch('./units.json');
+      const [cardsResponse, manifestResponse] = await Promise.all([
+        fetch('./units.json'),
+        fetch('./detachment_css_manifest.json').catch(() => null)
+      ]);
 
-      const text = await response.text();
-
+      const text = await cardsResponse.text();
       allCards = JSON.parse(text);
+
+      if (manifestResponse && manifestResponse.ok) {
+        try {
+          applyManifestInlineTextCss(await manifestResponse.json());
+        } catch (err) {}
+      }
+
       buildCardSelector(allCards);
     }
 

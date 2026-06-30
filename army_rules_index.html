@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Army Rules Card Renderer</title>
+  <link rel="stylesheet" href="./waha_common.css" />
   <style>
     :root{
       --card-w:1800px; --card-h:1200px; --strat-card-w:1200px; --strat-card-h:1800px; --paper:#ece9df; --ink:#111; --banner:#084563;
@@ -64,17 +65,6 @@
     .content-table p.impact18{font-weight:900;text-transform:uppercase;line-height:1.05;margin:.08cqw 0 .24cqw;white-space:nowrap;overflow-wrap:normal;word-break:keep-all;hyphens:none;max-width:none;width:max-content;display:block}
     .content-table p.impact18 span{white-space:nowrap;overflow-wrap:normal;word-break:keep-all}
     .content-table td:has(> p.impact18){min-width:max-content;overflow:visible}
-    .kwb,.kwb2{font-weight:900}
-    .bluefont{color:#2d6c83}
-    .tt,.kwbu{font-weight:900;text-transform:none;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:.12em}
-
-    .content-table td[style*="background-color"] {
-        color: #fff;
-    }
-
-    .content-table td[style*="background-color"] * {
-        color: inherit;
-    }
 
     /* Targeted shim for preserved Wahapedia warp-charge widgets.
        The manifest supplies the real cruWarpChargeTS background image; this CSS
@@ -274,7 +264,6 @@
     p{margin:.30cqw 0}
 
     .content-image{margin:.35cqw 0}
-    .content-image img{display:block;max-width:100%;height:auto}
 
     @media print{
       body{background:white;padding:0}
@@ -291,6 +280,7 @@
     <label><input id="all-factions" type="checkbox" /> Render all factions</label>
   </div>
   <main id="app"></main>
+<script src="./waha_content_render_utils.js"></script>
 <script>
 function esc(value) {
   return String(value ?? '')
@@ -727,6 +717,9 @@ async function fetchFirst(urls, fallback) {
 }
 
 
+
+// Manifest inline/text CSS is emitted by waha_content_render_utils.js.
+
 function cssUrl(value) {
   return String(value || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '');
 }
@@ -780,30 +773,22 @@ function pushManifestStyleRule(rules, selector, snapshot) {
 }
 
 function applyManifestAssetCss() {
-  const old = document.getElementById('manifest-asset-css');
-  if (old) old.remove();
+  const oldAsset = document.getElementById('manifest-asset-css');
+  if (oldAsset) oldAsset.remove();
+  const oldInline = document.getElementById('manifest-inline-text-css');
+  if (oldInline) oldInline.remove();
 
   const rules = [];
 
-  // Simple icon map, e.g. extra_icons.cruD1 or extra_icons.aeMovement.
+  // Keep manifest-driven assets for compact widgets/icons only.
+  // Do not emit every asset_candidate_styles entry: that reintroduces computed
+  // layout widths/heights from Wahapedia and can break card layouts.
   for (const [key, snapshot] of Object.entries(MANIFEST.extra_icons || {})) {
     pushManifestStyleRule(rules, selectorForClassKey(key), snapshot);
   }
 
-  // Richer class snapshots, including nested element/before/after data and
-  // localized background/mask/content assets.
-  for (const [key, entry] of Object.entries(MANIFEST.asset_candidate_styles || {})) {
-    const selector = selectorForClassKey(key);
-    if (!selector) continue;
-
-    if (entry?.element || entry?.before || entry?.after) {
-      pushManifestStyleRule(rules, selector, entry.element);
-      pushManifestStyleRule(rules, `${selector}::before`, entry.before);
-      pushManifestStyleRule(rules, `${selector}::after`, entry.after);
-    } else {
-      pushManifestStyleRule(rules, selector, entry);
-    }
-  }
+  // Emit only safe text-level classes from the manifest via the shared helper.
+  applyManifestInlineTextCss(MANIFEST);
 
   if (!rules.length) return;
   const style = document.createElement('style');
@@ -984,6 +969,31 @@ function render() {
   });
 }
 
+function measuredContentHeight(box, inner) {
+  if (!box || !inner) return 0;
+
+  const boxRect = box.getBoundingClientRect();
+  let maxBottom = inner.getBoundingClientRect().bottom;
+
+  // scrollHeight misses a few cases that matter for preserved Wahapedia HTML:
+  // collapsed margins, transformed/icon widgets and overflow-visible descendants.
+  // Measure rendered descendants as well so clipped final prose still triggers a
+  // shrink pass instead of disappearing below the card boundary.
+  inner.querySelectorAll('*').forEach(el => {
+    for (const rect of el.getClientRects()) {
+      if (rect.width || rect.height) maxBottom = Math.max(maxBottom, rect.bottom);
+    }
+  });
+
+  return Math.max(inner.scrollHeight || 0, maxBottom - boxRect.top);
+}
+
+function needsVerticalFit(box, inner, bottomPad = 0) {
+  const availableH = Math.max(0, box.clientHeight - bottomPad);
+  const neededH = measuredContentHeight(box, inner);
+  return !!availableH && neededH > availableH + 0.5;
+}
+
 function fitBox(box, inner) {
   if (!box || !inner) return;
 
@@ -991,7 +1001,7 @@ function fitBox(box, inner) {
   inner.style.width = '100%';
 
   const availableH = box.clientHeight;
-  const neededH = inner.scrollHeight;
+  const neededH = measuredContentHeight(box, inner);
 
   if (!availableH || !neededH) return;
 
@@ -1015,7 +1025,7 @@ function fitArmyRulesCard(card) {
 
   const FIT_BOTTOM_PAD = 12;
 
-  for (let pass = 0; pass < 90 && fit.scrollHeight > content.clientHeight - FIT_BOTTOM_PAD; pass++) {
+  for (let pass = 0; pass < 90 && needsVerticalFit(content, fit, FIT_BOTTOM_PAD); pass++) {
     const fs = parseFloat(getComputedStyle(card).getPropertyValue('--rule-fs')) || 2.4;
     if (fs <= 0.92) break;
     card.style.setProperty('--rule-fs', (fs - 0.035) + 'cqw');
