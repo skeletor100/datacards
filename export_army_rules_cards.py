@@ -170,7 +170,7 @@ def main():
         )
 
         page.goto(args.url, wait_until="networkidle")
-        page.wait_for_selector("#faction option")
+        page.wait_for_selector("#faction option", state="attached")
         page.wait_for_selector(".army-rules-card")
         wait_for_render(page)
 
