@@ -11,14 +11,58 @@ function textRuns(block) {
   if (!block) return '';
 
   const runs = Array.isArray(block.runs) ? block.runs : [];
+  const pieces = [];
+  let previousText = '';
+  let previousClasses = [];
 
-  return runs
-    .map(run => {
-      const classes = esc((run.source_classes || []).join(' '));
-      const text = esc(run.text);
+  const isWordBoundary = (left, right) => {
+    if (!left || !right) return false;
+    return /[\p{L}\p{N}\])]$/u.test(left) && /^[\p{L}\p{N}[(]/u.test(right);
+  };
 
-      return `<span class="${classes}">${text}</span>`;
-    })
+  for (const run of runs) {
+    const rawText = String(run?.text ?? '');
+    if (!rawText) continue;
+
+    const sourceClasses = Array.isArray(run.source_classes)
+      ? run.source_classes.filter(Boolean)
+      : [];
+
+    // Whitespace-only runs are semantic separators between adjacent styled
+    // Wahapedia spans, e.g. <span class="kwb">AGENTS</span> <span class="kwb2">OF</span>.
+    // Render them as literal text instead of a styled span so they cannot be
+    // swallowed by class merging or copied innerHTML simplification.
+    if (!rawText.trim() && !sourceClasses.length) {
+      pieces.push(' ');
+      previousText = ' ';
+      previousClasses = [];
+      continue;
+    }
+
+    // Defensive fallback: if upstream data ever arrives without the separator
+    // run, do not glue adjacent word-like styled runs together as AGENTSOF or
+    // ADEPTUSASTARTES. Existing explicit whitespace above remains the source of
+    // truth; this only covers missing separators.
+    if (
+      pieces.length &&
+      previousText.trim() &&
+      rawText.trim() &&
+      sourceClasses.length &&
+      previousClasses.length &&
+      isWordBoundary(previousText, rawText)
+    ) {
+      pieces.push(' ');
+    }
+
+    const classes = esc(sourceClasses.join(' '));
+    const text = esc(rawText);
+
+    pieces.push(classes ? `<span class="${classes}">${text}</span>` : `<span>${text}</span>`);
+    previousText = rawText;
+    previousClasses = sourceClasses;
+  }
+
+  return pieces
     .join('')
     .replace(/\s+([,.;:])/g, '$1');
 }
@@ -28,6 +72,173 @@ function blockAttrs(block) {
   const classAttr = classes.length ? ` class="${esc(classes.join(' '))}"` : '';
   const styleAttr = block?.style ? ` style="${esc(block.style)}"` : '';
   return `${classAttr}${styleAttr}`;
+}
+
+
+function parseInlineStyleDeclarations(style) {
+  const declarations = [];
+
+  for (const raw of String(style || '').split(';')) {
+    if (!raw || !raw.includes(':')) continue;
+    const [propRaw, ...valueParts] = raw.split(':');
+    const prop = propRaw.trim().toLowerCase();
+    const value = valueParts.join(':').trim();
+    if (!prop || !value) continue;
+    declarations.push([prop, value]);
+  }
+
+  return declarations;
+}
+
+function styleHasProperty(style, propertyName) {
+  const wanted = String(propertyName || '').trim().toLowerCase();
+  return parseInlineStyleDeclarations(style).some(([prop]) => prop === wanted);
+}
+
+function inlineStylePropertyValue(style, propertyName) {
+  const wanted = String(propertyName || '').trim().toLowerCase();
+  const declarations = parseInlineStyleDeclarations(style);
+
+  for (let i = declarations.length - 1; i >= 0; i--) {
+    const [prop, value] = declarations[i];
+    if (prop === wanted) return value;
+  }
+
+  return '';
+}
+
+function parseConcreteCssColor(value) {
+  value = String(value || '').trim().toLowerCase();
+
+  // CSS variables and keywords require browser cascade/context. Do not guess.
+  if (!value || value.includes('var(') || value === 'transparent' || value === 'inherit' || value === 'initial' || value === 'unset' || value === 'currentcolor') {
+    return null;
+  }
+
+  const namedColors = {
+    black: '#000000',
+    white: '#ffffff',
+    red: '#ff0000',
+    green: '#008000',
+    blue: '#0000ff',
+    yellow: '#ffff00',
+    cyan: '#00ffff',
+    aqua: '#00ffff',
+    magenta: '#ff00ff',
+    fuchsia: '#ff00ff',
+    gray: '#808080',
+    grey: '#808080',
+    silver: '#c0c0c0',
+    maroon: '#800000',
+    olive: '#808000',
+    purple: '#800080',
+    teal: '#008080',
+    navy: '#000080',
+    orange: '#ffa500',
+  };
+
+  if (namedColors[value]) value = namedColors[value];
+
+  let match = value.match(/^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i);
+  if (match) {
+    let hex = match[1];
+    if (hex.length === 3 || hex.length === 4) {
+      hex = hex.split('').map(ch => ch + ch).join('');
+    }
+
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    const a = hex.length >= 8 ? parseInt(hex.slice(6, 8), 16) / 255 : 1;
+    if (a <= 0.05) return null;
+    return { r, g, b, a };
+  }
+
+  match = value.match(/^rgba?\(([^)]+)\)$/i);
+  if (match) {
+    const parts = match[1]
+      .split(',')
+      .map(part => part.trim())
+      .filter(Boolean);
+
+    if (parts.length >= 3) {
+      const toChannel = part => {
+        if (part.endsWith('%')) return Math.round(Math.max(0, Math.min(100, parseFloat(part))) * 2.55);
+        return Math.max(0, Math.min(255, parseFloat(part)));
+      };
+
+      const r = toChannel(parts[0]);
+      const g = toChannel(parts[1]);
+      const b = toChannel(parts[2]);
+      const a = parts.length >= 4 ? Math.max(0, Math.min(1, parseFloat(parts[3]))) : 1;
+
+      if ([r, g, b, a].some(n => Number.isNaN(n)) || a <= 0.05) return null;
+      return { r, g, b, a };
+    }
+  }
+
+  return null;
+}
+
+function relativeLuminance({ r, g, b }) {
+  const channel = value => {
+    value = value / 255;
+    return value <= 0.03928
+      ? value / 12.92
+      : Math.pow((value + 0.055) / 1.055, 2.4);
+  };
+
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+function readableTextColorForBackground(backgroundColor) {
+  const color = parseConcreteCssColor(backgroundColor);
+  if (!color) return '';
+  return relativeLuminance(color) <= 0.42 ? '#fff' : '#111';
+}
+
+function readableTableCellPresentation(style) {
+  style = String(style || '').trim();
+
+  const backgroundColor = inlineStylePropertyValue(style, 'background-color')
+    || inlineStylePropertyValue(style, 'background');
+
+  const hasConcreteBackground = !!parseConcreteCssColor(backgroundColor);
+  const hasExplicitColor = styleHasProperty(style, 'color');
+  const textColor = hasConcreteBackground && !hasExplicitColor
+    ? readableTextColorForBackground(backgroundColor)
+    : '';
+
+  let resolvedStyle = style;
+  if (textColor) {
+    const separator = resolvedStyle && !resolvedStyle.trim().endsWith(';') ? ';' : '';
+    resolvedStyle = `${resolvedStyle}${separator}color:${textColor}`;
+  }
+
+  return {
+    style: resolvedStyle,
+    readableBgCell: hasConcreteBackground && (hasExplicitColor || !!textColor),
+  };
+}
+
+function tableCellAttrs(cell) {
+  if (!cell || typeof cell !== 'object' || Array.isArray(cell)) return '';
+
+  const attrs = [];
+  const classes = Array.isArray(cell.classes) ? cell.classes.filter(Boolean) : [];
+  const presentation = readableTableCellPresentation(cell.style || '');
+  const style = presentation.style;
+
+  if (presentation.readableBgCell && !classes.includes('readable-bg-cell')) {
+    classes.push('readable-bg-cell');
+  }
+
+  if (classes.length) attrs.push(`class="${esc(classes.join(' '))}"`);
+  if (style) attrs.push(`style="${esc(style)}"`);
+  if (cell.colspan) attrs.push(`colspan="${esc(cell.colspan)}"`);
+  if (cell.rowspan) attrs.push(`rowspan="${esc(cell.rowspan)}"`);
+
+  return attrs.length ? ' ' + attrs.join(' ') : '';
 }
 
 function renderImageBlock(block) {
@@ -263,16 +474,7 @@ function blockHtml(block) {
       return textRuns(cell);
     };
 
-    const tdAttrs = cell => {
-      if (!cell || typeof cell !== 'object' || Array.isArray(cell)) return '';
-      const attrs = [];
-      const classes = Array.isArray(cell.classes) ? cell.classes.filter(Boolean) : [];
-      if (classes.length) attrs.push(`class="${esc(classes.join(' '))}"`);
-      if (cell.style) attrs.push(`style="${esc(cell.style)}"`);
-      if (cell.colspan) attrs.push(`colspan="${esc(cell.colspan)}"`);
-      if (cell.rowspan) attrs.push(`rowspan="${esc(cell.rowspan)}"`);
-      return attrs.length ? ' ' + attrs.join(' ') : '';
-    };
+    const tdAttrs = tableCellAttrs;
 
     return `
       <table class="content-table">
@@ -346,19 +548,30 @@ function manifestInlineTextSnapshot(manifest, className) {
   return null;
 }
 
-function manifestInlineTextCss(snapshot) {
+const MANIFEST_INLINE_TEXT_COLOR_CLASSES = new Set([
+  // These classes are explicitly colour-semantic. Other safe inline classes
+  // such as .kwb/.kwb2/.kwbu/.tt should inherit the renderer context colour.
+  'bluefont',
+  'aeText'
+]);
+
+function manifestInlineTextCss(snapshot, className) {
   if (!snapshot || typeof snapshot !== 'object') return '';
 
   const pairs = [];
+  const allowColor = MANIFEST_INLINE_TEXT_COLOR_CLASSES.has(className);
 
   const add = (prop, value) => {
     if (!value || value === 'normal' || value === 'auto' || value === '0px') return;
+    if (prop === 'color' && !allowColor) return;
     if (prop === 'color' && value === 'rgba(0, 0, 0, 0)') return;
     if (prop === 'background-color' && value === 'rgba(0, 0, 0, 0)') return;
     pairs.push(`${prop}:${value}`);
   };
 
   // Text-only properties. Do not emit width/height/display/margins/flex/etc.
+  // Colour is only emitted for explicit colour classes; normal keyword classes
+  // inherit card/stratagem/table-cell colour from their renderer context.
   add('color', snapshot.color);
   add('font-weight', snapshot.fontWeight);
   add('font-style', snapshot.fontStyle);
@@ -378,7 +591,7 @@ function applyManifestInlineTextCss(manifest) {
 
   for (const className of MANIFEST_INLINE_TEXT_CLASS_WHITELIST) {
     const snapshot = manifestInlineTextSnapshot(manifest, className);
-    const css = manifestInlineTextCss(snapshot);
+    const css = manifestInlineTextCss(snapshot, className);
     if (css) rules.push(`.${CSS.escape(className)}{${css}}`);
   }
 

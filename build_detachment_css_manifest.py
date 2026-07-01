@@ -19,6 +19,34 @@ def style_key(role, style):
     return f"{role}:{style or ''}"
 
 
+# Inline classes are used by the renderers for typography/semantic emphasis.
+# Most of them must inherit their surrounding colour so stratagem colour blocks,
+# table-cell readability colours, and datasheet contexts remain consistent.
+# Only explicitly colour-semantic classes should retain computed colour.
+INLINE_TEXT_COLOR_CLASSES = {
+    "bluefont",
+    "aeText",
+}
+
+
+def strip_non_semantic_inline_colours(inline_styles):
+    cleaned = {}
+
+    for key, snapshot in (inline_styles or {}).items():
+        classes = set(str(key or "").split())
+        if classes & INLINE_TEXT_COLOR_CLASSES:
+            cleaned[key] = snapshot
+            continue
+
+        if isinstance(snapshot, dict):
+            snapshot = dict(snapshot)
+            snapshot.pop("color", None)
+
+        cleaned[key] = snapshot
+
+    return cleaned
+
+
 def collect_class_set(classes, target):
     classes = tuple(sorted(c for c in (classes or []) if c))
     if classes:
@@ -975,7 +1003,7 @@ def build_manifest(units_json, wahapedia_url, asset_dir):
             ],
             "asset_candidate_class_sets": sorted(asset_candidate_styles.keys()),
         },
-        "inline_classes": inline_styles,
+        "inline_classes": strip_non_semantic_inline_colours(inline_styles),
         "heading_classes": heading_styles,
         "stratagem_colors": stratagem_color_styles,
         "stratagem_icons": stratagem_icon_styles,

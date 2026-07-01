@@ -5,7 +5,9 @@
 
 /* Wahapedia inline/text classes such as .kwb, .kwb2, .kwbu, .tt,
    .bluefont and .aeText are emitted from detachment_css_manifest.json
-   at runtime by applyManifestInlineTextCss(). */
+   at runtime by applyManifestInlineTextCss(). Generic keyword/tooltip
+   classes inherit colour from the renderer context; only explicitly
+   colour-semantic classes such as .bluefont emit colour. */
 
 /* Semantic inline tags/classes emitted by parser fixes. */
 .italic,
@@ -22,14 +24,18 @@ strong {
   font-weight: 900;
 }
 
-/* Wahapedia often gives table header/category cells a dark background
-   without an explicit text colour. Keep them readable in every renderer. */
-.content-table td[style*="background-color"] {
-  color: #fff;
-}
+/* Table-cell foreground colour is now resolved by the shared renderer.
+   If a cell has a concrete inline background colour, waha_content_render_utils.js
+   emits an inline readable text colour. Unresolved values such as
+   background-color:var(--row-bg) are deliberately ignored instead of forcing
+   white text over a transparent background. */
 
-.content-table td[style*="background-color"] * {
-  color: inherit;
+
+/* Keep manifest text colours from overriding renderer-chosen table-cell
+   foreground colours. Do not set the td itself to inherit here: the td carries
+   the concrete inline colour chosen by the renderer. */
+.content-table td.readable-bg-cell * {
+  color: inherit !important;
 }
 
 /* Shared image safety. */

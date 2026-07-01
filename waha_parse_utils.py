@@ -9,6 +9,8 @@ INLINE_RENDER_CLASSES = {
     "aeText",
     "tt",
     "kwbu",
+    "bold",
+    "italic",
 }
 
 
@@ -143,6 +145,28 @@ def filtered_inline_classes(classes):
     ]
 
 
+def should_insert_run_separator(left_text, right_text):
+    """Return True when merging adjacent runs would glue two words together.
+
+    The parser normally preserves literal whitespace text nodes between inline
+    siblings, but some Wahapedia/browser-normalised fragments can still arrive as
+    adjacent same-class runs with no separator. Without this guard, merging turns
+    markup like ``<span>ADEPTUS</span> <span>ASTARTES</span>`` into
+    ``ADEPTUSASTARTES`` if the intervening whitespace node was lost upstream.
+    """
+    if not left_text or not right_text:
+        return False
+
+    if left_text[-1].isspace() or right_text[0].isspace():
+        return False
+
+    # Avoid changing punctuation joins such as "(i.e." or "D6+4)."
+    if not left_text[-1].isalnum() or not right_text[0].isalnum():
+        return False
+
+    return True
+
+
 def merge_adjacent_runs(runs):
     merged = []
 
@@ -154,18 +178,30 @@ def merge_adjacent_runs(runs):
             merged
             and merged[-1].get("source_classes", []) == run.get("source_classes", [])
         ):
-            # Do not inject an extra separator here. Meaningful spaces between
-            # inline tags are represented by real NavigableString nodes, e.g.
-            # <span>LEAGUES</span> <span>OF</span> <span>VOTANN</span>.
-            # Adding a synthetic space while also preserving those text nodes can
-            # create unwanted spacing elsewhere.
+            # Do not normally inject separators: meaningful spaces between inline
+            # tags are represented by real NavigableString nodes. However, guard
+            # against accidental word-gluing when two word-like same-class runs
+            # arrive adjacent without a preserved whitespace node.
+            separator = " " if should_insert_run_separator(
+                merged[-1]["text"],
+                run["text"],
+            ) else ""
+
             merged[-1]["text"] = clean_inline_punctuation_spacing(
-                merged[-1]["text"] + run["text"]
+                merged[-1]["text"] + separator + run["text"]
             )
         else:
             merged.append(run)
 
     return merged
+
+
+SEMANTIC_INLINE_TAG_CLASSES = {
+    "b": "bold",
+    "strong": "bold",
+    "i": "italic",
+    "em": "italic",
+}
 
 
 def extract_text_runs(node, inherited_classes=None):
@@ -201,6 +237,11 @@ def extract_text_runs(node, inherited_classes=None):
         return []
 
     classes = filtered_inline_classes(node.get("class", []))
+
+    semantic_class = SEMANTIC_INLINE_TAG_CLASSES.get(node.name)
+    if semantic_class:
+        classes.append(semantic_class)
+
     combined_classes = inherited_classes + classes
 
     runs = []

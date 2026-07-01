@@ -21,6 +21,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--no-units", action="store_true")
     parser.add_argument("--no-detachments", action="store_true")
+    parser.add_argument("--no-army-rules", action="store_true")
     parser.add_argument("--output", default="rendered_cards")
     parser.add_argument("--faction")
     parser.add_argument("--subFaction")
@@ -39,8 +40,11 @@ def main():
     if not args.no_detachments:
         jobs.append([sys.executable, "export_detachment_cards.py", *common])
 
+    if not args.no_army_rules:
+        jobs.append([sys.executable, "export_army_rules_cards.py", *common])
+
     if not jobs:
-        raise SystemExit("Nothing to export: both --no-units and --no-detachments were set")
+        raise SystemExit("Nothing to export: --no-units, --no-detachments and --no-army-rules were all set")
 
 
     processes = [subprocess.Popen(cmd) for cmd in jobs]
