@@ -1,5 +1,7 @@
 import json
 import argparse
+import subprocess
+import sys
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 from datacard_parser import run as parse_datacard
@@ -61,6 +63,11 @@ def parse_args():
     parser.add_argument(
         "--faction",
         help="Only process this faction name"
+    )
+    parser.add_argument(
+        "--no-core-rules",
+        action="store_true",
+        help="Do not extract core rules"
     )
     parser.add_argument(
         "--no-units",
@@ -597,6 +604,12 @@ if __name__ == "__main__":
     args = parse_args()
 
     start_time = time.perf_counter()
+
+    if not args.no_core_rules:
+        process = subprocess.Popen([sys.executable, "core_stratagems_scraper.py"])
+        exit_code = process.wait()
+        if exit_code != 0:
+            raise SystemExit(f"core_stratagems_scraper.py failed with exit code {exit_code}")
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
