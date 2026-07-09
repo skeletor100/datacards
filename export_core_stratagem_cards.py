@@ -3,7 +3,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 BASE_URL = "http://localhost:8000/core_stratagems_index.html"
-OUTPUT_DIR = Path("rendered_cards")
+OUTPUT_DIR = Path("rendered_cards") / "Core Rules"
 
 
 def wait_for_render(page):
@@ -36,6 +36,8 @@ def parse_args():
 def main():
     args = parse_args()
     output_dir = Path(args.output)
+    if output_dir == Path("rendered_cards"):
+        output_dir = OUTPUT_DIR
     output_path = output_dir / args.filename
 
     with sync_playwright() as p:
