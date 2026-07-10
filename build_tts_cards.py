@@ -64,12 +64,9 @@ def git_publish_all():
         check=True
     )
 
-# TTS units are not pixels.
-# Adjust once you see them in-game.
-# The longest edge of every tile will have this TTS transform scale.
-# TTS creates custom tiles with the short image edge as its base unit, so
-# wide/tall images need a smaller uniform scale as their aspect ratio grows.
-TILE_LONG_EDGE_SCALE = 3.0
+# Base scale for portrait (2:3) cards.
+# Landscape (3:2) cards are reduced so their long edge matches portrait cards.
+PORTRAIT_TILE_SCALE = 3.0
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Wahapedia faction extractor")
@@ -90,20 +87,29 @@ def parse_args():
 # IMAGE → TTS TILE
 # =========================
 
-def get_normalized_tile_scale(image_path):
-    """Return a uniform scale that gives every tile the same longest edge."""
+def get_tile_scale(image_path):
+    """Return an orientation-aware uniform TTS scale.
+
+    Portrait 2:3 cards keep the configured base scale.
+    Landscape 3:2 cards are reduced by height / width so their
+    longest in-game edge matches the portrait cards.
+    """
     with Image.open(image_path) as image:
         width, height = image.size
 
     if width <= 0 or height <= 0:
-        raise ValueError(f"Invalid image dimensions for {image_path}: {width}x{height}")
+        raise ValueError(
+            f"Invalid image dimensions for {image_path}: {width}x{height}"
+        )
 
-    aspect_ratio = max(width, height) / min(width, height)
-    return TILE_LONG_EDGE_SCALE / aspect_ratio
+    if width > height:
+        return PORTRAIT_TILE_SCALE * (height / width)
+
+    return PORTRAIT_TILE_SCALE
 
 
 def create_tile(image_path, url):
-    tile_scale = get_normalized_tile_scale(image_path)
+    tile_scale = get_tile_scale(image_path)
 
     return {
         "GUID": guid(),
