@@ -66,7 +66,10 @@ def git_publish_all():
 
 # TTS units are not pixels.
 # Adjust once you see them in-game.
-PIXEL_TO_TTS_SCALE = 0.002
+# The longest edge of every tile will have this TTS transform scale.
+# TTS creates custom tiles with the short image edge as its base unit, so
+# wide/tall images need a smaller uniform scale as their aspect ratio grows.
+TILE_LONG_EDGE_SCALE = 3.0
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Wahapedia faction extractor")
@@ -87,7 +90,20 @@ def parse_args():
 # IMAGE → TTS TILE
 # =========================
 
+def get_normalized_tile_scale(image_path):
+    """Return a uniform scale that gives every tile the same longest edge."""
+    with Image.open(image_path) as image:
+        width, height = image.size
+
+    if width <= 0 or height <= 0:
+        raise ValueError(f"Invalid image dimensions for {image_path}: {width}x{height}")
+
+    aspect_ratio = max(width, height) / min(width, height)
+    return TILE_LONG_EDGE_SCALE / aspect_ratio
+
+
 def create_tile(image_path, url):
+    tile_scale = get_normalized_tile_scale(image_path)
 
     return {
         "GUID": guid(),
@@ -101,9 +117,9 @@ def create_tile(image_path, url):
             "rotX": 0,
             "rotY": 180,
             "rotZ": 0,
-            "scaleX": 3,
-            "scaleY": 3,
-            "scaleZ": 3
+            "scaleX": tile_scale,
+            "scaleY": tile_scale,
+            "scaleZ": tile_scale
         },
 
         "ColorDiffuse": {
