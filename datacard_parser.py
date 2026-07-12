@@ -147,6 +147,33 @@ def extract_weapon_name_and_keywords(name_cell):
     return name, keywords
 
 
+PROFILE_MARKER_IGNORED_CLASSES = {
+    "tooltip",
+    "tooltip_",
+    "tooltipstered",
+    "showShort2",
+    "hideShort2",
+}
+
+
+def extract_weapon_profile_marker(marker_cell):
+    marker = marker_cell.select_one(".dsPointy")
+    if not marker:
+        return None
+
+    classes = [
+        cls
+        for cls in marker.get("class", [])
+        if cls not in PROFILE_MARKER_IGNORED_CLASSES
+    ]
+
+    return {
+        "source_tag": marker.name,
+        "classes": classes,
+        "style": marker.get("style", ""),
+    }
+
+
 def extract_weapons(ds):
     weapons = []
 
@@ -182,6 +209,8 @@ def extract_weapons(ds):
         if len(cells) < 8:
             continue
 
+        profile_marker = extract_weapon_profile_marker(cells[0])
+
         name_cell = cells[1]
         name, keywords = extract_weapon_name_and_keywords(name_cell)
 
@@ -192,6 +221,8 @@ def extract_weapons(ds):
             "type": current_type,
             "name": name,   
             "keywords": keywords,
+            "is_profile": profile_marker is not None,
+            "profile_marker": profile_marker,
             "range": utils.clean_text(cells[2]),
             "A": utils.clean_text(cells[3]),
             current_hit_key: utils.clean_text(cells[4]),
@@ -561,11 +592,40 @@ def extract_theme(ds, page):
     return theme
 
 
+def extract_weapon_abilities(ds):
+    abilities = []
+
+    table = ds.select_one(".dsLeftСol .wTable")
+    if not table:
+        return abilities
+
+    sibling = table.find_next_sibling()
+
+    while sibling:
+        if isinstance(sibling, Tag):
+            classes = sibling.get("class", [])
+
+            # Weapon notes live immediately after the table and its separator.
+            # Stop once a conventional headed section or another table begins.
+            if "dsHeader" in classes or sibling.name == "table":
+                break
+
+            if "dsAbility" in classes:
+                parsed = parse_ability_section_item(sibling)
+                if parsed["kind"] == "items":
+                    abilities.extend(parsed["items"])
+
+        sibling = sibling.find_next_sibling()
+
+    return abilities
+
+
 def extract_all(ds, page):
     return {
         "name": extract_name(ds),
         "profiles": extract_profiles(ds),
         "weapons": extract_weapons(ds),
+        "weapon_abilities": extract_weapon_abilities(ds),
         "sections": extract_sections(ds),
         "keywords": extract_keywords(ds),
         "faction_keywords": extract_faction_keywords(ds),

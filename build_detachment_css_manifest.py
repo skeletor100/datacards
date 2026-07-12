@@ -353,6 +353,7 @@ def collect_unit_card(
     inline_class_sets,
     heading_classes,
     extra_icon_classes,
+    weapon_marker_class_sets,
     direct_image_assets,
     table_class_sets,
     table_cell_class_sets,
@@ -371,6 +372,35 @@ def collect_unit_card(
                 table_cell_class_sets,
                 raw_styles,
             )
+
+    for item in card.get("weapon_abilities", []) or []:
+        collect_from_content_blocks(
+            item.get("content", []),
+            inline_class_sets,
+            heading_classes,
+            extra_icon_classes,
+            direct_image_assets,
+            table_class_sets,
+            table_cell_class_sets,
+            raw_styles,
+        )
+
+    for weapon in card.get("weapons", []) or []:
+        marker = weapon.get("profile_marker")
+        if not isinstance(marker, dict):
+            continue
+
+        classes = marker.get("classes", [])
+        collect_class_set(classes, weapon_marker_class_sets)
+
+        for cls in classes or []:
+            extra_icon_classes.add(cls)
+
+        add_raw_style(
+            raw_styles,
+            "weapon_profile_marker",
+            marker.get("style"),
+        )
 
 
 def collect_detachment_card(
@@ -466,6 +496,7 @@ def collect_css_classes(units_data):
     stratagem_color_classes = set()
     stratagem_icon_classes = set()
     extra_icon_classes = set()
+    weapon_marker_class_sets = set()
     direct_image_assets = {}
     table_class_sets = set()
     table_cell_class_sets = set()
@@ -489,6 +520,7 @@ def collect_css_classes(units_data):
                 inline_class_sets,
                 heading_classes,
                 extra_icon_classes,
+                weapon_marker_class_sets,
                 direct_image_assets,
                 table_class_sets,
                 table_cell_class_sets,
@@ -518,6 +550,10 @@ def collect_css_classes(units_data):
         "stratagem_color_classes": sorted(stratagem_color_classes),
         "stratagem_icon_classes": sorted(stratagem_icon_classes),
         "extra_icon_classes": sorted(extra_icon_classes),
+        "weapon_marker_class_sets": sorted(
+            [list(classes) for classes in weapon_marker_class_sets],
+            key=lambda x: class_key(x)
+        ),
         "table_class_sets": sorted(
             [list(classes) for classes in table_class_sets],
             key=lambda x: class_key(x)
@@ -717,10 +753,29 @@ def read_asset_candidate_styles(page, class_sets):
             const result = {};
 
             for (const item of items) {
+                // Recreate the relevant Wahapedia datasheet/table ancestry so
+                // contextual selectors such as .wTable .dsPointy resolve.
+                const datasheet = document.createElement("div");
+                datasheet.className = "datasheet";
+
+                const leftCol = document.createElement("div");
+                leftCol.className = "dsLeftСol";
+
+                const table = document.createElement("table");
+                table.className = "wTable";
+                const tbody = document.createElement("tbody");
+                const row = document.createElement("tr");
+                const cell = document.createElement("td");
                 const el = document.createElement("div");
                 el.className = item.classes.join(" ");
-                el.textContent = "Sample";
-                document.body.appendChild(el);
+
+                cell.appendChild(el);
+                row.appendChild(cell);
+                tbody.appendChild(row);
+                table.appendChild(tbody);
+                leftCol.appendChild(table);
+                datasheet.appendChild(leftCol);
+                document.body.appendChild(datasheet);
 
                 result[item.key] = {
                     element: snapshot(window.getComputedStyle(el)),
@@ -728,7 +783,7 @@ def read_asset_candidate_styles(page, class_sets):
                     after: snapshot(window.getComputedStyle(el, "::after"))
                 };
 
-                el.remove();
+                datasheet.remove();
             }
 
             return result;
@@ -935,6 +990,7 @@ def build_manifest(units_json, wahapedia_url, asset_dir):
         for source in (
             classes["stratagem_icon_classes"],
             classes["extra_icon_classes"],
+            classes["weapon_marker_class_sets"],
             classes["table_class_sets"],
             classes["table_cell_class_sets"],
             classes["inline_class_sets"],
@@ -977,6 +1033,16 @@ def build_manifest(units_json, wahapedia_url, asset_dir):
         asset_dir
     )
 
+    weapon_marker_keys = {
+        class_key(class_set)
+        for class_set in classes["weapon_marker_class_sets"]
+    }
+    weapon_marker_styles = {
+        key: value
+        for key, value in asset_candidate_styles.items()
+        if key in weapon_marker_keys
+    }
+
     return {
         "source": wahapedia_url,
         "asset_dir": asset_dir.replace("\\", "/"),
@@ -989,6 +1055,10 @@ def build_manifest(units_json, wahapedia_url, asset_dir):
             "stratagem_color_classes": classes["stratagem_color_classes"],
             "stratagem_icon_classes": classes["stratagem_icon_classes"],
             "extra_icon_classes": classes["extra_icon_classes"],
+            "weapon_marker_class_sets": [
+                class_key(classes)
+                for classes in classes["weapon_marker_class_sets"]
+            ],
             "table_class_sets": [
                 class_key(classes)
                 for classes in classes["table_class_sets"]
@@ -1008,6 +1078,7 @@ def build_manifest(units_json, wahapedia_url, asset_dir):
         "stratagem_colors": stratagem_color_styles,
         "stratagem_icons": stratagem_icon_styles,
         "extra_icons": extra_icon_styles,
+        "weapon_markers": weapon_marker_styles,
         "tables": table_styles,
         "table_cells": table_cell_styles,
         "raw_styles": classes["raw_styles"],

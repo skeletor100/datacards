@@ -356,10 +356,53 @@
     }
     .weapon-table tbody td:first-child{
       text-align:left;
-      padding-left:8.6%;
+      /* The old 8.6% inset reserved space for a separately drawn icon column.
+         The profile marker now participates in the name layout, so that inset
+         would be counted twice. */
+      padding-left:.35em;
       padding-right:.6em;
     }
     .weapon-name{ font-weight:600; }
+    .weapon-profile-slot{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:1.45em;
+      min-width:1.45em;
+      overflow:visible;
+    }
+    .weapon-profile-marker{
+      display:inline-block !important;
+      position:static !important;
+      margin:0 !important;
+      vertical-align:middle;
+      flex:0 0 auto;
+      max-width:100%;
+    }
+    .weapon-name-wrap{
+      display:grid;
+      grid-template-columns:1.45em minmax(0, 1fr);
+      align-items:center;
+      column-gap:.55em;
+      width:100%;
+      max-width:100%;
+    }
+    .weapon-name-content{ min-width:0; }
+    .weapon-abilities{
+      font-size:var(--weapon-font, clamp(16px,1.42cqw,26px));
+      line-height:var(--weapon-line, 1.08);
+      padding:.18em .35em .45em;
+      margin-top:-1.45%;
+      margin-bottom:1.0%;
+    }
+    .weapon-abilities .ability-item{
+      display:inline;
+      margin:0;
+    }
+    .weapon-abilities .ability-item + .ability-item::before{
+      content:'  ';
+      white-space:pre;
+    }
     .weapon-keywords{
       color:var(--text);
       font-weight:900;
@@ -551,6 +594,11 @@
       const rightSections = abilitiesIndex >= 0 ? sections.slice(abilitiesIndex) : [];
       const ranged = (card.weapons || []).filter(w => norm(w.type) === 'RANGED');
       const melee = (card.weapons || []).filter(w => norm(w.type) === 'MELEE');
+      const weaponAbilities = Array.isArray(card.weapon_abilities) ? card.weapon_abilities : [];
+      const rangedAbilities = abilitiesForWeapons(weaponAbilities, ranged);
+      const meleeAbilities = abilitiesForWeapons(weaponAbilities, melee);
+      const matchedAbilityTitles = new Set([...rangedAbilities, ...meleeAbilities].map(a => norm(a.title)));
+      const unmatchedWeaponAbilities = weaponAbilities.filter(a => !matchedAbilityTitles.has(norm(a.title)));
 
       root.innerHTML = `
         <div class="card-bg"></div>
@@ -564,7 +612,10 @@
         <main class="main-frame">
           <section class="col left-col">
             ${renderWeaponTable(ranged, 'RANGED WEAPONS', 'BS')}
+            ${renderWeaponAbilities(rangedAbilities)}
             ${renderWeaponTable(melee, 'MELEE WEAPONS', 'WS')}
+            ${renderWeaponAbilities(meleeAbilities)}
+            ${renderWeaponAbilities(unmatchedWeaponAbilities)}
             ${leftSections.map(renderSection).join('')}
           </section>
           <section class="col right-col">
@@ -632,12 +683,32 @@
       `;
     }
 
+    function markerClassKey(classes){
+      return [...(classes || [])].filter(Boolean).sort().join(' ');
+    }
+
+    function markerToken(key){
+      let hash = 2166136261;
+      for(const ch of String(key || '')){
+        hash ^= ch.charCodeAt(0);
+        hash = Math.imul(hash, 16777619);
+      }
+      return `m${(hash >>> 0).toString(16)}`;
+    }
+
+    function renderWeaponProfileMarker(w){
+      const marker = w?.profile_marker;
+      if(!marker || !Array.isArray(marker.classes) || !marker.classes.length) return '';
+      const key = markerClassKey(marker.classes);
+      return `<span class="weapon-profile-marker" data-marker="${esc(markerToken(key))}" aria-hidden="true"></span>`;
+    }
+
     function renderWeaponTable(weapons, title, hitKey){
       if(!weapons.length) return '';
       return `<div class="weapon-table-wrap"><table class="weapon-table">
         <colgroup><col class="name"><col class="range"><col class="a"><col class="hit"><col class="s"><col class="ap"><col class="d"></colgroup>
         <thead><tr><th>${esc(title)}</th><th>RANGE</th><th>A</th><th>${esc(hitKey)}</th><th>S</th><th>AP</th><th>D</th></tr></thead>
-        <tbody>${weapons.map(w => `<tr><td>${renderWeaponName(w)}</td><td>${esc(w.range)}</td><td>${esc(w.A)}</td><td>${esc(w[hitKey])}</td><td>${esc(w.S)}</td><td>${esc(w.AP)}</td><td>${esc(w.D)}</td></tr>`).join('')}</tbody>
+        <tbody>${weapons.map(w => `<tr><td><span class="weapon-name-wrap"><span class="weapon-profile-slot" aria-hidden="true">${renderWeaponProfileMarker(w)}</span><span class="weapon-name-content">${renderWeaponName(w)}</span></span></td><td>${esc(w.range)}</td><td>${esc(w.A)}</td><td>${esc(w[hitKey])}</td><td>${esc(w.S)}</td><td>${esc(w.AP)}</td><td>${esc(w.D)}</td></tr>`).join('')}</tbody>
       </table></div>`;
     }
 
@@ -645,6 +716,18 @@
       const keywords = Array.isArray(w.keywords) ? w.keywords : [];
       if(!keywords.length) return `<span class="weapon-name">${esc(w.name)}</span>`;
       return `<span class="weapon-name">${esc(w.name)}</span> <span class="weapon-keywords">[${esc(keywords.map(k => String(k).toUpperCase()).join(', '))}]</span>`;
+    }
+
+    function abilitiesForWeapons(items, weapons){
+      const keywords = new Set(
+        (weapons || []).flatMap(w => Array.isArray(w.keywords) ? w.keywords : []).map(norm)
+      );
+      return (items || []).filter(item => keywords.has(norm(item.title)));
+    }
+
+    function renderWeaponAbilities(items){
+      if(!Array.isArray(items) || !items.length) return '';
+      return `<div class="weapon-abilities">${items.map(renderAbilityItem).join('')}</div>`;
     }
 
     function renderSection(section){
@@ -815,6 +898,50 @@
     function esc(v){ return String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
     let allCards = {};
     let currentCard = null;
+    let cssManifest = null;
+
+    function markerSnapshotCss(snapshot){
+      if(!snapshot) return '';
+      const map = {
+        boxSizing:'box-sizing',
+        width:'width', height:'height', minWidth:'min-width', minHeight:'min-height',
+        maxWidth:'max-width', maxHeight:'max-height', padding:'padding',
+        color:'color', backgroundColor:'background-color', backgroundImage:'background-image',
+        backgroundSize:'background-size', backgroundRepeat:'background-repeat',
+        backgroundPosition:'background-position', filter:'filter', borderRadius:'border-radius',
+        borderWidth:'border-width', borderStyle:'border-style', borderColor:'border-color',
+        clipPath:'clip-path', transform:'transform', overflow:'overflow'
+      };
+      return Object.entries(map).map(([source, cssName]) => {
+        const value = snapshot[source];
+        if(!value || value === 'none' || value === 'normal' || value === 'auto') return '';
+        if((source === 'backgroundColor' || source === 'color') && value === 'rgba(0, 0, 0, 0)') return '';
+        return `${cssName}:${value}`;
+      }).filter(Boolean).join(';');
+    }
+
+    function installWeaponMarkerCss(manifest){
+      document.getElementById('manifest-weapon-marker-css')?.remove();
+      const rules = [];
+      for(const [key, snapshot] of Object.entries(manifest?.weapon_markers || {})){
+        const selector = `.weapon-profile-marker[data-marker="${markerToken(key)}"]`;
+        const elementCss = markerSnapshotCss(snapshot.element);
+        if(elementCss) rules.push(`${selector}{${elementCss}}`);
+        for(const pseudo of ['before','after']){
+          const data = snapshot[pseudo];
+          const css = markerSnapshotCss(data);
+          const content = data?.content;
+          if(css || (content && content !== 'none' && content !== 'normal')){
+            rules.push(`${selector}::${pseudo}{content:${content && content !== 'none' ? content : '""'};${css}}`);
+          }
+        }
+      }
+      if(!rules.length) return;
+      const style = document.createElement('style');
+      style.id = 'manifest-weapon-marker-css';
+      style.textContent = rules.join('\n');
+      document.head.appendChild(style);
+    }
     
 
     async function loadCards() {
@@ -828,7 +955,9 @@
 
       if (manifestResponse && manifestResponse.ok) {
         try {
-          applyManifestInlineTextCss(await manifestResponse.json());
+          cssManifest = await manifestResponse.json();
+          applyManifestInlineTextCss(cssManifest);
+          installWeaponMarkerCss(cssManifest);
         } catch (err) {}
       }
 
