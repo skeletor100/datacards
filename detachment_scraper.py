@@ -15,23 +15,6 @@ from io import BytesIO
 # =========================================================
 # TEXT CLEANING
 # =========================================================
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def extract_subrule_from_table(block):
     title_node = block.select_one(".impact18")
     if not title_node:
@@ -241,24 +224,42 @@ def extract_stratagems(soup):
 # =========================================================
 
 
+def xpath_string_literal(value):
+    """Return a safely quoted XPath string literal."""
+    if "'" not in value:
+        return f"'{value}'"
+
+    if '"' not in value:
+        return f'"{value}"'
+
+    parts = value.split("'")
+    return "concat(" + ', "\'", '.join(
+        f"'{part}'" for part in parts
+    ) + ")"
+
+
 def extract_detachment_block(page, detachment_anchor):
+    anchor_value = xpath_string_literal(detachment_anchor)
 
-    target = utils.norm(detachment_anchor)
+    anchor = page.locator(
+        f"xpath=//a[@name={anchor_value}]"
+    ).first
 
-    anchors = page.locator("a[name]")
+    anchor.wait_for(state="attached", timeout=30000)
 
-    count = anchors.count()
+    block = anchor.locator(
+        "xpath=ancestor::div[contains("
+        "concat(' ', normalize-space(@class), ' '), "
+        "' clFl '"
+        ")][1]"
+    )
 
-    for i in range(count):
-        a = anchors.nth(i)
-        name = a.get_attribute("name") or ""
+    if block.count() == 0:
+        raise Exception(
+            f"Containing detachment block not found: {detachment_anchor}"
+        )
 
-        if utils.norm(name) == target:
-            return a.locator(
-                "xpath=ancestor::div[contains(@class,'clFl')]"
-            ).first
-
-    raise Exception(f"Detachment not found: {detachment_anchor}")
+    return block
 
 
 def extract_detachment_data(detachment_block, faction_name, detachment_name):
@@ -278,116 +279,50 @@ def extract_detachment_data(detachment_block, faction_name, detachment_name):
 # PIPELINE (FETCH + IDENTIFICATION ONLY)
 # =========================================================
 
-def run(page, faction_name, detachment_name, take_screenshot):
-
-    detachment_anchor = utils.normalise_anchor_name(
-        detachment_name
-    )
-
-    page.set_viewport_size({
-        "width": 1600,
-        "height": 2000
-    })
-
-
-    page.wait_for_function(f"""
-    () => {{
-        const target = "{detachment_anchor}".toLowerCase().replace(/[^a-z0-9]+/g, "-");
-
-        const anchors = Array.from(document.querySelectorAll("a[name]"));
-
-        const el = anchors.find(a => {{
-            const name = (a.getAttribute("name") || "")
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, "-");
-
-            return name === target;
-        }});
-
-        if (!el) return false;
-
-        const section = el.closest('div.clFl');
-        if (!section) return false;
-
-        const rect = section.getBoundingClientRect();
-        return rect.width > 0 && rect.height > 0;
-    }}
-    """)
-
-
-    page.add_style_tag(content="""
-        * {
-            animation: none !important;
-            transition: none !important;
-        }
-    """)
-
-
-    html = page.content()
-
-    soup = BeautifulSoup(
-        html,
-        "html.parser"
-    )
-
+def run(
+    page,
+    faction_name,
+    detachment_name,
+    detachment_anchor,
+    take_screenshot,
+):
     detachment_block = extract_detachment_block(
         page,
-        detachment_anchor
-    )    
+        detachment_anchor,
+    )
+
+    detachment_block.wait_for(
+        state="visible",
+        timeout=30000,
+    )
 
     data = extract_detachment_data(
         detachment_block,
         faction_name,
-        detachment_name
+        detachment_name,
     )
 
     print(
-        f"Faction: {faction_name} | Detachment: {detachment_anchor}"
+        f"Faction: {faction_name} | Detachment: {detachment_name}"
     )
 
-
     if take_screenshot:
-        # Extract Detachments
-        contents = page.locator("div.contents_header").first
+        page.set_viewport_size({
+            "width": 1600,
+            "height": 2000,
+        })
 
-        container = contents.locator(
-            "xpath=ancestor::div[contains(@class,'BreakInsideAvoid')]"
-        ).first
+        page.add_style_tag(content="""
+            * {
+                animation: none !important;
+                transition: none !important;
+            }
+        """)
 
-        headers = container.locator(
-            "div.i10 a[href^='#'], div.i30 a[href^='#'], div.i50 a[href^='#']"
-        )
-        count = headers.count()
-        detachment_rule_names = []
-
-        for i in range(count):
-            h = headers.nth(i)
-
-            text = h.inner_text().strip()
-            cls = h.locator("..").get_attribute("class") or ""
-
-            if "i10" in cls:
-                if detachment_found:
-                    break
-                else:
-                    if text == detachment_name:
-                        detachment_found = True
-                continue
-
-            if detachment_found and "i30" in cls:
-                if text == "Enhancements":
-                    has_enhancements = True
-                if text == "Stratagems":
-                    has_stratagems = True
-                continue
-
-            if detachment_found and "i50" in cls:
-                detachment_rule_names.append(text)
-                continue
-
-        rules = []
-        for rule in data["rules"]:
-            rules.append(rule["name"])
+        rules = [
+            rule["name"]
+            for rule in data["rules"]
+        ]
 
         screenshot_detachment(
             page,
@@ -395,8 +330,8 @@ def run(page, faction_name, detachment_name, take_screenshot):
             faction_name,
             detachment_anchor,
             rules,
-            len(data["enhancements"]) > 0,
-            len(data["stratagems"] > 0)
+            bool(data["enhancements"]),
+            bool(data["stratagems"]),
         )
 
     return data
@@ -724,10 +659,11 @@ if __name__ == "__main__":
         )
 
         data = run(
-            page,
-            args.faction,
-            args.detachment,
-            args.screenshot
+            page=page,
+            faction_name=args.faction,
+            detachment_name=args.detachment,
+            detachment_anchor=args.detachment,
+            take_screenshot=args.screenshot,
         )
 
         output_path = f"./{args.faction}/{args.detachment}.json"

@@ -375,7 +375,16 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
         exclusion_set.discard('sLegendary')
 
     # --- STAGE 1: FACTION DISCOVERY ---
-    page.goto(f"{DOMAIN}/wh40k10ed/the-rules/quick-start-guide/")
+    page.goto(
+        f"{DOMAIN}/wh40k10ed/the-rules/quick-start-guide/",
+        wait_until="domcontentloaded",
+        timeout=60000,
+    )
+    page.wait_for_selector(
+        "div.NavBtn_Factions",
+        state="attached",
+        timeout=30000,
+    )
     soup = BeautifulSoup(page.content(), 'html.parser')
     factions_button = soup.find('div', class_='NavBtn_Factions')
     faction_container = factions_button.find_next_sibling('div', class_='NavDropdown-content')
@@ -538,7 +547,13 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
                     faction_name_str = utils.normalize_faction_name(detachment["sub_faction"])
 
                     print(f"Processing Detachment: {detachment['name']} for faction {faction_name_str}")
-                    detachment_data = scrape_detachment(page, faction_name_str, detachment["name"], args.screenshots)
+                    detachment_data = scrape_detachment(
+                        page=page,
+                        faction_name=faction_name_str,
+                        detachment_name=detachment["name"],
+                        detachment_anchor=detachment["anchor"],
+                        take_screenshot=args.screenshots,
+                    )
 
                     set_default_manifest(
                         all_factions_manifest,
