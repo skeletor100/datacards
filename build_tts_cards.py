@@ -141,10 +141,10 @@ def create_tile(image_path, url):
         "Tooltip": True,
 
         "CustomImage": {
-            "ImageURL": url,
+            "ImageURL": f"{{verifycache}}{url}",
 
             # back of tile
-            "ImageSecondaryURL": url,
+            "ImageSecondaryURL": f"{{verifycache}}{url}",
 
             "ImageScalar": 1.0,
             "WidthScale": 0.0,
