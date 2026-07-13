@@ -2,12 +2,13 @@ import json
 import argparse
 import subprocess
 import sys
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 from bs4 import BeautifulSoup
 from datacard_parser import run as parse_datacard
 from detachment_scraper import run as scrape_detachment
 from army_rules_scraper import run as scrape_army_rules
 import time
+from pathlib import Path
 
 import waha_parse_utils as utils
 
@@ -58,6 +59,42 @@ def worker(failed_units):
 
 DOMAIN = "https://wahapedia.ru"
 
+
+def navigate_to_required_selector(page, url, selector, attempts=3):
+    """Navigate without waiting for every page resource, then wait for required content."""
+    last_error = None
+
+    for attempt in range(1, attempts + 1):
+        try:
+            page.goto(
+                url,
+                wait_until="commit",
+                timeout=60000,
+            )
+            page.wait_for_selector(
+                selector,
+                state="attached",
+                timeout=60000,
+            )
+            return
+        except PlaywrightTimeoutError as exc:
+            last_error = exc
+            print(
+                f"Navigation attempt {attempt}/{attempts} failed for {url}: {exc}"
+            )
+            if attempt < attempts:
+                try:
+                    page.goto(
+                        "about:blank",
+                        wait_until="commit",
+                        timeout=10000,
+                    )
+                except PlaywrightTimeoutError:
+                    pass
+                page.wait_for_timeout(2000 * attempt)
+
+    raise last_error
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Wahapedia faction extractor")
     parser.add_argument(
@@ -85,7 +122,11 @@ def parse_args():
     )
     parser.add_argument(
         "--remerge",
-        help="Retry failed units from a JSON file"
+        help="Merge an existing manifest into the output JSON"
+    )
+    parser.add_argument(
+        "--reverse-changes",
+        help="Reapply the previous values stored in a changes JSON file"
     )
     parser.add_argument(
         "--output-json",
@@ -375,15 +416,10 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
         exclusion_set.discard('sLegendary')
 
     # --- STAGE 1: FACTION DISCOVERY ---
-    page.goto(
+    navigate_to_required_selector(
+        page,
         f"{DOMAIN}/wh40k10ed/the-rules/quick-start-guide/",
-        wait_until="domcontentloaded",
-        timeout=60000,
-    )
-    page.wait_for_selector(
         "div.NavBtn_Factions",
-        state="attached",
-        timeout=30000,
     )
     soup = BeautifulSoup(page.content(), 'html.parser')
     factions_button = soup.find('div', class_='NavBtn_Factions')
@@ -406,8 +442,11 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
     for faction in discovered_factions:
         
         print(f"Processing: {faction['name']} | URL: {faction['path']}")
-        page.goto(faction["path"], wait_until="domcontentloaded")
-        page.wait_for_selector("#tooltip_contentArmyList", state="attached", timeout=30000)
+        navigate_to_required_selector(
+            page,
+            faction["path"],
+            "#tooltip_contentArmyList",
+        )
         
         sm_soup = BeautifulSoup(page.content(), 'html.parser')
         selects = utils.get_filter_selects(sm_soup)
@@ -601,6 +640,103 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
 
     merge_and_write_json(args.output_json, all_factions_manifest, sections_to_merge=sections_to_merge)
 
+
+def get_change_payload(change, item_name):
+    """Return the stored previous value from a change record."""
+    if item_name in change:
+        return change[item_name]
+
+    payload_keys = [
+        key for key in change
+        if key not in {"type", "path"}
+    ]
+
+    if len(payload_keys) == 1:
+        return change[payload_keys[0]]
+
+    raise ValueError(
+        f"Could not identify stored value for change path: {change.get('path')}"
+    )
+
+
+def reverse_changes(changes_file, output_json):
+    """Restore values recorded in a changes file into the output manifest."""
+    manifest = load_existing_output(output_json)
+
+    if not manifest and not Path(output_json).exists():
+        raise FileNotFoundError(
+            f"Output JSON does not exist: {output_json}"
+        )
+
+    with open(changes_file, "r", encoding="utf-8") as f:
+        changes = json.load(f)
+
+    if not isinstance(changes, list):
+        raise ValueError(
+            f"Changes file must contain a JSON list: {changes_file}"
+        )
+
+    restored = 0
+    skipped = 0
+
+    for index, change in enumerate(changes, start=1):
+        if not isinstance(change, dict):
+            raise ValueError(
+                f"Change #{index} is not a JSON object"
+            )
+
+        change_type = change.get("type")
+        path = change.get("path")
+
+        if change_type not in {"removed", "modified"}:
+            print(
+                f"Skipping unsupported change type at entry {index}: "
+                f"{change_type}"
+            )
+            skipped += 1
+            continue
+
+        if not isinstance(path, str):
+            raise ValueError(
+                f"Change #{index} has no valid path"
+            )
+
+        path_parts = path.split(".", 2)
+        if len(path_parts) != 3:
+            raise ValueError(
+                f"Change #{index} has an invalid path: {path}"
+            )
+
+        faction_name, section_name, item_name = path_parts
+        previous_value = get_change_payload(change, item_name)
+
+        faction = manifest.setdefault(faction_name, {})
+        section = faction.setdefault(section_name, {})
+
+        if not isinstance(section, dict):
+            raise ValueError(
+                f"Target section is not an object: "
+                f"{faction_name}.{section_name}"
+            )
+
+        section[item_name] = previous_value
+        restored += 1
+
+        action = (
+            "Restored removed"
+            if change_type == "removed"
+            else "Reverted modified"
+        )
+        print(f"{action}: {path}")
+
+    with open(output_json, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=4, ensure_ascii=False)
+
+    print(
+        f"Reverse changes complete: {restored} restored, "
+        f"{skipped} skipped. Updated '{output_json}'."
+    )
+
 def merge_and_write_json(output_json, new_json, sections_to_merge=None):
     existing_manifest = load_existing_output(output_json)
     merged_manifest, changes = merge_with_change_tracking(
@@ -619,6 +755,17 @@ if __name__ == "__main__":
     args = parse_args()
 
     start_time = time.perf_counter()
+
+    if args.reverse_changes:
+        reverse_changes(args.reverse_changes, args.output_json)
+        elapsed = time.perf_counter() - start_time
+        minutes = int(elapsed // 60)
+        seconds = int(elapsed % 60)
+        print(
+            f"Success! Reverse changes applied in "
+            f"{minutes} minutes and {seconds} seconds."
+        )
+        raise SystemExit(0)
 
     if not args.no_core_rules:
         process = subprocess.Popen([sys.executable, "core_stratagems_scraper.py"])
