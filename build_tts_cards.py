@@ -4,6 +4,7 @@ import base64
 import requests
 import argparse
 import subprocess
+import hashlib
 from PIL import Image
 import uuid
 
@@ -87,6 +88,24 @@ def parse_args():
 # IMAGE → TTS TILE
 # =========================
 
+def image_pixel_hash(image_path, length=16):
+    """Return a deterministic hash of the decoded RGBA pixels.
+
+    PNG metadata and compression differences do not affect this value.
+    The hash changes only when the dimensions or decoded pixel data change.
+    """
+    with Image.open(image_path) as image:
+        normalized = image.convert("RGBA")
+
+        digest = hashlib.sha256()
+        digest.update(
+            f"{normalized.width}x{normalized.height}:RGBA".encode("ascii")
+        )
+        digest.update(normalized.tobytes())
+
+    return digest.hexdigest()[:length]
+
+
 def get_tile_scale(image_path):
     """Return an orientation-aware uniform TTS scale.
 
@@ -141,10 +160,10 @@ def create_tile(image_path, url):
         "Tooltip": True,
 
         "CustomImage": {
-            "ImageURL": f"{{verifycache}}{url}",
+            "ImageURL": url,
 
             # back of tile
-            "ImageSecondaryURL": f"{{verifycache}}{url}",
+            "ImageSecondaryURL": url,
 
             "ImageScalar": 1.0,
             "WidthScale": 0.0,
@@ -223,10 +242,13 @@ def build_container(folder):
 
             repo_path = relative.replace("\\", "/")
 
+            version = image_pixel_hash(path)
+
             image_url = (
                 f"https://raw.githubusercontent.com/"
                 f"{GITHUB_USER}/{GITHUB_REPO}/"
                 f"{GITHUB_BRANCH}/{repo_path}"
+                f"?v={version}"
             )
 
             container["ContainedObjects"].append(
