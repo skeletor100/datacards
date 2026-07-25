@@ -88,20 +88,12 @@ def parse_args():
 # IMAGE → TTS TILE
 # =========================
 
-def image_pixel_hash(image_path, length=16):
-    """Return a deterministic hash of the decoded RGBA pixels.
+def image_file_hash(image_path, length=16):
+    digest = hashlib.sha256()
 
-    PNG metadata and compression differences do not affect this value.
-    The hash changes only when the dimensions or decoded pixel data change.
-    """
-    with Image.open(image_path) as image:
-        normalized = image.convert("RGBA")
-
-        digest = hashlib.sha256()
-        digest.update(
-            f"{normalized.width}x{normalized.height}:RGBA".encode("ascii")
-        )
-        digest.update(normalized.tobytes())
+    with open(image_path, "rb") as image_file:
+        for chunk in iter(lambda: image_file.read(1024 * 1024), b""):
+            digest.update(chunk)
 
     return digest.hexdigest()[:length]
 
@@ -242,7 +234,7 @@ def build_container(folder):
 
             repo_path = relative.replace("\\", "/")
 
-            version = image_pixel_hash(path)
+            version = image_file_hash(path)
 
             image_url = (
                 f"https://raw.githubusercontent.com/"
