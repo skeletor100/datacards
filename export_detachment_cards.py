@@ -1,7 +1,7 @@
 import argparse, re
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-BASE_URL='http://localhost:8000/detachment_index.html'
+BASE_URL='http://localhost:8000/detachments.html'
 OUTPUT_DIR=Path('rendered_cards')
 def safe(v): return re.sub(r'[<>:"/\\|?*\x00-\x1F]','',str(v)).strip()
 def safe_dir(v): return re.sub(r'\s+','_',safe(v))

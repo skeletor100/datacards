@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
-BASE_URL = "http://localhost:8000/core_stratagems_index.html"
+BASE_URL = "http://localhost:8000/core_stratagems.html"
 OUTPUT_DIR = Path("rendered_cards") / "Core Rules"
 
 

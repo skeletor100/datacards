@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
-BASE_URL = "http://localhost:8000/index.html"
+BASE_URL = "http://localhost:8000/units.html"
 OUTPUT_DIR = Path("rendered_cards")
 NONE_LABELS = {"None", "__NONE__"}
 
