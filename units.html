@@ -70,8 +70,28 @@
     }
 
     .datasheet-card{
-      width:100%;
-      aspect-ratio:3/2;
+      /* Fixed size (matching army_rules.html/core_stratagems.html/
+         detachments.html's own cards), not width:100%/aspect-ratio. Those
+         other three pages never resize their card for the viewport at
+         all — on mobile it just overflows and needs a scroll/zoom, which
+         is an accepted tradeoff, not a bug. This card USED to be
+         genuinely responsive (width:100%, shrinking to fit any
+         container), but that broke on real phone widths: every clamp()
+         floor throughout this file (e.g. .unit-title's
+         font-size:clamp(22px, 2.95cqw, 54px)) was sized assuming the card
+         would only ever render near its designed ~1800px width, where the
+         cqw side of the clamp always exceeds the px floor anyway. Shrunk
+         to an actual ~360px mobile width, 2.95cqw computes to ~10.6px —
+         far below the 22px floor — so the floor won by 2x, and every
+         clamped element rendered roughly double its correct proportional
+         size, overlapping and overflowing everywhere (the "OVERFLOW"
+         badge, garbled stat row, merged table headers). Fixing the card's
+         own size to --card-w/--card-h means cqw is always computed
+         against that same ~1800px design width regardless of viewport, so
+         those floors never engage in the first place — the same reason
+         the other three pages don't hit this. */
+      width:var(--card-w);
+      height:var(--card-h);
       background:var(--paper);
       position:relative;
       overflow:hidden;
