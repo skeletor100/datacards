@@ -98,7 +98,9 @@
       bottom:3.2%;
       display:grid;
       grid-template-rows:var(--rules-row, auto) minmax(0, 1fr);
-      gap:1.1cqw;
+      gap:var(--content-gap, 1.1cqw);
+      padding-top:var(--content-pad-top, 0);
+      padding-bottom:var(--content-pad-bottom, 0);
     }
     .rules-zone,
     .enh-zone{
@@ -114,6 +116,31 @@
     .enh-zone{
       display:grid;
       grid-template-rows:auto minmax(0,1fr);
+    }
+    /* Combined card (see renderCombined/fitCombinedCard): rules,
+       enhancements and stratagems stack in one flex column instead of the
+       split rule-card's two-row grid (--rules-row) — there's no need for
+       per-zone height budgeting here since fitCombinedCard shrinks all
+       three sections together via one shared font-size ratio, so each
+       zone just takes its own natural height in the stack. */
+    .combined-card .content{
+      display:flex;
+      flex-direction:column;
+      gap:var(--combined-gap, 1.1cqw);
+      padding-top:var(--combined-pad-top, 0);
+      padding-bottom:var(--combined-pad-bottom, 0);
+    }
+    .combined-card .rules-zone,
+    .combined-card .enh-zone,
+    .combined-card .strat-zone{
+      overflow:visible;
+      min-height:auto;
+    }
+    .combined-card .enh-zone{
+      display:block;
+    }
+    .combined-card .strat-zone .strat-grid{
+      height:auto;
     }
     .strat-card .header{height:8.2%;}.strat-card .kicker{font-size:3.7cqw}.strat-card .page-title{font-size:3.2cqw}.strat-card .content{top:12.2%;bottom:3.2%}
     .strat-grid{
@@ -262,7 +289,24 @@ function render(){
     return;
   }
 
-  app.innerHTML = renderRules(card) + renderStrats(card);
+  const hasStrats = (card.stratagems || []).length > 0;
+
+  if (hasStrats) {
+    // Try combining onto one card first — fitCombinedCard measures
+    // whether rules+enhancements+stratagems actually fit (see its own
+    // comment for the threshold), synchronously right after this innerHTML
+    // set (reading scrollHeight/clientHeight forces the layout that
+    // measurement needs). If it doesn't fit, discard this attempt and fall
+    // back to the existing two-card split.
+    app.innerHTML = renderCombined(card);
+    const combinedEl = app.querySelector('.combined-card');
+    if (!fitCombinedCard(combinedEl)) {
+      app.innerHTML = renderRules(card) + renderStrats(card);
+    }
+  } else {
+    app.innerHTML = renderRules(card);
+  }
+
   applyShow();
   attachExportUi();
 }
@@ -280,7 +324,9 @@ function cardHeader(card,title){
         <div class="page-title">${title}</div>
     </div>`;
 }
-function renderRules(card){
+// Shared between the split rule-card and the combined (rules+enhancements+
+// stratagems in one card) layout — see renderCombined.
+function renderRulesEnhZones(card){
   const bannerStyle = headingStyle(card.rules?.[0]?.heading);
 
   const rules = (card.rules || []).map(r => `
@@ -323,18 +369,23 @@ function renderRules(card){
   `;
 
   return `
+    <div class="rules-zone">
+      <div class="rules-fit">${rules}</div>
+    </div>
+    <div class="enh-zone">
+      <div class="section-title" style="${bannerStyle}">Enhancements</div>
+      <div class="enh-fit">
+        <div class="enh-grid"><div class="enh-col">${left.map(renderEnh).join('')}</div><div class="enh-col">${right.map(renderEnh).join('')}</div></div>
+      </div>
+    </div>
+  `;
+}
+function renderRules(card){
+  return `
     <article class="detachment-card rule-card" data-card="rules">
       ${cardHeader(card,'Detachment Rules')}
       <div class="content">
-        <div class="rules-zone">
-          <div class="rules-fit">${rules}</div>
-        </div>
-        <div class="enh-zone">
-          <div class="section-title" style="${bannerStyle}">Enhancements</div>
-          <div class="enh-fit">
-            <div class="enh-grid"><div class="enh-col">${left.map(renderEnh).join('')}</div><div class="enh-col">${right.map(renderEnh).join('')}</div></div>
-          </div>
-        </div>
+        ${renderRulesEnhZones(card)}
       </div>
     </article>
   `;
@@ -357,23 +408,54 @@ function splitStrats(strats){
     strats.slice(leftCount)
   ];
 }
+// Shared between the split strat-card and the combined layout — see
+// renderCombined.
+function renderStratGridContent(card){
+  const strats = card.stratagems || [];
+  const [left, right] = splitStrats(strats);
+
+  return `
+    <div class="strat-grid">
+      <div class="strat-col">
+        ${left.map(s => renderStrat(s, card.detachment)).join('')}
+      </div>
+      <div class="strat-col">
+        ${right.map(s => renderStrat(s, card.detachment)).join('')}
+      </div>
+    </div>
+  `;
+}
 function renderStrats(card){
   const strats = card.stratagems || [];
   if (!strats.length) return '';
-
-  const [left, right] = splitStrats(strats);
 
   return `
     <article class="detachment-card strat-card" data-card="stratagems">
       ${cardHeader(card,'Stratagems')}
       <div class="content">
-        <div class="strat-grid">
-          <div class="strat-col">
-            ${left.map(s => renderStrat(s, card.detachment)).join('')}
-          </div>
-          <div class="strat-col">
-            ${right.map(s => renderStrat(s, card.detachment)).join('')}
-          </div>
+        ${renderStratGridContent(card)}
+      </div>
+    </article>
+  `;
+}
+// Combines rules+enhancements+stratagems onto one card, stacked in the
+// same top-to-bottom order as the split cards (rules, then enhancements,
+// then stratagems) — see fitCombinedCard for the decision of whether this
+// actually fits, and render() for the fallback to the split cards when it
+// doesn't. Only attempted when there are stratagems to combine at all;
+// with none, renderRules alone already produces a single card (e.g.
+// Librarius Conclave).
+function renderCombined(card){
+  const bannerStyle = headingStyle(card.rules?.[0]?.heading);
+
+  return `
+    <article class="detachment-card rule-card combined-card" data-card="combined">
+      ${cardHeader(card,'Detachment Rules')}
+      <div class="content">
+        ${renderRulesEnhZones(card)}
+        <div class="strat-zone">
+          <div class="section-title" style="${bannerStyle}">Stratagems</div>
+          ${renderStratGridContent(card)}
         </div>
       </div>
     </article>
@@ -381,7 +463,7 @@ function renderStrats(card){
 }
 function pxToCqw(card, px){ return (px / card.getBoundingClientRect().width) * 100; }
 function fitBox(box, inner, availableHOverride){
-  if (!box || !inner) return;
+  if (!box || !inner) return null;
 
   inner.style.transform = '';
   inner.style.width = '100%';
@@ -397,7 +479,7 @@ function fitBox(box, inner, availableHOverride){
     neededH = Math.max(...Array.from(enhCols, col => col.scrollHeight));
   }
 
-  if (!availableW || !availableH || !neededW || !neededH) return;
+  if (!availableW || !availableH || !neededW || !neededH) return null;
 
   const scale = Math.min(
     1,
@@ -413,6 +495,12 @@ function fitBox(box, inner, availableHOverride){
   } else {
     inner.style.width = `${100 / scale}%`;
   }
+
+  // Returned so callers can tell whether this content had room to spare
+  // (scale === 1, i.e. it fit at natural size with height left over)
+  // rather than needing to shrink — see fitRulesCard's enhancement
+  // spacing, which only kicks in in that case.
+  return { scale, neededH, availableH };
 }
 
 /* Redistributes the children of two column elements to minimize the
@@ -479,9 +567,12 @@ function fitRulesCard(card){
   }
 
   card.style.setProperty('--rules-row', 'auto');
+  card.style.setProperty('--content-gap', '');
+  card.style.setProperty('--content-pad-top', '');
+  card.style.setProperty('--content-pad-bottom', '');
 
   const contentH = content.clientHeight;
-  const gap = parseFloat(getComputedStyle(content).rowGap) || 0;
+  const baseGap = parseFloat(getComputedStyle(content).rowGap) || 0;
   const naturalRulesH = rulesFit.scrollHeight;
 
   const minEnhH = Math.max(
@@ -489,12 +580,46 @@ function fitRulesCard(card){
     (enhTitle?.offsetHeight || 0) + 160
   );
 
-  const maxRulesH = Math.max(0, contentH - gap - minEnhH);
+  const maxRulesH = Math.max(0, contentH - baseGap - minEnhH);
   const rulesH = Math.min(naturalRulesH, maxRulesH);
 
   card.style.setProperty('--rules-row', `${rulesH}px`);
 
   fitBox(rulesZone, rulesFit);
+
+  // How much height the enh-zone grid row would get with the current gap
+  // (this is the same arithmetic the grid itself uses: whatever's left of
+  // contentH after the rules row and the gap between the two rows).
+  const enhRowH = Math.max(0, contentH - baseGap - rulesH);
+
+  // Enhancements' own natural need — the title bar plus however tall its
+  // taller column naturally is, before any scaling. Measured the same way
+  // fitBox measures it internally, but needed here BEFORE calling fitBox
+  // so the decision below can react to it.
+  const naturalEnhCardsH = (enhCols && enhCols.length)
+    ? Math.max(0, ...Array.from(enhCols, c => c.scrollHeight))
+    : 0;
+  const naturalEnhH = (enhTitle?.offsetHeight || 0) + naturalEnhCardsH;
+
+  // If enhancements need less than the row they'd otherwise get, that
+  // leftover is currently just dead space sitting below the cards inside
+  // enh-zone. Spread it evenly into THREE places instead of dumping it
+  // all into one gap — above the rules content, between rules and
+  // "Enhancements", and below the enhancement cards — the same way
+  // justify-content:space-evenly would for two stacked items, for a more
+  // balanced-looking page rather than one big gap in the middle.
+  // Increasing the row-gap and adding top/bottom padding both shrink
+  // enh-zone's own 1fr row by the same amount (the grid's rows, gap and
+  // this element's own padding all still have to sum to contentH), so
+  // enh-zone ends up sized to what it actually needs regardless of how
+  // the freed space is divided up.
+  const leftoverInEnh = enhRowH - naturalEnhH;
+  if (leftoverInEnh > 0) {
+    const extra = leftoverInEnh / 3;
+    card.style.setProperty('--content-gap', `${baseGap + extra}px`);
+    card.style.setProperty('--content-pad-top', `${extra}px`);
+    card.style.setProperty('--content-pad-bottom', `${extra}px`);
+  }
 
   // enhZone.clientHeight includes the "Enhancements" title bar above
   // enh-fit, so using it directly as the available height overestimates
@@ -503,6 +628,137 @@ function fitRulesCard(card){
   // Subtract the title's height to get enh-fit's real budget.
   const enhAvailableH = enhZone.clientHeight - (enhTitle?.offsetHeight || 0);
   fitBox(enhZone, enhFit, enhAvailableH);
+}
+
+const COMBINED_RULE_FS_CEILING = 2.4;
+const COMBINED_ENH_FS_CEILING = 2.15;
+
+// Decides whether rules+enhancements+stratagems fit on one card, and if so
+// fits them there. Unlike fitRulesCard/fitStratagemGrid (which scale a
+// FIXED zone via transform, or binary-search one section's own font size
+// independently), this scales all three sections together from one shared
+// ratio: rules, enhancements, and stratagems all have their own font-size
+// custom properties already driving every bit of their own layout (see
+// --rule-fs/--enh-fs/--strat-fs in waha_common.css), so shrinking all
+// three proportionally shrinks the WHOLE stacked card coherently, without
+// needing per-zone height budgeting the way the split rule-card does.
+//
+// Returns true (and leaves the card fitted) if rules+enhancements+
+// stratagems, measured at their normal/ceiling sizes, come to no more than
+// 105% of the card's available height — close enough that shrinking to
+// fit doesn't require noticeably smaller text than the split cards already
+// use. Returns false (and leaves the card as-is, to be discarded by the
+// caller) otherwise.
+function fitCombinedCard(card){
+  if (!card) return false;
+
+  const content = card.querySelector('.content');
+  const rulesFit = card.querySelector('.rules-fit');
+  const enhZone = card.querySelector('.enh-zone');
+  const enhFit = card.querySelector('.enh-fit');
+  const enhTitle = enhZone?.querySelector('.section-title');
+  const enhCols = enhFit?.querySelectorAll(':scope > .enh-grid > .enh-col');
+  const stratZone = card.querySelector('.strat-zone');
+  const stratTitle = stratZone?.querySelector('.section-title');
+  const stratCols = stratZone?.querySelectorAll(':scope > .strat-grid > .strat-col');
+
+  if (!content || !rulesFit || !enhZone || !enhFit || !stratZone) return false;
+
+  if (enhCols && enhCols.length === 2) {
+    balanceTwoColumns(enhCols[0], enhCols[1]);
+  }
+
+  // Cleared before measuring so the natural-size pass below always starts
+  // from the plain CSS default (1.1cqw — see .combined-card .content),
+  // regardless of what a previous call left it at.
+  card.style.setProperty('--combined-gap', '');
+  card.style.setProperty('--combined-pad-top', '');
+  card.style.setProperty('--combined-pad-bottom', '');
+
+  const applyRatio = r => {
+    card.style.setProperty('--rule-fs', (COMBINED_RULE_FS_CEILING * r) + 'cqw');
+    card.style.setProperty('--enh-fs', (COMBINED_ENH_FS_CEILING * r) + 'cqw');
+    const stratFs = STRAT_FS_CEILING * r;
+    card.style.setProperty('--strat-fs', stratFs + 'cqw');
+    card.style.setProperty('--strat-name-fs', (stratFs * STRAT_NAME_TO_TEXT_RATIO) + 'cqw');
+    card.style.setProperty('--strat-type-fs', (stratFs * STRAT_TYPE_TO_TEXT_RATIO) + 'cqw');
+  };
+
+  // Measure natural (unscaled) size first.
+  applyRatio(1);
+
+  const availableH = content.clientHeight;
+  const baseGap = parseFloat(getComputedStyle(content).rowGap) || 0;
+
+  const naturalRulesH = rulesFit.scrollHeight;
+  const naturalEnhH = (enhTitle?.offsetHeight || 0)
+    + Math.max(0, ...Array.from(enhCols || [], c => c.scrollHeight));
+  const naturalStratH = (stratTitle?.offsetHeight || 0)
+    + Math.max(0, ...Array.from(stratCols || [], c => c.scrollHeight));
+
+  const naturalTotal = naturalRulesH + baseGap + naturalEnhH + baseGap + naturalStratH;
+
+  if (!availableH || !naturalTotal || naturalTotal > availableH * 1.05) {
+    return false;
+  }
+
+  const ratio = Math.min(1, availableH / naturalTotal);
+  applyRatio(ratio);
+
+  if (ratio >= 1) {
+    // Natural (ceiling-size) content already fits with room to spare —
+    // rather than leaving that as dead space at the bottom of the card,
+    // spread it evenly across FOUR places instead of just the two gaps
+    // between rules/enhancements/stratagems: above the rules content,
+    // between rules and enhancements, between enhancements and
+    // stratagems, and below the stratagems — the same space-evenly
+    // balance used for the split rule-card's own rules/enhancements gap.
+    // Both internal gaps share one --combined-gap value (flexbox's own
+    // `gap` already applies uniformly between every pair of stacked
+    // children), so all three "extra" quantities are driven by one shared
+    // value rather than needing separate ones.
+    const applyExtra = e => {
+      card.style.setProperty('--combined-gap', `${baseGap + e}px`);
+      card.style.setProperty('--combined-pad-top', `${e}px`);
+      card.style.setProperty('--combined-pad-bottom', `${e}px`);
+    };
+
+    const leftover = Math.max(0, availableH - naturalTotal);
+    let lo = 0, hi = leftover / 4;
+    applyExtra(hi);
+
+    // The leftover-space arithmetic above is exact in theory (the new
+    // total should land precisely on availableH), but scrollHeight at
+    // measurement time doesn't always exactly match the final rendered
+    // height (sub-pixel rounding, reflow differences) — verifying against
+    // the real DOM via overflowing(), the same way the shrink branch
+    // below does, catches that instead of trusting the estimate blindly.
+    if (overflowing(content)) {
+      for (let i = 0; i < 14 && (hi - lo) > 0.5; i++) {
+        const mid = (lo + hi) / 2;
+        applyExtra(mid);
+        if (overflowing(content)) hi = mid; else lo = mid;
+      }
+      applyExtra(lo);
+    }
+  } else if (overflowing(content)) {
+    // Font-size -> rendered-height isn't perfectly linear (line-wrapping
+    // changes, some elements don't scale 1:1 with font-size), so the ratio
+    // above is a close estimate, not a guarantee. Refine with a short
+    // binary search only if it still overflows — mirrors
+    // fitStratagemGrid's own binary search, just over this shared ratio
+    // instead of one font size.
+    let lo = 0, hi = ratio;
+    for (let i = 0; i < 14 && (hi - lo) > 0.004; i++) {
+      const mid = (lo + hi) / 2;
+      applyRatio(mid);
+      if (overflowing(content)) hi = mid; else lo = mid;
+    }
+    applyRatio(lo);
+  }
+
+  positionExtraCostBadges(card);
+  return true;
 }
 // fitStratagemGrid is shared — see waha_content_render_utils.js.
 function fitStratagems(card){ fitStratagemGrid(card, '.strat-grid'); }
@@ -522,14 +778,22 @@ function fitKicker(card){
 }
 function fitAll(){
   document.querySelectorAll('.detachment-card').forEach(fitKicker);
-  document.querySelectorAll('.rule-card').forEach(fitRulesCard);
+  // .combined-card already carries .rule-card (for header CSS) but its
+  // fitting is fully handled once, synchronously, by fitCombinedCard in
+  // render() — running fitRulesCard on it too would clobber that with its
+  // own transform-based two-zone logic, which the combined layout doesn't
+  // use at all.
+  document.querySelectorAll('.rule-card:not(.combined-card)').forEach(fitRulesCard);
   document.querySelectorAll('.strat-card').forEach(fitStratagems);
 }
 function applyShow(){
   const v = $('#show').value;
 
+  // A combined card is the only card for its detachment — always show it
+  // regardless of the "Rules card"/"Stratagems card" filter, since there's
+  // no separate rules-only or stratagems-only card to switch to.
   document.querySelectorAll('.detachment-card').forEach(c =>
-    c.classList.toggle('hidden', v !== 'all' && c.dataset.card !== v)
+    c.classList.toggle('hidden', c.dataset.card !== 'combined' && v !== 'all' && c.dataset.card !== v)
   );
 
   requestAnimationFrame(() => {

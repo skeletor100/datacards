@@ -69,6 +69,27 @@ def screenshot_visible_cards(page, outdir):
     base = outdir.joinpath(*parts) / safe_dir(det)
     base.mkdir(parents=True, exist_ok=True)
 
+    # When rules+enhancements+stratagems fit together, detachments.html
+    # renders one combined card instead of the usual rules/stratagems pair
+    # (see renderCombined/fitCombinedCard there) — export that single card
+    # instead of the two-card loop below in that case.
+    combined = page.locator('.detachment-card[data-card="combined"]')
+    if combined.count() > 0:
+        wait(page)
+        box = combined.bounding_box()
+
+        page.screenshot(
+            path=str(base / "combined.png"),
+            clip={
+                "x": box["x"],
+                "y": box["y"],
+                "width": 1200,
+                "height": 1800,
+            }
+        )
+        print(f"Saved {base / 'combined.png'}")
+        return
+
     for name in ("rules", "stratagems"):
         page.select_option("#show", name)
         wait(page)
