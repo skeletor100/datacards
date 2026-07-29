@@ -1,0 +1,1409 @@
+{
+  "name": "Core Stratagems",
+  "faction": "Core Rules",
+  "detachment": "Core Stratagems",
+  "stratagems": [
+    {
+      "name": "COMMAND RE-ROLL 15.02",
+      "cp": "1CP",
+      "type": "Core Stratagem",
+      "when": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " Any phase, just after you make one of the following rolls for a friendly unit or model:",
+              "source_classes": []
+            },
+            {
+              "br": true
+            }
+          ]
+        },
+        {
+          "displayItem": "ul",
+          "items": [
+            {
+              "content": [
+                {
+                  "displayItem": "p",
+                  "runs": [
+                    {
+                      "text": "Advance roll",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "displayItem": "p",
+                  "runs": [
+                    {
+                      "text": "Charge roll",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "displayItem": "p",
+                  "runs": [
+                    {
+                      "text": "Damage roll",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "displayItem": "p",
+                  "runs": [
+                    {
+                      "text": "Hazard roll",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "displayItem": "p",
+                  "runs": [
+                    {
+                      "text": "Hit roll",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "displayItem": "p",
+                  "runs": [
+                    {
+                      "text": "Save roll",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "displayItem": "p",
+                  "runs": [
+                    {
+                      "text": "Wound roll",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "displayItem": "p",
+                  "runs": [
+                    {
+                      "text": "A roll to determine the number of attacks generated with a weapon.",
+                      "source_classes": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "displayItem": "br"
+        }
+      ],
+      "target": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " That unit or model.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "effect": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " You re-roll that roll. If you are rolling more than one dice together, select one of those dice to re-roll (excluding ",
+              "source_classes": []
+            },
+            {
+              "text": "charge rolls",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": ", which you must re-roll in full).",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "restrictions": null,
+      "icon_classes": [
+        "str11Any",
+        "str11Either"
+      ],
+      "color_class": "str11ColorEither",
+      "bg_class": "str11StratBg"
+    },
+    {
+      "name": "EPIC CHALLENGE 15.03",
+      "cp": "1CP",
+      "type": "Core Stratagem",
+      "when": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": "Fight phase, just after a friendly ",
+              "source_classes": []
+            },
+            {
+              "text": "CHARACTER",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": " unit is ",
+              "source_classes": []
+            },
+            {
+              "text": "selected to fight",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": ".",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "target": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " That ",
+              "source_classes": []
+            },
+            {
+              "text": "CHARACTER",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": " unit.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "effect": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " Select one ",
+              "source_classes": []
+            },
+            {
+              "text": "CHARACTER",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": " model in your unit. Until the end of the phase, that model’s melee weapons have the ",
+              "source_classes": []
+            },
+            {
+              "text": "[PRECISION]",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": " ability.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "restrictions": null,
+      "icon_classes": [
+        "str11Fight",
+        "str11Either"
+      ],
+      "color_class": "str11ColorEither",
+      "bg_class": "str11StratBg"
+    },
+    {
+      "name": "INSANE BRAVERY 15.04",
+      "cp": "1CP",
+      "type": "Core Stratagem",
+      "when": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": "Battle-shock step of your Command phase, just before you make a ",
+              "source_classes": []
+            },
+            {
+              "text": "battle-shock roll",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": " for a friendly unit.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "target": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " That unit.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "effect": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " That ",
+              "source_classes": []
+            },
+            {
+              "text": "battle-shock roll",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": " is automatically successful.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "restrictions": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " You cannot use this ",
+              "source_classes": []
+            },
+            {
+              "text": "stratagem",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": " more than once per battle.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "icon_classes": [
+        "str11Command",
+        "str11Your"
+      ],
+      "color_class": "str11ColorYour",
+      "bg_class": "str11StratBg"
+    },
+    {
+      "name": "EXPLOSIVES 15.05",
+      "cp": "1CP",
+      "type": "Core Stratagem",
+      "when": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " Your Shooting phase.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "target": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " One friendly ",
+              "source_classes": []
+            },
+            {
+              "text": "unengaged",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": " ",
+              "source_classes": []
+            },
+            {
+              "text": "EXPLOSIVES",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": "/",
+              "source_classes": []
+            },
+            {
+              "text": "GRENADES",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": " unit that is ",
+              "source_classes": []
+            },
+            {
+              "text": "eligible to shoot",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": " and did not make an ",
+              "source_classes": []
+            },
+            {
+              "text": "advance move",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": " this turn.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "effect": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " Resolve the following sequence:",
+              "source_classes": []
+            },
+            {
+              "br": true
+            }
+          ]
+        },
+        {
+          "displayItem": "ol",
+          "items": [
+            {
+              "content": [
+                {
+                  "displayItem": "p",
+                  "runs": [
+                    {
+                      "text": "Select one ",
+                      "source_classes": []
+                    },
+                    {
+                      "text": "EXPLOSIVES",
+                      "source_classes": [
+                        "bold",
+                        "upper"
+                      ]
+                    },
+                    {
+                      "text": "/",
+                      "source_classes": []
+                    },
+                    {
+                      "text": "GRENADES",
+                      "source_classes": [
+                        "bold",
+                        "upper"
+                      ]
+                    },
+                    {
+                      "text": " model in your unit.",
+                      "source_classes": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "displayItem": "p",
+                  "runs": [
+                    {
+                      "text": "Select one ",
+                      "source_classes": []
+                    },
+                    {
+                      "text": "unengaged",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    },
+                    {
+                      "text": " enemy unit within 8\" of and ",
+                      "source_classes": []
+                    },
+                    {
+                      "text": "visible",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    },
+                    {
+                      "text": " to that model.",
+                      "source_classes": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "displayItem": "p",
+                  "runs": [
+                    {
+                      "text": "Roll six D6: for each 4+, that enemy unit suffers 1 ",
+                      "source_classes": []
+                    },
+                    {
+                      "text": "mortal wound",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    },
+                    {
+                      "text": " (",
+                      "source_classes": []
+                    },
+                    {
+                      "text": "06.02",
+                      "source_classes": [
+                        "upper"
+                      ]
+                    },
+                    {
+                      "text": ").",
+                      "source_classes": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "restrictions": null,
+      "icon_classes": [
+        "str11Shooting",
+        "str11Your"
+      ],
+      "color_class": "str11ColorYour",
+      "bg_class": "str11StratBg"
+    },
+    {
+      "name": "CRUSHING IMPACT 15.06",
+      "cp": "1CP",
+      "type": "Core Stratagem",
+      "when": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " Your Charge phase, just after a friendly ",
+              "source_classes": []
+            },
+            {
+              "text": "MONSTER",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": "/",
+              "source_classes": []
+            },
+            {
+              "text": "VEHICLE",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": " unit ends a ",
+              "source_classes": []
+            },
+            {
+              "text": "charge move",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": ".",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "target": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " That ",
+              "source_classes": []
+            },
+            {
+              "text": "MONSTER",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": "/",
+              "source_classes": []
+            },
+            {
+              "text": "VEHICLE",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": " unit.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "effect": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " Resolve the following sequence:",
+              "source_classes": []
+            },
+            {
+              "br": true
+            }
+          ]
+        },
+        {
+          "displayItem": "ol",
+          "items": [
+            {
+              "content": [
+                {
+                  "displayItem": "p",
+                  "runs": [
+                    {
+                      "text": "Select one enemy unit ",
+                      "source_classes": []
+                    },
+                    {
+                      "text": "engaged",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    },
+                    {
+                      "text": " with your unit.",
+                      "source_classes": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "displayItem": "p",
+                  "runs": [
+                    {
+                      "text": "Select one model in your unit ",
+                      "source_classes": []
+                    },
+                    {
+                      "text": "engaged",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    },
+                    {
+                      "text": " with that enemy unit.",
+                      "source_classes": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "displayItem": "p",
+                  "runs": [
+                    {
+                      "text": "Roll a number of D6 equal to the ",
+                      "source_classes": []
+                    },
+                    {
+                      "text": "T",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    },
+                    {
+                      "text": " characteristic of that model: for each 1, your unit suffers 1 ",
+                      "source_classes": []
+                    },
+                    {
+                      "text": "mortal wound",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    },
+                    {
+                      "text": "; for each 5+, that enemy unit suffers 1 ",
+                      "source_classes": []
+                    },
+                    {
+                      "text": "mortal wound",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    },
+                    {
+                      "text": " (to a maximum of 6 ",
+                      "source_classes": []
+                    },
+                    {
+                      "text": "mortal wounds",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    },
+                    {
+                      "text": " per unit).",
+                      "source_classes": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "restrictions": null,
+      "icon_classes": [
+        "str11Charge",
+        "str11Your"
+      ],
+      "color_class": "str11ColorYour",
+      "bg_class": "str11StratBg"
+    },
+    {
+      "name": "RAPID INGRESS 15.07",
+      "cp": "1CP",
+      "type": "Core Stratagem",
+      "when": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " End of your opponent’s Movement phase.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "target": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " One friendly unit that is in ",
+              "source_classes": []
+            },
+            {
+              "text": "strategic reserves",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": " (excluding ",
+              "source_classes": []
+            },
+            {
+              "text": "AIRCRAFT",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": ").",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "effect": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " Your unit makes an ",
+              "source_classes": []
+            },
+            {
+              "text": "ingress move",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": " (20.04).",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "restrictions": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " You cannot use this ",
+              "source_classes": []
+            },
+            {
+              "text": "stratagem",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": " during the first battle round.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "icon_classes": [
+        "str11Movement",
+        "str11Enemy"
+      ],
+      "color_class": "str11ColorEnemy",
+      "bg_class": "str11StratBg"
+    },
+    {
+      "name": "FIRE OVERWATCH 15.08",
+      "cp": "1CP",
+      "type": "Core Stratagem",
+      "when": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " End of your opponent’s Movement phase.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "target": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " One friendly ",
+              "source_classes": []
+            },
+            {
+              "text": "unengaged",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": " unit (excluding ",
+              "source_classes": []
+            },
+            {
+              "text": "TITANIC",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": " units).",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "effect": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " Your unit shoots using ",
+              "source_classes": []
+            },
+            {
+              "text": "snap shooting",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": ".",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "restrictions": null,
+      "icon_classes": [
+        "str11Movement",
+        "str11Enemy"
+      ],
+      "color_class": "str11ColorEnemy",
+      "bg_class": "str11StratBg"
+    },
+    {
+      "name": "SMOKESCREEN 15.10",
+      "cp": "1CP",
+      "type": "Core Stratagem",
+      "when": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " Start of your opponent’s Shooting phase.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "target": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " One friendly ",
+              "source_classes": []
+            },
+            {
+              "text": "SMOKE",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": " unit.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "effect": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " Until the end of the phase, each time an attack targets either your ",
+              "source_classes": []
+            },
+            {
+              "text": "SMOKE",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": " unit, or a unit that is not ",
+              "source_classes": []
+            },
+            {
+              "text": "fully visible",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": " to the attacking model because of one or more models in your ",
+              "source_classes": []
+            },
+            {
+              "text": "SMOKE",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": " unit, the target has the ",
+              "source_classes": []
+            },
+            {
+              "text": "benefit of cover",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": " against that attack (",
+              "source_classes": []
+            },
+            {
+              "text": "13.08",
+              "source_classes": [
+                "upper"
+              ]
+            },
+            {
+              "text": ").",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "restrictions": null,
+      "icon_classes": [
+        "str11Shooting",
+        "str11Enemy"
+      ],
+      "color_class": "str11ColorEnemy",
+      "bg_class": "str11StratBg"
+    },
+    {
+      "name": "HEROIC INTERVENTION 15.11",
+      "cp": "1CP",
+      "type": "Core Stratagem",
+      "when": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " End of your opponent’s Charge phase.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "target": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " One friendly ",
+              "source_classes": []
+            },
+            {
+              "text": "unengaged",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": " unit within 12\" of one or more enemy units. You can only select a ",
+              "source_classes": []
+            },
+            {
+              "text": "VEHICLE",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": " unit if it is a ",
+              "source_classes": []
+            },
+            {
+              "text": "CHARACTER",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": "/",
+              "source_classes": []
+            },
+            {
+              "text": "WALKER",
+              "source_classes": [
+                "bold",
+                "upper"
+              ]
+            },
+            {
+              "text": " unit.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "effect": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": "Resolve a charge",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": " with your unit (",
+              "source_classes": []
+            },
+            {
+              "text": "11.02",
+              "source_classes": [
+                "upper"
+              ]
+            },
+            {
+              "text": "). While doing so, before making the ",
+              "source_classes": []
+            },
+            {
+              "text": "charge roll",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": ", you must select one of the following modes:",
+              "source_classes": []
+            }
+          ]
+        },
+        {
+          "displayItem": "ul",
+          "items": [
+            {
+              "content": [
+                {
+                  "displayItem": "p",
+                  "runs": [
+                    {
+                      "text": "Leap to Defend:",
+                      "source_classes": [
+                        "bold"
+                      ],
+                      "color": "#fefefe",
+                      "background": "#a31317"
+                    },
+                    {
+                      "text": " When selecting ",
+                      "source_classes": []
+                    },
+                    {
+                      "text": "charge targets",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    },
+                    {
+                      "text": ", you can only select enemy units that made a ",
+                      "source_classes": []
+                    },
+                    {
+                      "text": "charge move",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    },
+                    {
+                      "text": " this phase and are within the ",
+                      "source_classes": []
+                    },
+                    {
+                      "text": "maximum distance",
+                      "source_classes": [
+                        "bold"
+                      ]
+                    },
+                    {
+                      "text": ".",
+                      "source_classes": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "displayItem": "ul",
+          "items": [
+            {
+              "content": [
+                {
+                  "displayItem": "p",
+                  "runs": [
+                    {
+                      "text": "Into the Fray:",
+                      "source_classes": [
+                        "bold"
+                      ],
+                      "color": "#fefefe",
+                      "background": "#a31317"
+                    },
+                    {
+                      "br": true
+                    }
+                  ]
+                },
+                {
+                  "displayItem": "ul",
+                  "items": [
+                    {
+                      "content": [
+                        {
+                          "displayItem": "p",
+                          "runs": [
+                            {
+                              "text": "When making the ",
+                              "source_classes": []
+                            },
+                            {
+                              "text": "charge roll",
+                              "source_classes": [
+                                "bold"
+                              ]
+                            },
+                            {
+                              "text": ", if the result is greater than 6 (after modifiers), change it to 6.",
+                              "source_classes": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "content": [
+                        {
+                          "displayItem": "p",
+                          "runs": [
+                            {
+                              "text": "When selecting ",
+                              "source_classes": []
+                            },
+                            {
+                              "text": "charge targets",
+                              "source_classes": [
+                                "bold"
+                              ]
+                            },
+                            {
+                              "text": ", you can select any enemy units that are within 6\" of your unit and within the ",
+                              "source_classes": []
+                            },
+                            {
+                              "text": "maximum distance",
+                              "source_classes": [
+                                "bold"
+                              ]
+                            },
+                            {
+                              "text": ".",
+                              "source_classes": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "extraCost": "+1CP"
+        }
+      ],
+      "restrictions": null,
+      "icon_classes": [
+        "str11Charge",
+        "str11Enemy"
+      ],
+      "color_class": "str11ColorEnemy",
+      "bg_class": "str11StratBg"
+    },
+    {
+      "name": "COUNTEROFFENSIVE 15.12",
+      "cp": "2CP",
+      "type": "Core Stratagem",
+      "when": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": "Fight step of your opponent’s Fight phase, just after an enemy unit has resolved its attacks.",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "target": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " One friendly unit that is ",
+              "source_classes": []
+            },
+            {
+              "text": "eligible to fight",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": ".",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "effect": [
+        {
+          "displayItem": "p",
+          "runs": [
+            {
+              "text": " Until the end of the phase, your unit has the ",
+              "source_classes": []
+            },
+            {
+              "text": "Fights First",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": " ability and it must be the next unit you ",
+              "source_classes": []
+            },
+            {
+              "text": "select to fight",
+              "source_classes": [
+                "bold"
+              ]
+            },
+            {
+              "text": " (",
+              "source_classes": []
+            },
+            {
+              "text": "12.04",
+              "source_classes": [
+                "upper"
+              ]
+            },
+            {
+              "text": ").",
+              "source_classes": []
+            }
+          ]
+        }
+      ],
+      "restrictions": null,
+      "icon_classes": [
+        "str11Fight",
+        "str11Enemy"
+      ],
+      "color_class": "str11ColorEnemy",
+      "bg_class": "str11StratBg"
+    }
+  ]
+}
