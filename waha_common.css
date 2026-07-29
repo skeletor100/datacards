@@ -244,17 +244,23 @@ strong {
   word-break: break-word;
   z-index: 1;
 }
-/* --accent is a separate custom property (not just `color`) because
-   .strat-type above needs the section's accent colour as its OWN
-   background while ALSO overriding its own text colour to white — and
-   currentColor inside that same rule would resolve against that white
-   override, not the ancestor's green/blue/red, since currentColor always
-   resolves against the element's own final `color`, not an ancestor's.
-   Requires --green/--blue/--red to be defined by the page (both
-   core_stratagems.html and detachments.html declare these on
-   :root already). */
-.str10ColorEither{color:var(--green);--accent:var(--green)}.str10ColorYour{color:var(--blue);--accent:var(--blue)}.str10ColorEnemy{color:var(--red);--accent:var(--red)}
-.str11ColorEither{color:var(--green);--accent:var(--green)}.str11ColorYour{color:var(--blue);--accent:var(--blue)}.str11ColorEnemy{color:var(--red);--accent:var(--red)}
+/* --accent (not `color`): the live site's stratagem text is always plain
+   black regardless of mode (Your/Enemy/Either) — confirmed against the
+   real page, where .str11Text/.str11BodyWrap compute to rgb(0,0,0) even
+   inside a red "Enemy" stratagem. An earlier version of this set `color`
+   here directly, which .strat-text (and .label, and .strat-body/
+   .strat-icons' own currentColor borders) then all inherited, tinting the
+   whole stratagem's text and borders green/blue/red instead of just the
+   type-bar/icon-bar accent bits that are actually supposed to be
+   coloured — --accent is used explicitly only where that accent colour is
+   genuinely wanted (.strat-type's background, .strat-head's border via
+   var(--accent,currentColor)), while everything else now falls back to
+   the page's own default text colour (body{color:var(--ink)}), matching
+   the live site's plain black. Requires --green/--blue/--red to be
+   defined by the page (both core_stratagems.html and detachments.html
+   declare these on :root already). */
+.str10ColorEither{--accent:var(--green)}.str10ColorYour{--accent:var(--blue)}.str10ColorEnemy{--accent:var(--red)}
+.str11ColorEither{--accent:var(--green)}.str11ColorYour{--accent:var(--blue)}.str11ColorEnemy{--accent:var(--red)}
 
 /* ============================================================
    BATTLE ROUND BANNER (see _parse_battle_round_banner in
