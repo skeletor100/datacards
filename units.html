@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Datasheet Renderer V2.1 - Geometry Pass</title>
-  <link rel="stylesheet" href="./waha_common.css" />
+  <link rel="stylesheet" href="./waha_common.css?v=1" />
   <style>
     :root{
       --card-w: 1800px;
@@ -38,9 +38,19 @@
       color:#ddd;
       font: 14px Arial, sans-serif;
       display:flex;
-      justify-content:space-between;
-      gap:12px;
+      gap:10px;
       align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .toolbar label{
+      display:flex;
+      gap:6px;
+      align-items:center;
+    }
+
+    .toolbar select{
+      padding:6px 8px;
     }
 
     .toolbar button{
@@ -51,6 +61,8 @@
       border-radius:4px;
       cursor:pointer;
     }
+
+    .hidden{ display:none!important; }
 
     #app{
       width:min(96vw, var(--card-w));
@@ -379,6 +391,18 @@
       flex:0 0 auto;
       max-width:100%;
     }
+    /* Plain-text alternative to .weapon-profile-marker (see
+       renderWeaponProfileMarker) — same slot, same job (marking which
+       models in the unit this weapon option belongs to), just text
+       ("1-2") instead of a .dsPointy shape. Smaller than the surrounding
+       body text since the slot itself is only 1.45em wide. */
+    .weapon-model-range{
+      font-weight:700;
+      font-size:.78em;
+      line-height:1;
+      text-align:center;
+      white-space:nowrap;
+    }
     .weapon-name-wrap{
       display:grid;
       grid-template-columns:1.45em minmax(0, 1fr);
@@ -523,12 +547,11 @@
 </head>
 <body>
   <div class="toolbar">
-    <div>Datasheet Renderer V2 — Milestone 1. Fixed 3:2 frame, content-complete schema render.</div>
-    <button onclick="window.print()">Print / Save PDF</button>
+    <div>Loading factions…</div>
   </div>
   <div id="app"></div>
 
-  <script src="./waha_content_render_utils.js"></script>
+  <script src="./waha_content_render_utils.js?v=1"></script>
   <script>
     const sampleCard = {
       "name": "Roboute Guilliman",
@@ -597,8 +620,8 @@
       const weaponAbilities = Array.isArray(card.weapon_abilities) ? card.weapon_abilities : [];
       const rangedAbilities = abilitiesForWeapons(weaponAbilities, ranged);
       const meleeAbilities = abilitiesForWeapons(weaponAbilities, melee);
-      const matchedAbilityTitles = new Set([...rangedAbilities, ...meleeAbilities].map(a => norm(a.title)));
-      const unmatchedWeaponAbilities = weaponAbilities.filter(a => !matchedAbilityTitles.has(norm(a.title)));
+      const matchedAbilityTitles = new Set([...rangedAbilities, ...meleeAbilities].map(a => norm(blockLeadTitle(a))));
+      const unmatchedWeaponAbilities = weaponAbilities.filter(a => !matchedAbilityTitles.has(norm(blockLeadTitle(a))));
 
       root.innerHTML = `
         <div class="card-bg"></div>
@@ -698,9 +721,21 @@
 
     function renderWeaponProfileMarker(w){
       const marker = w?.profile_marker;
-      if(!marker || !Array.isArray(marker.classes) || !marker.classes.length) return '';
-      const key = markerClassKey(marker.classes);
-      return `<span class="weapon-profile-marker" data-marker="${esc(markerToken(key))}" aria-hidden="true"></span>`;
+      if(marker && Array.isArray(marker.classes) && marker.classes.length){
+        const key = markerClassKey(marker.classes);
+        return `<span class="weapon-profile-marker" data-marker="${esc(markerToken(key))}" aria-hidden="true"></span>`;
+      }
+
+      // Some units (e.g. Orks' Mek Gunz) assign different weapon options to
+      // different models in the unit via plain text in this same slot
+      // ("1-2", "3-4", "5-6") instead of a .dsPointy split-profile marker
+      // shape — see extract_weapon_profile_marker/models in
+      // waha_unit_scraper.py, which already captures this as w.models.
+      // Without this fallback, the marker slot rendered empty and that
+      // text was silently dropped from the card entirely.
+      if(w?.models) return `<span class="weapon-model-range">${esc(w.models)}</span>`;
+
+      return '';
     }
 
     function renderWeaponTable(weapons, title, hitKey){
@@ -718,11 +753,17 @@
       return `<span class="weapon-name">${esc(w.name)}</span> <span class="weapon-keywords">[${esc(keywords.map(k => String(k).toUpperCase()).join(', '))}]</span>`;
     }
 
+    function blockLeadTitle(block){
+      const runs = Array.isArray(block?.runs) ? block.runs : [];
+      const first = runs[0];
+      return first ? String(first.text || '').replace(/:\s*$/, '') : '';
+    }
+
     function abilitiesForWeapons(items, weapons){
       const keywords = new Set(
         (weapons || []).flatMap(w => Array.isArray(w.keywords) ? w.keywords : []).map(norm)
       );
-      return (items || []).filter(item => keywords.has(norm(item.title)));
+      return (items || []).filter(item => keywords.has(norm(blockLeadTitle(item))));
     }
 
     function renderWeaponAbilities(items){
@@ -744,7 +785,7 @@
     }
 
     function renderAbilityItem(item){
-      return `<div class="ability-item">${item.title ? `<span class="ability-title">${esc(item.title)}:</span> ` : ''}<span class="content-block">${(item.content || []).map(blockHtml).join('')}</span></div>`;
+      return `<div class="ability-item">${blockHtml(item)}</div>`;
     }
 
     function renderKeywordGroups(groups){
@@ -784,8 +825,19 @@
       const minContentTop = isMulti ? 26.0 : 26.0;
       const headerBottomMargin = isMulti ? 6 : 18;
 
+      // minContentTop is a fixed floor sized for the ordinary case — but
+      // once the header banner has ALSO been shrunk all the way to its own
+      // floor (setHeaderScale's 0.72) and the columns still overflow (e.g.
+      // Tactical Squad's 26 weapon profiles), that fixed floor can end up
+      // reserving banner space the now-shrunk header no longer actually
+      // needs. contentTopFloor lets that reservation shrink further in that
+      // specific case, down to ABSOLUTE_MIN_CONTENT_TOP, instead of leaving
+      // the columns clipped while unused banner space sits above them.
+      const ABSOLUTE_MIN_CONTENT_TOP = 10.0;
+      let contentTopFloor = minContentTop;
+
       const setContentTop = value => {
-        contentTop = Math.max(minContentTop, Math.min(maxContentTop, value));
+        contentTop = Math.max(contentTopFloor, Math.min(maxContentTop, value));
         card.style.setProperty('--content-top', `${contentTop}%`);
       };
 
@@ -841,21 +893,44 @@
       setHeaderScale(1);
       setContentTop(minContentTop);
 
+      // shrinkColumns' own font floors (0.74 ability / 0.66 weapon) are
+      // reached in about 15 iterations — checked directly (rather than
+      // gated on a fixed iteration count) so a unit whose columns bottom
+      // out early hands the remaining budget to header-shrinking
+      // immediately, instead of the loop wasting iterations re-applying
+      // the same already-floored values while the header sits untouched.
+      // That gap was real: a fixed i<34 cutoff before switching phases
+      // left only 10 iterations for header-shrinking out of a 44 total
+      // budget, never enough to reach setHeaderScale's own 0.72 floor —
+      // e.g. Tactical Squad's 26 weapon profiles still overflowed even
+      // with columns fully shrunk, because the header was only ever
+      // reduced to 0.86 before the loop ran out.
+      const columnFontsAtFloor = iteration => {
+        const abilityFont = Math.max(0.74, 1 - iteration * 0.023);
+        const weaponFont = Math.max(0.66, 1 - iteration * 0.024);
+        return abilityFont <= 0.74 && weaponFont <= 0.66;
+      };
+
+      let columnIteration = 0;
+      let headerIteration = 0;
+
       // First spend vertical space on the upper banner.  This keeps the title,
       // stats and shields as large as possible, and only scales them down after
       // the banner has reached its cap and the columns cannot give up more room.
-      for(let i=0;i<44;i++){
+      for(let i=0;i<60;i++){
         setContentTop(requiredContentTop());
 
-        if((leftOverflows() || rightOverflows()) && i < 34){
-          shrinkColumns(i + 1);
+        if((leftOverflows() || rightOverflows()) && !columnFontsAtFloor(columnIteration)){
+          columnIteration++;
+          shrinkColumns(columnIteration);
           continue;
         }
 
         if(footerOverflows()) shrinkFooter(i + 1);
 
         if((headerOverflows() || titleOverflows()) && contentTop >= maxContentTop - 0.05){
-          setHeaderScale(1 - (i + 1) * 0.014);
+          headerIteration++;
+          setHeaderScale(1 - headerIteration * 0.014);
           setContentTop(requiredContentTop());
           continue;
         }
@@ -864,10 +939,23 @@
           break;
         }
 
-        // If columns still overflow even after some column compaction, very
-        // gradually reduce the header content. This is intentionally last.
-        if((leftOverflows() || rightOverflows()) && i >= 34){
-          setHeaderScale(1 - (i - 33) * 0.014);
+        // Columns still overflow even with column fonts already at their own
+        // floor — shrink the header banner too, to free up more room below
+        // it. This is intentionally last.
+        if(leftOverflows() || rightOverflows()){
+          headerIteration++;
+          const nextHeaderScale = 1 - headerIteration * 0.014;
+          setHeaderScale(nextHeaderScale);
+
+          // The header banner itself is now as small as it's allowed to get
+          // — if columns are STILL overflowing at this point, the fixed
+          // minContentTop floor is likely reserving banner space the
+          // shrunk header no longer needs, so let that reservation shrink
+          // too, gradually, down to an absolute floor.
+          if(nextHeaderScale <= 0.72 + 1e-6 && (leftOverflows() || rightOverflows())){
+            contentTopFloor = Math.max(ABSOLUTE_MIN_CONTENT_TOP, contentTopFloor - 0.6);
+          }
+
           setContentTop(requiredContentTop());
         }
       }
@@ -923,7 +1011,7 @@
     function installWeaponMarkerCss(manifest){
       document.getElementById('manifest-weapon-marker-css')?.remove();
       const rules = [];
-      for(const [key, snapshot] of Object.entries(manifest?.weapon_markers || {})){
+      for(const [key, snapshot] of Object.entries(manifest?.icons || {})){
         const selector = `.weapon-profile-marker[data-marker="${markerToken(key)}"]`;
         const elementCss = markerSnapshotCss(snapshot.element);
         if(elementCss) rules.push(`${selector}{${elementCss}}`);
@@ -946,8 +1034,8 @@
 
     async function loadCards() {
       const [cardsResponse, manifestResponse] = await Promise.all([
-        fetch('./units.json'),
-        fetch('./detachment_css_manifest.json').catch(() => null)
+        fetch('./waha_data.json'),
+        fetch('./waha_css_manifest.json').catch(() => null)
       ]);
 
       const text = await cardsResponse.text();
@@ -956,7 +1044,7 @@
       if (manifestResponse && manifestResponse.ok) {
         try {
           cssManifest = await manifestResponse.json();
-          applyManifestInlineTextCss(cssManifest);
+          setActiveManifest(cssManifest);
           installWeaponMarkerCss(cssManifest);
         } catch (err) {}
       }
@@ -968,6 +1056,7 @@
 
     function buildCardSelector(data) {
       const toolbar = document.querySelector('.toolbar');
+      injectCardExportStyles();
       cardIndex = [];
 
       for (const [factionName, faction] of Object.entries(data)) {
@@ -988,11 +1077,20 @@
       }
 
       toolbar.innerHTML = `
-        <select id="faction-primary"></select>
-        <select id="sub-faction-select"></select>
-        <select id="unit-select"></select>
-        <button onclick="window.print()">Print / Save PDF</button>
+        <label>Faction <select id="faction-primary"></select></label>
+        <label id="sub-faction-row" class="hidden">Sub-Faction <select id="sub-faction-select"></select></label>
+        <label>Unit <select id="unit-select"></select></label>
       `;
+
+      addDownloadAllButton(
+        toolbar,
+        () => {
+          const cardEl = document.querySelector('#app .datasheet-card');
+          return cardEl ? [cardEl] : [];
+        },
+        () => currentCard?.name || 'unit',
+        'Download PNG'
+      );
 
       const primary = document.getElementById('faction-primary');
       const subFaction = document.getElementById('sub-faction-select');
@@ -1024,7 +1122,10 @@
           .map(v => `<option value="${esc(v)}">${esc(v)}</option>`)
           .join('');
 
-        subFaction.hidden = subFactionValues.length <= 1 && subFactionValues[0] === 'None';
+        document.getElementById('sub-faction-row').classList.toggle(
+          'hidden',
+          subFactionValues.length <= 1 && subFactionValues[0] === 'None'
+        );
 
         updateUnits();
       }
@@ -1055,7 +1156,8 @@
 
         const app = document.getElementById('app');
         app.innerHTML = '';
-        app.appendChild(renderCard(selected.card));
+        const cardEl = renderCard(selected.card);
+        app.appendChild(cardEl);
       }
     }
 
@@ -1070,7 +1172,8 @@
 
       const app = document.getElementById('app');
       app.innerHTML = '';
-      app.appendChild(renderCard(card));
+      const cardEl = renderCard(card);
+      app.appendChild(cardEl);
     }
 
     loadCards();

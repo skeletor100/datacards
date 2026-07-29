@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Core Stratagem Renderer</title>
-  <link rel="stylesheet" href="./waha_common.css" />
+  <link rel="stylesheet" href="./waha_common.css?v=1" />
   <style>
     :root{
       --card-w:1800px; --card-h:1200px; --strat-card-w:1200px; --strat-card-h:1800px; --paper:#ece9df; --ink:#111; --banner:#084563;
@@ -12,8 +12,8 @@
       --font:"Conduit ITC","ConduitITC","Bahnschrift Condensed","Aptos Narrow","Arial Narrow",Arial,sans-serif;
     }
     *{box-sizing:border-box} body{margin:0;background:#242424;color:var(--ink);font-family:var(--font);padding:24px}
-    .toolbar{max-width:var(--card-w);margin:0 auto 16px;color:#ddd;font:14px Arial,sans-serif;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.toolbar select{padding:6px 8px}.toolbar label{display:flex;gap:6px;align-items:center}
-    #app{width:min(96vw,var(--card-w));margin:0 auto;display:grid;gap:24px}.hidden{display:none!important}
+    .toolbar{max-width:var(--strat-card-w);margin:0 auto 16px;color:#ddd;font:14px Arial,sans-serif;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.toolbar select{padding:6px 8px}.toolbar label{display:flex;gap:6px;align-items:center}
+    #app{width:min(96vw,var(--strat-card-w));margin:0 auto;display:grid;gap:24px}.hidden{display:none!important}
     .core-stratagem-card {
         width: 1200px;
         height: 1800px;
@@ -100,46 +100,6 @@
       gap: 1.5cqw;
       min-width: 0;
     }
-    .core-stratagem{display: grid;grid-template-columns: 8.7cqw 1fr;gap: 1.25cqw;min-height: auto;}
-    .core-stratagem-icons{
-      --diamond-size: 5.7cqw;
-      --diamond-gap: 1.05cqw;
-
-      position: relative;
-      width: 8.4cqw;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding-top: 1.05cqw;
-      gap: var(--diamond-gap);
-    }
-    .core-stratagem-icons::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:.64cqw;transform:translateX(-50%);background:currentColor;z-index:0}
-    .diamond-slot{
-      width: calc(var(--diamond-size) * 1.41421356);
-      height: calc(var(--diamond-size) * 1.41421356);
-      display: grid;
-      place-items: start center;
-      flex: 0 0 auto;
-      z-index: 1;
-    }
-    .diamond-slot:first-child{
-      height: var(--diamond-size);
-      margin-bottom: calc((var(--diamond-size) * 1.41421356) - var(--diamond-size));
-    }
-    .diamond{
-      width: var(--diamond-size);
-      height: var(--diamond-size);
-      background: var(--paper);
-      border: .64cqw solid currentColor;
-      transform: rotate(45deg);
-      display: grid;
-      place-items: center;
-    }
-    .diamond > *{
-      transform: rotate(-45deg);
-    }
-    .cp{font-weight:900;font-size:2.15cqw;line-height:1;color:currentColor}.phase-icon{width:3.8cqw;height:3.8cqw;background-color:transparent;background-repeat:no-repeat;background-size:contain;background-position:center}.str10ColorEither .phase-icon{filter:invert(40%) sepia(12%) saturate(2210%) hue-rotate(121deg) brightness(94%) contrast(88%)}.str10ColorYour .phase-icon{filter:invert(23%) sepia(88%) saturate(2002%) hue-rotate(179deg) brightness(87%) contrast(93%)}.str10ColorEnemy .phase-icon{filter:invert(10%) sepia(76%) saturate(6071%) hue-rotate(352deg) brightness(102%) contrast(99%)}.core-stratagem-body{min-width:0;overflow:hidden}.core-stratagem-name{font-weight:900;text-transform:uppercase;font-size:var(--strat-name-fs,3.39cqw);line-height:1;color:currentColor;letter-spacing:.04em;border-bottom:.30cqw solid currentColor;padding-bottom:.18cqw;white-space:nowrap;overflow:hidden;text-overflow:clip}.core-stratagem-type{font-weight:900;text-transform:uppercase;font-size:var(--strat-type-fs,3.15cqw);line-height:1.05;margin:.28cqw 0 .22cqw}.dotline{border-top:.20cqw dotted #111;height:0;margin:.13cqw 0 .28cqw}.core-stratagem-text{font:var(--strat-fs,3.15cqw)/1.08 var(--font)}.core-stratagem-field{margin:.14cqw 0 .30cqw}.label{display:inline;font-weight:900;color:currentColor;text-transform:uppercase;margin-right:.22em}.str10ColorEither{color:var(--green)}.str10ColorYour{color:var(--blue)}.str10ColorEnemy{color:var(--red)}
-  
     .core-stratagem-card { margin: 0 auto; }
     .core-stratagem-card .header{height:8.2%;}
     .core-stratagem-card .kicker{font-size:3.7cqw}
@@ -148,41 +108,24 @@
   </style>
 </head>
 <body>
-  <script src="./waha_content_render_utils.js"></script>
+  <script src="./waha_content_render_utils.js?v=1"></script>
   <div class="toolbar"><label>Show <select id="show"><option value="stratagems">Core stratagems</option></select></label></div>
   <main id="app"></main>
 <script>
-const DATA_URL='core_stratagems.json', MANIFEST_URL='detachment_css_manifest.json';
+const DATA_URL='core_stratagems.json', MANIFEST_URL='waha_css_manifest.json';
 let DATA={}, MANIFEST={};
 const $=s=>document.querySelector(s), app=$('#app');
-function colourClass(cls){return cls||'str10ColorEither'}
-function iconStyle(icon){ const item=MANIFEST.stratagem_icons?.[icon]; const path=item?.backgroundImageAsset || ''; return path ? `style="background-image:url('${esc(path)}')"` : ''; }
+// colourClass/iconStyle/fieldBlockHtml/fieldHtml/overflowing are shared —
+// see waha_content_render_utils.js's "STRATAGEM CARDS" section.
 function cardHeader(card,title){
   return `<div class="header"><div class="kicker">${esc(card.faction || 'Core Rules')}</div><div class="page-title">${esc(title)}</div></div>`;
 }
-function fieldHtml(val){
-  if (!val) return '';
-  if (Array.isArray(val)) return val.map(fieldHtml).join('');
-  if (val.displayItem === 'p') return textRuns(val);
-  return blockHtml(val);
-}
 function renderCoreStratagem(s){
   const color=colourClass(s.color_class);
-  const icons=(s.icon_classes&&s.icon_classes.length?s.icon_classes:['str10Any']).concat(['CP:'+s.cp]);
-  const iconHtml = icons.map(i =>
-    i.startsWith('CP:')
-      ? `<div class="diamond-slot"><div class="diamond"><div class="cp">${esc(i.slice(3)||'1CP')}</div></div></div>`
-      : `<div class="diamond-slot"><div class="diamond"><div class="phase-icon" ${iconStyle(i)}></div></div></div>`
-  ).join('');
-  const field = (label, val) => val ? `<div class="core-stratagem-field"><span class="label">${label}:</span>${fieldHtml(val)}</div>` : '';
-  return `<section class="core-stratagem ${color}"><div class="core-stratagem-icons">${iconHtml}</div><div class="core-stratagem-body"><div class="core-stratagem-name">${esc(s.name)}</div><div class="core-stratagem-type">${esc(s.type||'Stratagem')}</div><div class="dotline"></div><div class="core-stratagem-text">${field('WHEN',s.when)}${field('TARGET',s.target)}${field('EFFECT',s.effect)}${field('RESTRICTIONS',s.restrictions)}</div></div></section>`;
-}
-function chunkCoreStratagems(strats, pageSize = 6){
-  const pages = [];
-  for (let i = 0; i < strats.length; i += pageSize) {
-    pages.push(strats.slice(i, i + pageSize));
-  }
-  return pages.length ? pages : [[]];
+  const icons=(s.icon_classes&&s.icon_classes.length?s.icon_classes:['str10Any']);
+  const iconHtml = icons.map(i => `<div class="strat-icon" ${iconStyle(i)}></div>`).join('');
+  const field = (label, val) => val ? `<div class="strat-field"><span class="label">${label}:</span>${fieldHtml(val)}</div>` : '';
+  return `<section class="strat ${color}"><div class="strat-head"><div class="strat-name">${esc(s.name)}</div><div class="strat-cp">${esc(s.cp||'')}</div></div><div class="strat-body"><div class="strat-type">${esc(s.type||'Stratagem')}</div><div class="dotline"></div><div class="strat-text">${field('WHEN',s.when)}${field('TARGET',s.target)}${field('EFFECT',s.effect)}${field('RESTRICTIONS',s.restrictions)}</div></div><div class="strat-icons" ${iconStyle(s.bg_class)}>${iconHtml}</div></section>`;
 }
 function splitCoreStratagems(strats){
   const leftCount = Math.ceil(strats.length / 2);
@@ -193,39 +136,78 @@ function renderCoreStratagemPage(card, pageStrats, pageIndex, pageCount){
   const title = pageCount > 1 ? `Core Stratagems ${pageIndex + 1}/${pageCount}` : 'Core Stratagems';
   return `<article class="core-stratagem-card" data-card="stratagems" data-page="${pageIndex + 1}">${cardHeader(card,title)}<div class="content"><div class="core-stratagem-grid"><div class="core-stratagem-col">${left.map(renderCoreStratagem).join('')}</div><div class="core-stratagem-col">${right.map(renderCoreStratagem).join('')}</div></div></div></article>`;
 }
+// Core stratagems are never bounded by a fixed count-per-page — the whole
+// list must fit in AT MOST 2 pages, full stop, however many stratagems
+// there are. Order is strict (never reordered), but exactly where the
+// split falls between page 1 and page 2 is free to move to whatever gives
+// the more comfortable fit on both sides. That "comfortable" judgement
+// needs a real measurement, not a guess: this renders each candidate page
+// off-screen, runs the actual shrink-to-fit loop on it, and reads back the
+// font size it settled on — the same mechanism fitCoreStratagems already
+// uses for the real, visible cards.
+function measureMinFontSize(pageStrats, card){
+  if (!pageStrats.length) return Infinity;
+  const scratch = document.createElement('div');
+  scratch.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;left:-9999px;top:0';
+  scratch.innerHTML = renderCoreStratagemPage(card, pageStrats, 0, 1);
+  document.body.appendChild(scratch);
+  const cardEl = scratch.querySelector('.core-stratagem-card');
+  fitCoreStratagems(cardEl);
+  let minFs = Infinity;
+  cardEl.querySelectorAll('.strat').forEach(strat=>{
+    const fs = parseFloat(getComputedStyle(strat).getPropertyValue('--strat-fs'));
+    if (fs < minFs) minFs = fs;
+  });
+  scratch.remove();
+  return minFs;
+}
+// Any font size at/above this reads comfortably. Used only to decide
+// whether a single page is fine at all — the split search itself always
+// checks every candidate and keeps the actual best one, rather than
+// stopping at the first "good enough" split, which produced lopsided
+// results (e.g. 2 stratagems on page 1, 8 crammed onto page 2, both
+// technically "comfortable" but nowhere near the best available balance).
+// A full scan is still cheap for what's normally ~10-20 stratagems.
+const COMFORTABLE_STRAT_FS = 1.6;
+function splitCoreStratagemsForBestFit(strats, card){
+  if (strats.length <= 1) return [strats];
+
+  const singleFs = measureMinFontSize(strats, card);
+  if (singleFs >= COMFORTABLE_STRAT_FS) return [strats];
+
+  // Font size only ever shrinks from a fixed baseline (never grows past
+  // it), so once both sides of a split comfortably fit at full baseline,
+  // every split at or beyond that point scores identically — nothing
+  // shorter than "fits at max size" can ever score higher. Without a
+  // tie-break, the first such split found (e.g. 2 stratagems on page 1,
+  // the rest crammed onto page 2) wins arbitrarily, which is "comfortable"
+  // by the score but visibly lopsided. Preferring the numerically most
+  // balanced split among ties gives the actual best-looking result.
+  const mid = strats.length / 2;
+  let bestSplit = Math.ceil(mid);
+  let bestScore = -Infinity;
+  for (let i = 1; i < strats.length; i++){
+    const left = strats.slice(0, i), right = strats.slice(i);
+    const score = Math.min(measureMinFontSize(left, card), measureMinFontSize(right, card));
+    const better = score > bestScore ||
+      (score === bestScore && Math.abs(i - mid) < Math.abs(bestSplit - mid));
+    if (better){ bestScore = score; bestSplit = i; }
+  }
+  return [strats.slice(0, bestSplit), strats.slice(bestSplit)];
+}
 function renderCoreStratagemCards(card){
-  const pages = chunkCoreStratagems(card.stratagems || [], 6);
+  const pages = splitCoreStratagemsForBestFit(card.stratagems || [], card);
   return pages.map((pageStrats, pageIndex) => renderCoreStratagemPage(card, pageStrats, pageIndex, pages.length)).join('');
 }
-function overflowing(el){ return el && (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1); }
-function fitCoreStratagems(card){
-  const grid = card.querySelector('.core-stratagem-grid');
-  const content = card.querySelector('.content');
-  card.querySelectorAll('.core-stratagem').forEach(strat=>{
-    strat.style.setProperty('--strat-name-fs','3.5cqw');
-    strat.style.setProperty('--strat-fs','2.4cqw');
-    strat.style.setProperty('--strat-type-fs','1.8cqw');
-  });
-  for(let pass = 0; pass < 120 && (overflowing(grid) || overflowing(content)); pass++){
-    card.querySelectorAll('.core-stratagem').forEach(strat=>{
-      const fs = parseFloat(getComputedStyle(strat).getPropertyValue('--strat-fs')) || 2.2;
-      const ts = parseFloat(getComputedStyle(strat).getPropertyValue('--strat-type-fs')) || 1.6;
-      if(fs > 0.86) strat.style.setProperty('--strat-fs', (fs - .035) + 'cqw');
-      if(ts > 1.05) strat.style.setProperty('--strat-type-fs', (ts - .025) + 'cqw');
-    });
-  }
-  card.querySelectorAll('.core-stratagem').forEach(strat=>{
-    const name = strat.querySelector('.core-stratagem-name');
-    for(let i=0; i<80 && overflowing(name); i++){
-      const ns = parseFloat(getComputedStyle(strat).getPropertyValue('--strat-name-fs')) || 3;
-      if(ns <= 1.65) break;
-      strat.style.setProperty('--strat-name-fs', (ns - .055) + 'cqw');
-    }
-  });
-}
+// fitStratagemGrid is shared — see waha_content_render_utils.js.
+function fitCoreStratagems(card){ fitStratagemGrid(card, '.core-stratagem-grid'); }
 function fitAll(){ document.querySelectorAll('.core-stratagem-card').forEach(fitCoreStratagems); }
-function render(){ app.innerHTML = renderCoreStratagemCards(DATA); requestAnimationFrame(()=>{fitAll(); requestAnimationFrame(fitAll);}); }
-Promise.all([fetch(DATA_URL).then(r=>r.json()), fetch(MANIFEST_URL).then(r=>r.json()).catch(()=>{})]).then(([d,m])=>{DATA=d;MANIFEST=m;applyManifestInlineTextCss(MANIFEST);render();});
+function stratCardFilename(card){ return `${DATA.faction || 'core'}-stratagems-${card.dataset.page || '1'}`; }
+function attachExportUi(){
+  addDownloadAllButton($('.toolbar'), () => document.querySelectorAll('.core-stratagem-card'), stratCardFilename);
+}
+function render(){ app.innerHTML = renderCoreStratagemCards(DATA); attachExportUi(); requestAnimationFrame(()=>{fitAll(); requestAnimationFrame(fitAll);}); }
+Promise.all([fetch(DATA_URL).then(r=>r.json()), fetch(MANIFEST_URL).then(r=>r.json()).catch(()=>{})]).then(([d,m])=>{DATA=d;MANIFEST=m;setActiveManifest(MANIFEST);render();});
 </script>
 </body>
 </html>

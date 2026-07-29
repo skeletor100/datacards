@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Detachment Card Renderer</title>
-  <link rel="stylesheet" href="./waha_common.css" />
+  <link rel="stylesheet" href="./waha_common.css?v=1" />
   <style>
     :root{
       --card-w:1800px; --card-h:1200px; --strat-card-w:1200px; --strat-card-h:1800px; --paper:#ece9df; --ink:#111; --banner:#084563;
@@ -12,8 +12,8 @@
       --font:"Conduit ITC","ConduitITC","Bahnschrift Condensed","Aptos Narrow","Arial Narrow",Arial,sans-serif;
     }
     *{box-sizing:border-box} body{margin:0;background:#242424;color:var(--ink);font-family:var(--font);padding:24px}
-    .toolbar{max-width:var(--card-w);margin:0 auto 16px;color:#ddd;font:14px Arial,sans-serif;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.toolbar select{padding:6px 8px}.toolbar label{display:flex;gap:6px;align-items:center}
-    #app{width:min(96vw,var(--card-w));margin:0 auto;display:grid;gap:24px}.hidden{display:none!important}
+    .toolbar{max-width:var(--strat-card-w);margin:0 auto 16px;color:#ddd;font:14px Arial,sans-serif;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.toolbar select{padding:6px 8px}.toolbar label{display:flex;gap:6px;align-items:center}
+    #app{width:min(96vw,var(--strat-card-w));margin:0 auto;display:grid;gap:24px}.hidden{display:none!important}
     .detachment-card {
         width: 1200px;
         height: 1800px;
@@ -25,7 +25,18 @@
         box-shadow: 0 12px 40px rgba(0,0,0,.45);
     }
     .detachment-card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 18% 22%,rgba(255,255,255,.35),transparent 28%),linear-gradient(90deg,rgba(0,0,0,.035),transparent 20%,transparent 80%,rgba(0,0,0,.07));pointer-events:none}
-    .header{position:absolute;left:4%;right:4%;top:3%;height:10.2%;background:var(--banner);color:#fff;padding:0 1.55%;text-transform:uppercase;font-weight:900;letter-spacing:.035em;line-height:.95}.header::after{content:"";position:absolute;left:1.55%;right:1.55%;top:50%;height:.42cqw;background:#fff;transform:translateY(-50%)}.kicker{position:absolute;left:1.55%;right:1.55%;top:12%;font-size:2.26cqw;line-height:1}.page-title{position:absolute;left:1.55%;right:1.55%;line-height:.9}
+    .header{position:absolute;left:4%;right:4%;top:3%;height:10.2%;background:var(--banner);color:#fff;padding:0 1.55%;text-transform:uppercase;font-weight:900;letter-spacing:.035em;line-height:.95}.header::after{content:"";position:absolute;left:1.55%;right:1.55%;top:50%;height:.42cqw;background:#fff;transform:translateY(-50%)}
+    /* A long faction/detachment name (e.g. "Agents of the Imperium - Ordo
+       Hereticus Purgation Force") has no natural line-break point here, and
+       .kicker was never constrained to one line — it would wrap and grow
+       downward into .page-title's own space below it (both are absolutely
+       positioned in the same .header box), the two overlapping into an
+       unreadable jumble. white-space:nowrap plus overflow:hidden as a static
+       safety net, with fitKicker() scaling .kicker-text down at render time
+       to actually fit the available width instead of just clipping it. */
+    .kicker{position:absolute;left:1.55%;right:1.55%;top:12%;font-size:2.26cqw;line-height:1;white-space:nowrap;overflow:hidden}
+    .kicker-text{display:inline-block;transform-origin:left center}
+    .page-title{position:absolute;left:1.55%;right:1.55%;line-height:.9}
     .rule-card,
     .strat-card {
         margin: 0 auto;
@@ -46,8 +57,27 @@
     .rule-body{font:var(--rule-fs,2.4cqw)/1.20 var(--font)}
     .rule-name,
     .enh-name{font-weight:900;text-transform:uppercase;font-size:calc(var(--enh-fs,2.15cqw) * 1.5);letter-spacing:.02em;margin:.35cqw 0 .14cqw}
-    .subrule-title{font-weight:900;text-transform:uppercase;font-size:calc(var(--rule-fs,2.4cqw) * 1.15);margin:.55cqw 0 .08cqw}.enh-grid{display:grid;grid-template-columns:1fr 1fr;gap:.85cqw 2.0cqw}.enh-card{border-top:.18cqw dotted #222;padding-top:.32cqw;min-width:0}
+    /* New this edition: some enhancements carry a small "UPGRADE" badge
+       next to their name (see waha_detachment_scraper.extract_enhancements'
+       upgrade_label). Fixed colours captured from the live site
+       (background rgb(57,77,14), text rgb(242,242,242)) — unlike the
+       heading banners elsewhere in this project, this badge isn't a
+       per-faction colour, so a hardcoded value is correct here rather
+       than a captured/resolved one. */
+    .enh-upgrade-badge{display:inline-block;background:#394d0e;color:#f2f2f2;font-weight:700;text-transform:uppercase;font-size:calc(var(--enh-fs,2.15cqw) * .68);letter-spacing:.02em;padding:.12cqw .3cqw .02cqw;margin-left:.3cqw;vertical-align:middle}
+    .subrule-title{font-weight:900;text-transform:uppercase;font-size:calc(var(--rule-fs,2.4cqw) * 1.15);margin:.55cqw 0 .08cqw}.enh-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:2.0cqw}.enh-col{display:flex;flex-direction:column;gap:.85cqw}.enh-card{border-top:.18cqw dotted #222;padding-top:.32cqw;min-width:0}
     .enh-text{font:var(--enh-fs,2.15cqw)/1.16 var(--font)}
+    /* New this edition: an enhancement can grant a specific weapon profile
+       (see waha_detachment_scraper.extract_enhancement_weapon_profile) —
+       a compact single-row stat line, not the fuller multi-weapon table
+       units.html renders for a whole datasheet (profile markers for
+       split weapon options don't apply here, since there's only ever one
+       profile). */
+    .enh-weapon-table{width:100%;border-collapse:collapse;margin-top:.3cqw;font-size:calc(var(--enh-fs,2.15cqw) * .82)}
+    .enh-weapon-table th{background:var(--frame);color:#fff;text-transform:uppercase;font-weight:900;text-align:left;padding:.14cqw .3cqw;letter-spacing:.02em}
+    .enh-weapon-table th:not(:first-child),.enh-weapon-table td:not(:first-child){text-align:center}
+    .enh-weapon-table td{padding:.16cqw .3cqw;border-bottom:.06cqw solid #999}
+    .enh-weapon-keywords{font-weight:700;opacity:.75}
     .rule-table,
     .content-table{
       width:100%;
@@ -100,50 +130,11 @@
       gap: 1.5cqw;
       min-width: 0;
     }
-    .strat{display: grid;grid-template-columns: 8.7cqw 1fr;gap: 1.25cqw;min-height: auto;}
-    .strat-icons{
-      --diamond-size: 5.7cqw;
-      --diamond-gap: 1.05cqw;
-
-      position: relative;
-      width: 8.4cqw;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding-top: 1.05cqw;
-      gap: var(--diamond-gap);
-    }
-    .strat-icons::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:.64cqw;transform:translateX(-50%);background:currentColor;z-index:0}
-    .diamond-slot{
-      width: calc(var(--diamond-size) * 1.41421356);
-      height: calc(var(--diamond-size) * 1.41421356);
-      display: grid;
-      place-items: start center;
-      flex: 0 0 auto;
-      z-index: 1;
-    }
-    .diamond-slot:first-child{
-      height: var(--diamond-size);
-      margin-bottom: calc((var(--diamond-size) * 1.41421356) - var(--diamond-size));
-    }
-    .diamond{
-      width: var(--diamond-size);
-      height: var(--diamond-size);
-      background: var(--paper);
-      border: .64cqw solid currentColor;
-      transform: rotate(45deg);
-      display: grid;
-      place-items: center;
-    }
-    .diamond > *{
-      transform: rotate(-45deg);
-    }
-    .cp{font-weight:900;font-size:2.15cqw;line-height:1;color:currentColor}.phase-icon{width:3.8cqw;height:3.8cqw;background-color:transparent;background-repeat:no-repeat;background-size:contain;background-position:center}.str10ColorEither .phase-icon{filter:invert(40%) sepia(12%) saturate(2210%) hue-rotate(121deg) brightness(94%) contrast(88%)}.str10ColorYour .phase-icon{filter:invert(23%) sepia(88%) saturate(2002%) hue-rotate(179deg) brightness(87%) contrast(93%)}.str10ColorEnemy .phase-icon{filter:invert(10%) sepia(76%) saturate(6071%) hue-rotate(352deg) brightness(102%) contrast(99%)}.strat-body{min-width:0;overflow:hidden}.strat-name{font-weight:900;text-transform:uppercase;font-size:var(--strat-name-fs,3.39cqw);line-height:1;color:currentColor;letter-spacing:.04em;border-bottom:.30cqw solid currentColor;padding-bottom:.18cqw;white-space:nowrap;overflow:hidden;text-overflow:clip}.strat-type{font-weight:900;text-transform:uppercase;font-size:var(--strat-type-fs,3.15cqw);line-height:1.05;margin:.28cqw 0 .22cqw}.dotline{border-top:.20cqw dotted #111;height:0;margin:.13cqw 0 .28cqw}.strat-text{font:var(--strat-fs,3.15cqw)/1.08 var(--font)}.strat-field{margin:.14cqw 0 .30cqw}.label{display:inline;font-weight:900;color:currentColor;text-transform:uppercase;margin-right:.22em}.str10ColorEither{color:var(--green)}.str10ColorYour{color:var(--blue)}.str10ColorEnemy{color:var(--red)}
   </style>
 </head>
 <body>
-  <script src="./waha_content_render_utils.js"></script>
-  <div class="toolbar"><label>Faction <select id="faction-primary"></select></label><label>Sub-faction <select id="sub-faction"></select></label><label>Detachment <select id="detachment"></select></label><label>Show <select id="show"><option value="all">Both cards</option><option value="rules">Rules card</option><option value="stratagems">Stratagems card</option></select></label></div>
+  <script src="./waha_content_render_utils.js?v=1"></script>
+  <div class="toolbar"><label>Faction <select id="faction-primary"></select></label><label id="sub-faction-row" class="hidden">Sub-Faction <select id="sub-faction"></select></label><label>Detachment <select id="detachment"></select></label><label>Show <select id="show"><option value="all">Both cards</option><option value="rules">Rules card</option><option value="stratagems">Stratagems card</option></select></label></div>
   <main id="app"></main>
 <script>
 
@@ -211,8 +202,10 @@ function updateSubFactions(){
     .map(v => `<option value="${esc(v)}">${esc(v)}</option>`)
     .join('');
 
-  $('#sub-faction').hidden =
-    subFactionValues.length <= 1 && subFactionValues[0] === 'None';
+  $('#sub-faction-row').classList.toggle(
+    'hidden',
+    subFactionValues.length <= 1 && subFactionValues[0] === 'None'
+  );
 
   updateDets();
 }
@@ -243,10 +236,23 @@ function selectedCard(){
   return selected?.card || null;
 }
 
-const DATA_URL='units.json', MANIFEST_URL='detachment_css_manifest.json';
+const DATA_URL='waha_data.json', MANIFEST_URL='waha_css_manifest.json';
 let DATA={}, MANIFEST={};
 const $=s=>document.querySelector(s), app=$('#app');
 // Generic content rendering helpers are provided by waha_content_render_utils.js.
+
+function detachmentCardFilename(card){
+  const detName = $('#detachment').selectedOptions?.[0]?.textContent || 'detachment';
+  return `${detName}-${card.dataset.card || 'card'}`;
+}
+
+function attachExportUi(){
+  addDownloadAllButton(
+    $('.toolbar'),
+    () => document.querySelectorAll('.detachment-card:not(.hidden)'),
+    detachmentCardFilename
+  );
+}
 
 function render(){
   const card = selectedCard();
@@ -258,43 +264,28 @@ function render(){
 
   app.innerHTML = renderRules(card) + renderStrats(card);
   applyShow();
+  attachExportUi();
 }
-function colourClass(cls){return cls||'str10ColorEither'}
-function headingStyleFromClasses(classes){
-    classes = Array.isArray(classes) ? classes : [];
-
-    const style = {
-        color: "#fff"
-    };
-
-    for (const cls of classes) {
-        const s = MANIFEST.heading_classes?.[cls];
-        if (!s) continue;
-
-        if (s.backgroundColor && s.backgroundColor !== "rgba(0, 0, 0, 0)")
-            style.background = s.backgroundColor;
-    }
-
-    return Object.entries(style)
-        .map(([k,v]) => `${k}:${v}`)
-        .join(";");
+// colourClass/iconStyle/fieldBlockHtml/fieldHtml/overflowing are shared —
+// see waha_content_render_utils.js's "STRATAGEM CARDS" section.
+function headingStyle(heading){
+    return `color:${heading?.color || '#fff'}${heading?.background ? `;background:${heading.background}` : ''}`;
 }
-function iconStyle(icon){ const item=MANIFEST.stratagem_icons?.[icon]; const path=item?.backgroundImageAsset || ''; return path ? `style="background-image:url('${esc(path)}')"` : ''; }
 function cardHeader(card,title){
-    const bannerStyle = headingStyleFromClasses(card.rules?.[0]?.heading_class);
+    const bannerStyle = headingStyle(card.rules?.[0]?.heading);
 
     return `
     <div class="header" style="${bannerStyle}">
-        <div class="kicker">${esc(card.faction)} - ${esc(card.detachment)}</div>
+        <div class="kicker"><span class="kicker-text">${esc(card.faction)} - ${esc(card.detachment)}</span></div>
         <div class="page-title">${title}</div>
     </div>`;
 }
 function renderRules(card){
-  const bannerStyle = headingStyleFromClasses(card.rules?.[0]?.heading_class);
+  const bannerStyle = headingStyle(card.rules?.[0]?.heading);
 
   const rules = (card.rules || []).map(r => `
     <section>
-      <div class="section-title" style="${headingStyleFromClasses(r.heading_class)}">
+      <div class="section-title" style="${headingStyle(r.heading)}">
         ${esc(r.name)}
       </div>
       <div class="rule-body">
@@ -303,12 +294,33 @@ function renderRules(card){
     </section>
   `).join('');
 
-  const enh = (card.enhancements || []).map(e => `
+  const enhancements = card.enhancements || [];
+  const leftCount = Math.ceil(enhancements.length / 2);
+  const left = enhancements.slice(0, leftCount);
+  const right = enhancements.slice(leftCount);
+  const renderEnhWeaponProfile = w => {
+    if (!w) return '';
+    const hitKey = w.type === 'ranged' ? 'BS' : 'WS';
+    const keywords = Array.isArray(w.keywords) && w.keywords.length
+      ? ` <span class="enh-weapon-keywords">[${esc(w.keywords.map(k => String(k).toUpperCase()).join(', '))}]</span>`
+      : '';
+    return `
+      <table class="enh-weapon-table">
+        <thead><tr><th>${esc(w.type === 'ranged' ? 'RANGED WEAPONS' : 'MELEE WEAPONS')}</th><th>RANGE</th><th>A</th><th>${esc(hitKey)}</th><th>S</th><th>AP</th><th>D</th></tr></thead>
+        <tbody><tr><td>${esc(w.name)}${keywords}</td><td>${esc(w.range)}</td><td>${esc(w.A)}</td><td>${esc(w[hitKey])}</td><td>${esc(w.S)}</td><td>${esc(w.AP)}</td><td>${esc(w.D)}</td></tr></tbody>
+      </table>
+    `;
+  };
+  const upgradeBadge = e => e.upgrade_label
+    ? ` <span class="enh-upgrade-badge">${esc(e.upgrade_label)}</span>`
+    : '';
+  const renderEnh = e => `
     <div class="enh-card">
-      <div class="enh-name">${esc(e.name)}</div>
+      <div class="enh-name">${esc(e.name)}${upgradeBadge(e)}</div>
       <div class="enh-text">${(e.content || []).map(blockHtml).join('')}</div>
+      ${renderEnhWeaponProfile(e.weapon_profile)}
     </div>
-  `).join('');
+  `;
 
   return `
     <article class="detachment-card rule-card" data-card="rules">
@@ -320,36 +332,22 @@ function renderRules(card){
         <div class="enh-zone">
           <div class="section-title" style="${bannerStyle}">Enhancements</div>
           <div class="enh-fit">
-            <div class="enh-grid">${enh}</div>
+            <div class="enh-grid"><div class="enh-col">${left.map(renderEnh).join('')}</div><div class="enh-col">${right.map(renderEnh).join('')}</div></div>
           </div>
         </div>
       </div>
     </article>
   `;
 }
-function fieldHtml(val){
-  if (!val) return '';
-
-  if (Array.isArray(val)) return val.map(fieldHtml).join('');
-
-  if (val.displayItem === 'p') {
-    return textRuns(val);
-  }
-
-  return blockHtml(val);
-}
 function renderStrat(s,det){
-  const color=colourClass(s.color_class); const icons=(s.icon_classes&&s.icon_classes.length?s.icon_classes:['str10Any']).concat(['CP:'+s.cp]);
-  const iconHtml = icons.map(i =>
-    i.startsWith('CP:')
-      ? `<div class="diamond-slot"><div class="diamond"><div class="cp">${esc(i.slice(3)||'1CP')}</div></div></div>`
-      : `<div class="diamond-slot"><div class="diamond"><div class="phase-icon" ${iconStyle(i)}></div></div></div>`
-  ).join('');
+  const color=colourClass(s.color_class);
+  const icons=(s.icon_classes&&s.icon_classes.length?s.icon_classes:['str10Any']);
+  const iconHtml = icons.map(i => `<div class="strat-icon" ${iconStyle(i)}></div>`).join('');
   const field = (label, val) =>
     val
       ? `<div class="strat-field"><span class="label">${label}:</span>${fieldHtml(val)}</div>`
       : '';
-  return `<section class="strat ${color}"><div class="strat-icons">${iconHtml}</div><div class="strat-body"><div class="strat-name">${esc(s.name)}</div><div class="strat-type">${esc(det)} – ${esc(s.type||'Stratagem')}</div><div class="dotline"></div><div class="strat-text">${field('WHEN',s.when)}${field('TARGET',s.target)}${field('EFFECT',s.effect)}${field('RESTRICTIONS',s.restrictions)}</div></div></section>`;
+  return `<section class="strat ${color}"><div class="strat-head"><div class="strat-name">${esc(s.name)}</div><div class="strat-cp">${esc(s.cp||'')}</div></div><div class="strat-body"><div class="strat-type">${esc(det)} – ${esc(s.type||'Stratagem')}</div><div class="dotline"></div><div class="strat-text">${field('WHEN',s.when)}${field('TARGET',s.target)}${field('EFFECT',s.effect)}${field('RESTRICTIONS',s.restrictions)}</div></div><div class="strat-icons" ${iconStyle(s.bg_class)}>${iconHtml}</div></section>`;
 }
 function splitStrats(strats){
   const leftCount = Math.ceil(strats.length / 2);
@@ -382,18 +380,22 @@ function renderStrats(card){
   `;
 }
 function pxToCqw(card, px){ return (px / card.getBoundingClientRect().width) * 100; }
-function overflowing(el){ return el && (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1); }
-function fitBox(box, inner){
+function fitBox(box, inner, availableHOverride){
   if (!box || !inner) return;
 
   inner.style.transform = '';
   inner.style.width = '100%';
 
   const availableW = box.clientWidth;
-  const availableH = box.clientHeight;
+  const availableH = availableHOverride != null ? availableHOverride : box.clientHeight;
 
   const neededW = inner.scrollWidth;
-  const neededH = inner.scrollHeight;
+  let neededH = inner.scrollHeight;
+
+  const enhCols = inner.querySelectorAll('.enh-col');
+  if (enhCols.length) {
+    neededH = Math.max(...Array.from(enhCols, col => col.scrollHeight));
+  }
 
   if (!availableW || !availableH || !neededW || !neededH) return;
 
@@ -404,7 +406,53 @@ function fitBox(box, inner){
   );
 
   inner.style.transform = `scale(${scale})`;
-  inner.style.width = `${100 / scale}%`;
+
+  const isEnhancements = inner.querySelector('.enh-col');
+  if (isEnhancements) {
+    inner.style.width = '100%';
+  } else {
+    inner.style.width = `${100 / scale}%`;
+  }
+}
+
+/* Redistributes the children of two column elements to minimize the
+   tallest column's natural (unscaled) height, while preserving overall
+   order — reading col1 top-to-bottom then col2 top-to-bottom must still
+   give back the original sequence. Since it's a single contiguous split
+   point over an ordered sequence, trying every possible cut and keeping
+   the one with the smallest "tallest side" is optimal (not just a
+   heuristic), and is O(n) after the heights are measured. */
+function balanceTwoColumns(col1, col2) {
+  if (!col1 || !col2) return;
+
+  const items = [...Array.from(col1.children), ...Array.from(col2.children)];
+  const n = items.length;
+  if (!n) return;
+
+  const heights = items.map(el => el.getBoundingClientRect().height);
+  const prefix = [0];
+  for (let i = 0; i < n; i++) prefix.push(prefix[i] + heights[i]);
+  const total = prefix[n];
+
+  let bestIdx = n;
+  let bestWorst = Infinity;
+  for (let i = 0; i <= n; i++) {
+    const worst = Math.max(prefix[i], total - prefix[i]);
+    if (worst < bestWorst) {
+      bestWorst = worst;
+      bestIdx = i;
+    }
+  }
+
+  // Don't leave a column completely empty just because that happens to
+  // minimize the max — with 2+ items a visibly empty column looks broken
+  // even in the rare case it's technically optimal.
+  if (n > 1) {
+    bestIdx = Math.min(Math.max(bestIdx, 1), n - 1);
+  }
+
+  col1.replaceChildren(...items.slice(0, bestIdx));
+  col2.replaceChildren(...items.slice(bestIdx));
 }
 
 function fitRulesCard(card){
@@ -417,6 +465,7 @@ function fitRulesCard(card){
   const enhZone = card.querySelector('.enh-zone');
   const enhFit = card.querySelector('.enh-fit');
   const enhTitle = enhZone?.querySelector('.section-title');
+  const enhCols = enhFit?.querySelectorAll(':scope > .enh-grid > .enh-col');
 
   if (!content || !rulesZone || !rulesFit || !enhZone || !enhFit) return;
 
@@ -424,6 +473,10 @@ function fitRulesCard(card){
   rulesFit.style.width = '100%';
   enhFit.style.transform = '';
   enhFit.style.width = '100%';
+
+  if (enhCols && enhCols.length === 2) {
+    balanceTwoColumns(enhCols[0], enhCols[1]);
+  }
 
   card.style.setProperty('--rules-row', 'auto');
 
@@ -442,39 +495,33 @@ function fitRulesCard(card){
   card.style.setProperty('--rules-row', `${rulesH}px`);
 
   fitBox(rulesZone, rulesFit);
-  fitBox(enhZone, enhFit);
+
+  // enhZone.clientHeight includes the "Enhancements" title bar above
+  // enh-fit, so using it directly as the available height overestimates
+  // how much room enh-fit actually has (the title isn't part of enh-fit's
+  // own grid row) and under-shrinks the content, letting it get clipped.
+  // Subtract the title's height to get enh-fit's real budget.
+  const enhAvailableH = enhZone.clientHeight - (enhTitle?.offsetHeight || 0);
+  fitBox(enhZone, enhFit, enhAvailableH);
 }
-function fitStratagems(card){
-  const grid = card.querySelector('.strat-grid');
-  const content = card.querySelector('.content');
+// fitStratagemGrid is shared — see waha_content_render_utils.js.
+function fitStratagems(card){ fitStratagemGrid(card, '.strat-grid'); }
+function fitKicker(card){
+  const kicker = card.querySelector('.kicker');
+  const inner = kicker?.querySelector('.kicker-text');
+  if (!kicker || !inner) return;
 
-  card.querySelectorAll('.strat').forEach(strat=>{
-    strat.style.setProperty('--strat-name-fs','3.5cqw');
-    strat.style.setProperty('--strat-fs','2.4cqw');
-    strat.style.setProperty('--strat-type-fs','1.8cqw');
-  });
+  inner.style.transform = '';
 
-  for(let pass = 0; pass < 120 && (overflowing(grid) || overflowing(content)); pass++){
-    card.querySelectorAll('.strat').forEach(strat=>{
-      const fs = parseFloat(getComputedStyle(strat).getPropertyValue('--strat-fs')) || 2.2;
-      const ts = parseFloat(getComputedStyle(strat).getPropertyValue('--strat-type-fs')) || 1.6;
+  const availableW = kicker.clientWidth;
+  const neededW = inner.scrollWidth;
+  if (!availableW || !neededW) return;
 
-      if(fs > 0.86) strat.style.setProperty('--strat-fs', (fs - .035) + 'cqw');
-      if(ts > 1.05) strat.style.setProperty('--strat-type-fs', (ts - .025) + 'cqw');
-    });
-  }
-
-  card.querySelectorAll('.strat').forEach(strat=>{
-    const name = strat.querySelector('.strat-name');
-
-    for(let i=0; i<80 && overflowing(name); i++){
-      const ns = parseFloat(getComputedStyle(strat).getPropertyValue('--strat-name-fs')) || 3;
-      if(ns <= 1.65) break;
-      strat.style.setProperty('--strat-name-fs', (ns - .055) + 'cqw');
-    }
-  });
+  const scale = Math.min(1, availableW / neededW);
+  if (scale < 1) inner.style.transform = `scale(${scale})`;
 }
 function fitAll(){
+  document.querySelectorAll('.detachment-card').forEach(fitKicker);
   document.querySelectorAll('.rule-card').forEach(fitRulesCard);
   document.querySelectorAll('.strat-card').forEach(fitStratagems);
 }
@@ -491,7 +538,7 @@ function applyShow(){
   });
 }
 $('#faction-primary').addEventListener('change', updateSubFactions); $('#sub-faction').addEventListener('change', updateDets); $('#detachment').addEventListener('change', render); $('#show').addEventListener('change', applyShow);
-Promise.all([fetch(DATA_URL).then(r=>r.json()), fetch(MANIFEST_URL).then(r=>r.json()).catch(()=>({}))]).then(([d,m])=>{DATA=d;MANIFEST=m;applyManifestInlineTextCss(MANIFEST);populate();});
+Promise.all([fetch(DATA_URL).then(r=>r.json()), fetch(MANIFEST_URL).then(r=>r.json()).catch(()=>({}))]).then(([d,m])=>{DATA=d;MANIFEST=m;setActiveManifest(MANIFEST);populate();});
 </script>
 </body>
 </html>

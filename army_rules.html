@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Army Rules Card Renderer</title>
-  <link rel="stylesheet" href="./waha_common.css" />
+  <link rel="stylesheet" href="./waha_common.css?v=1" />
   <style>
     :root{
       --card-w:1800px; --card-h:1200px; --strat-card-w:1200px; --strat-card-h:1800px; --paper:#ece9df; --ink:#111; --banner:#084563;
@@ -44,7 +44,7 @@
     .impact18{font-weight:900;text-transform:uppercase;font-size:calc(var(--rule-fs,2.4cqw) * 1.22);letter-spacing:.02em}
 
     .cs-rule{display:grid;grid-template-columns:minmax(5.5cqw,auto) 1fr;column-gap:.85cqw;align-items:start;border-top:.18cqw dotted #222;padding-top:.45cqw;margin:.55cqw 0 .7cqw;break-inside:avoid}
-    .cs-req{min-width:5.5cqw;min-height:4.2cqw;display:flex;align-items:flex-start;justify-content:center;font-weight:900;text-transform:uppercase;font-size:1.55cqw;line-height:1;padding-top:.15cqw}
+    .cs-req{min-width:5.5cqw;min-height:4.2cqw;display:flex;align-items:center;justify-content:center;font-weight:900;text-transform:uppercase;font-size:1.55cqw;line-height:1}
     .cs-content{min-width:0}
     .cs-title{font-weight:900;text-transform:uppercase;font-size:calc(var(--rule-fs,2.4cqw) * 1.05);letter-spacing:.02em;margin:0 0 .12cqw}
     .cruD6wrap{display:inline-flex;align-items:center;justify-content:center;min-width:6.4cqw;min-height:6.4cqw;font-weight:900}
@@ -68,39 +68,55 @@
 
     /* Targeted shim for preserved Wahapedia warp-charge widgets.
        The manifest supplies the real cruWarpChargeTS background image; this CSS
-       only controls card-local sizing/positioning and readable text colour. */
-    .content-table .cruWarpChargeWrap{position:relative!important;display:block!important;width:100%!important;min-width:0!important;height:1.72em!important;min-height:1.72em!important;margin:.20cqw 0 .40cqw!important;background:rgb(0,60,112)!important;color:rgb(192,217,236)!important;overflow:visible!important;font-size:calc(var(--rule-fs,2.4cqw) * .82)!important;line-height:1!important;font-weight:900!important;text-transform:uppercase!important}
-    .content-table .cruWarpChargeName{position:absolute!important;left:.55em!important;top:50%!important;transform:translateY(-50%)!important;color:rgb(192,217,236)!important;font-size:1.08em!important;line-height:1!important;white-space:nowrap!important}
-    .content-table .cruWarpChargeName span{color:inherit!important;font-size:inherit!important;line-height:inherit!important}
-    .content-table .cruWarpChargeTS{position:absolute!important;right:-.10em!important;top:50%!important;transform:translateY(-50%)!important;width:2.25em!important;height:2.42em!important;background-color:transparent!important;background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important;color:rgb(192,217,236)!important;display:flex!important;align-items:center!important;justify-content:center!important;line-height:1!important;overflow:visible!important}
-    .content-table .cruWarpChargeTSNumber{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:100%!important;color:rgb(192,217,236)!important;font-size:1.42em!important;line-height:1!important;font-weight:900!important;text-align:center!important;text-shadow:0 1px 1px rgba(0,0,0,.45)!important}
-    .content-table .cruWarpChargeTSNumber span{color:inherit!important;font-size:inherit!important;line-height:inherit!important}
+       only controls card-local sizing/positioning and readable text colour.
+       Not scoped to .content-table: these widgets can now also appear inside a
+       subrule box (extract_subrule_from_table), not just a literal table. */
+    .cruWarpChargeWrap{position:relative!important;display:block!important;width:100%!important;min-width:0!important;height:1.72em!important;min-height:1.72em!important;margin:.20cqw 0 .40cqw!important;background:rgb(0,60,112)!important;color:rgb(192,217,236)!important;overflow:visible!important;font-size:calc(var(--rule-fs,2.4cqw) * .82)!important;line-height:1!important;font-weight:900!important;text-transform:uppercase!important}
+    .cruWarpChargeName{position:absolute!important;left:.55em!important;top:50%!important;transform:translateY(-50%)!important;color:rgb(192,217,236)!important;font-size:1.08em!important;line-height:1!important;white-space:nowrap!important}
+    .cruWarpChargeName span{color:inherit!important;font-size:inherit!important;line-height:inherit!important}
+    .cruWarpChargeTS{position:absolute!important;right:-.10em!important;top:50%!important;transform:translateY(-50%)!important;width:2.25em!important;height:2.42em!important;background-color:transparent!important;background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important;color:rgb(192,217,236)!important;display:flex!important;align-items:center!important;justify-content:center!important;line-height:1!important;overflow:visible!important}
+    .cruWarpChargeTSNumber{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:100%!important;color:rgb(192,217,236)!important;font-size:1.42em!important;line-height:1!important;font-weight:900!important;text-align:center!important;text-shadow:0 1px 1px rgba(0,0,0,.45)!important}
+    .cruWarpChargeTSNumber span{color:inherit!important;font-size:inherit!important;line-height:inherit!important}
+
+    /* World Eaters dice-requirement widget wrapper (cruWEwrap). The die/
+       plus/or icons inside it now bring their own real display:inline-block
+       (captured live, see STAMP_JS's `measured.display`), so they already
+       flow left-to-right correctly with no per-class CSS needed here.
+       cruWEwrap itself isn't a widget marker, so it still picks up the
+       manifest's auto-generated CSS (see applyManifestAssetCss) — which
+       sampled it in isolation with no children and captured a meaningless
+       width:8px (just its own padding). Unlike display, that raw width has
+       no valid reuse here (it's Wahapedia's own content-column width, not
+       a portable design constant), so it's overridden with auto rather
+       than captured. */
+    .cruWEwrap{width:auto!important}
 
     /* Action-entry icon rail: one or more redDiamondLeft widgets define the
-       left margin for the following TRIGGER/EFFECT text. */
-    .content-table .action-entry{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:.62cqw;align-items:start;margin:.25cqw 0 .42cqw;clear:both}
-    .content-table .action-icons{--action-icon-scale:2.8;display:flex;gap:.27cqw;align-items:flex-start;justify-content:flex-start;min-width:max-content;padding-top:.05cqw}
-    .content-table .action-icons-standalone{margin:.25cqw 0 .35cqw}
-    .content-table .action-icon-unit{width:calc(2.75cqw * var(--action-icon-scale));height:calc(3.55cqw * var(--action-icon-scale));min-width:calc(2.75cqw * var(--action-icon-scale));min-height:calc(3.55cqw * var(--action-icon-scale));display:flex;align-items:center;justify-content:center;overflow:visible}
-    .content-table .action-icon-unit > .redDiamondLeft{transform:scale(var(--action-icon-scale));transform-origin:center center}
-    .content-table .action-text{min-width:0}
-    .content-table .action-text p{margin:0 0 .38cqw;text-transform:none;font-weight:400}
-    .content-table .action-text p:last-child{margin-bottom:0}
+       left margin for the following TRIGGER/EFFECT text. Not scoped to
+       .content-table: this content can now also render inside a subrule box
+       (extract_subrule_from_table), not just a literal table. */
+    .action-entry{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:.62cqw;align-items:start;margin:.25cqw 0 .42cqw;clear:both}
+    .action-icons{display:flex;gap:.27cqw;align-items:flex-start;justify-content:flex-start;min-width:max-content;padding-top:.05cqw}
+    .action-icons-standalone{margin:.25cqw 0 .35cqw}
+    .action-icon-unit{display:flex;align-items:center;justify-content:center;overflow:visible}
+    .action-text{min-width:0}
+    .action-text p{margin:0 0 .38cqw;text-transform:none;font-weight:400}
+    .action-text p:last-child{margin-bottom:0}
 
     /* Datasheet-character chips used by Astra Militarum Orders.
        Render them as a reserved left rail instead of relying on source-page floats. */
-    .content-table .ds-char-entry{display:grid;grid-template-columns:7.2cqw minmax(0,1fr);column-gap:.70cqw;align-items:start;width:100%;max-width:100%;clear:both;margin:.85cqw 0 .8cqw;min-height:5.8cqw;padding-bottom:.25cqw;}
-    .content-table .ds-char-entry:has(.dsCharWrap + .dsCharWrap){grid-template-columns:14.2cqw minmax(0,1fr)}
-    .content-table .ds-char-icons{display:flex;gap:.45cqw;align-items:flex-start;justify-content:flex-start;width:7.2cqw;min-width:0;max-width:7.2cqw;overflow:visible}
-    .content-table .ds-char-entry:has(.dsCharWrap + .dsCharWrap) .ds-char-icons{width:14.2cqw;max-width:14.2cqw}
-    .content-table .ds-char-entry .dsCharWrap{float:none!important;display:block!important;padding:0!important;margin:0!important;width:6.6cqw!important;min-width:6.6cqw!important;max-width:6.6cqw!important;overflow:visible!important}
-    .content-table .ds-char-text{min-width:0;max-width:100%;overflow-wrap:normal}
-    .content-table .ds-char-text p{margin:0 0 .38cqw;text-transform:none;font-weight:400}
-    .content-table .ds-char-text p:last-child{margin-bottom:0}
+    .ds-char-entry{display:grid;grid-template-columns:7.2cqw minmax(0,1fr);column-gap:.70cqw;align-items:start;width:100%;max-width:100%;clear:both;margin:.85cqw 0 .8cqw;min-height:5.8cqw;padding-bottom:.25cqw;}
+    .ds-char-entry:has(.dsCharWrap + .dsCharWrap){grid-template-columns:14.2cqw minmax(0,1fr)}
+    .ds-char-icons{display:flex;gap:.45cqw;align-items:flex-start;justify-content:flex-start;width:7.2cqw;min-width:0;max-width:7.2cqw;overflow:visible}
+    .ds-char-entry:has(.dsCharWrap + .dsCharWrap) .ds-char-icons{width:14.2cqw;max-width:14.2cqw}
+    .ds-char-entry .dsCharWrap{float:none!important;display:block!important;padding:0!important;margin:0!important;width:6.6cqw!important;min-width:6.6cqw!important;max-width:6.6cqw!important;overflow:visible!important}
+    .ds-char-text{min-width:0;max-width:100%;overflow-wrap:normal}
+    .ds-char-text p{margin:0 0 .38cqw;text-transform:none;font-weight:400}
+    .ds-char-text p:last-child{margin-bottom:0}
 
     /* Scoped reconstruction of Wahapedia datasheet-character chips.
        This only applies to dsChar clusters rendered by the ds-char-entry path. */
-    .content-table .ds-char-entry .dsCharWrap{
+    .ds-char-entry .dsCharWrap{
       float:none!important;
       display:block!important;
       padding:0!important;
@@ -108,36 +124,43 @@
       font-family:ConduitITC,"Conduit ITC","Bahnschrift Condensed","Aptos Narrow","Arial Narrow",Arial,sans-serif!important;
       line-height:1!important;
     }
-    .content-table .ds-char-entry .dsCharFrame{
+    /* width/height/min-width/min-height are NOT !important here (unlike the
+       rest of this rule) — these are fallback defaults only. When the scrape
+       captured this element's real live size (block.measured, see
+       waha_scraper_common.py's STAMP_JS), the renderer emits it as an inline
+       style, which should win over these stale hand-typed pixels. Data
+       re-scraped after a source-page redesign self-corrects instead of
+       silently going wrong again. */
+    .ds-char-entry .dsCharFrame{
       display:flex!important;
       flex-direction:column!important;
       align-items:center!important;
       justify-content:flex-start!important;
-      width:57px!important;
-      height:57px!important;
-      min-width:57px!important;
-      min-height:57px!important;
+      width:45px;
+      height:57px;
+      min-width:45px;
+      min-height:57px;
       background-color:rgb(50,73,53)!important;
       clip-path:polygon(12% 0,100% 0,100% 20%,100% 88%,88% 100%,20% 100%,0 100%,0 12%)!important;
       overflow:hidden!important;
       line-height:1!important;
       box-sizing:border-box!important;
     }
-    .content-table .ds-char-entry .dsCharFrameBack{
+    .ds-char-entry .dsCharFrameBack{
       display:flex!important;
       align-items:center!important;
       justify-content:center!important;
-      width:51px!important;
-      height:39px!important;
-      min-width:51px!important;
-      min-height:39px!important;
-      margin-bottom:0!important;
-      background:#fff!important;
+      width:39px;
+      height:36px;
+      min-width:39px;
+      min-height:36px;
+      margin-bottom:3px;
+      background:rgb(231,233,225)!important;
       clip-path:polygon(10% 0,100% 0,100% 20%,100% 90%,90% 100%,20% 100%,0 100%,0 10%)!important;
       overflow:hidden!important;
       box-sizing:border-box!important;
     }
-    .content-table .ds-char-entry .dsCharName{
+    .ds-char-entry .dsCharName{
       display:flex!important;
       align-items:center!important;
       justify-content:center!important;
@@ -153,7 +176,7 @@
       overflow:hidden!important;
       box-sizing:border-box!important;
     }
-    .content-table .ds-char-entry .dsCharValue{
+    .ds-char-entry .dsCharValue{
       display:flex!important;
       align-items:center!important;
       justify-content:center!important;
@@ -169,8 +192,8 @@
       overflow:hidden!important;
       box-sizing:border-box!important;
     }
-    .content-table .ds-char-entry .dsCharName span,
-    .content-table .ds-char-entry .dsCharValue span{
+    .ds-char-entry .dsCharName span,
+    .ds-char-entry .dsCharValue span{
       display:contents!important;
       color:inherit!important;
       font:inherit!important;
@@ -179,58 +202,58 @@
     }
 
 
-    /* Targeted visual shim for Wahapedia action icons. The manifest can still
-       supply background/mask assets for the inner glyphs; these rules provide
-       the unscaled base presentation. The common .action-icon-unit frame above
-       controls overall scaling for the complete icon group. */
-    .content-table .redDiamondLeft{position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;width:2.75cqw!important;height:3.55cqw!important;min-width:2.75cqw!important;min-height:3.55cqw!important;margin:0!important;overflow:visible!important;background:transparent!important;line-height:1!important}
-    .content-table .bluCircle2{position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;width:2.20cqw!important;height:3.12cqw!important;border-radius:999px!important;background-color:rgb(22,105,114)!important;overflow:hidden!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important}
-    .content-table .bluCircle2 > div[class^="ae"]{display:flex!important;align-items:center!important;justify-content:center!important;width:1.55cqw!important;height:1.55cqw!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;color:#fff!important;line-height:1!important}
-    .content-table .bluCircle2 > div[class^="ae"]::before,
-    .content-table .bluCircle2 > div[class^="ae"]::after{display:block!important;width:1.55cqw!important;height:1.55cqw!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important}
+    /* Targeted visual shim for Wahapedia action icons. width/height/margin
+       are NOT !important throughout this section (unlike display/position/
+       background/etc, which stay structural constants): the renderer now
+       derives each of these from the widget's real measured proportions,
+       scaled uniformly from one hand-chosen anchor size (see
+       WIDGET_ANCHOR_WIDTHS / scaledMeasuredCss in
+       waha_content_render_utils.js), so internal spacing/position stays
+       correct at any scale instead of drifting the way separately hand-typed
+       cqw guesses for every nested piece did. These px/cqw values remain
+       only as a fallback for data scraped before this existed. */
+    .redDiamondLeft{position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;width:2.75cqw;height:3.55cqw;min-width:2.75cqw;min-height:3.55cqw;margin:0;overflow:visible!important;background:transparent!important;line-height:1!important}
+    .bluCircle2{position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;width:2.20cqw;height:3.12cqw;border-radius:50%;background-color:rgb(22,105,114)!important;overflow:hidden!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important}
+    .bluCircle2 > div[class^="ae"]{display:flex!important;align-items:center!important;justify-content:center!important;width:1.55cqw;height:1.55cqw;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;color:#fff!important;line-height:1!important}
+    .bluCircle2 > div[class^="ae"]::before,
+    .bluCircle2 > div[class^="ae"]::after{display:block!important;width:1.55cqw!important;height:1.55cqw!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important}
 
-    /* Scoped reconstruction/tuning of Wahapedia action icons:
-      <div class="redDiamondLeft"><div class="bluCircle2"><div class="aeMovement"></div></div></div>
-      Only applies to action-entry icon rails. */
-    .content-table .action-entry .action-icon-unit {
-      --action-icon-scale: 2.8;
-      width: calc(2.75cqw * var(--action-icon-scale));
-      height: calc(3.55cqw * var(--action-icon-scale));
-      min-width: calc(2.75cqw * var(--action-icon-scale));
-      min-height: calc(3.55cqw * var(--action-icon-scale));
+    /* Icon-rail wrapper: sized to its child now that the child's own width/
+       height come directly from real measured data scaled to the chosen
+       anchor (WIDGET_ANCHOR_WIDTHS.redDiamondLeft), so it no longer needs
+       its own separate scale guess or a transform to blow the icon up. */
+    .action-entry .action-icon-unit {
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: visible;
     }
 
-    .content-table .action-entry .redDiamondLeft {
+    .action-entry .redDiamondLeft {
       position: relative !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
-      width: 2.75cqw !important;
-      height: 3.55cqw !important;
-      min-width: 2.75cqw !important;
-      min-height: 3.55cqw !important;
-      margin: 0 !important;
+      width: 2em;
+      height: 3.6em;
+      min-width: 2em;
+      min-height: 3.6em;
+      margin: 0;
       overflow: visible !important;
       background: transparent !important;
       line-height: 1 !important;
-      transform: scale(var(--action-icon-scale));
-      transform-origin: center center;
     }
 
     /* Inner blue oval/circle. */
-    .content-table .action-entry .bluCircle2 {
+    .action-entry .bluCircle2 {
       position: relative !important;
       z-index: 1;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
-      width: 2.05cqw !important;
-      height: 2.70cqw !important;
-      border-radius: 999px !important;
+      width: 2em;
+      height: 3em;
+      border-radius: 50%;
       background-color: rgb(22,105,114) !important;
       overflow: hidden !important;
       background-position: center !important;
@@ -239,10 +262,10 @@
     }
 
     /* Inner glyph, e.g. aeMovement / aeShooting / aeCharge / aeFight. */
-    .content-table .action-entry .bluCircle2 > div[class^="ae"] {
+    .action-entry .bluCircle2 > div[class^="ae"] {
       display: block !important;
-      width: 1.42cqw !important;
-      height: 1.42cqw !important;
+      width: 1.65em;
+      height: 1.65em;
       background-position: center !important;
       background-repeat: no-repeat !important;
       background-size: contain !important;
@@ -251,11 +274,11 @@
       z-index: 2;
     }
 
-    .content-table .action-entry .bluCircle2 > div[class^="ae"]::before,
-    .content-table .action-entry .bluCircle2 > div[class^="ae"]::after {
+    .action-entry .bluCircle2 > div[class^="ae"]::before,
+    .action-entry .bluCircle2 > div[class^="ae"]::after {
       display: block !important;
-      width: 1.42cqw !important;
-      height: 1.42cqw !important;
+      width: 1.65em;
+      height: 1.65em;
       background-position: center !important;
       background-repeat: no-repeat !important;
       background-size: contain !important;
@@ -275,12 +298,12 @@
 </head>
 <body>
   <div class="toolbar">
-    <label>Faction <select id="faction"></select></label>
-    <label id="subfaction-row" class="hidden">Sub-faction <select id="subfaction"></select></label>
+    <label>Faction <select id="faction-primary"></select></label>
+    <label id="sub-faction-row" class="hidden">Sub-Faction <select id="sub-faction"></select></label>
     <label><input id="all-factions" type="checkbox" /> Render all factions</label>
   </div>
   <main id="app"></main>
-<script src="./waha_content_render_utils.js"></script>
+<script src="./waha_content_render_utils.js?v=1"></script>
 <script>
 function imageSrc(block) {
   const src = block?.src || '';
@@ -465,7 +488,13 @@ function richBlockSequenceHtml(blocks) {
       continue;
     }
 
-    if (shouldKeepOwnBlock(block)) {
+    // A 'p' block reaching here (not consumed by the ds-char/action-icon
+    // rail lookaheads above, which deliberately want the opposite) is
+    // always a complete, already-decided paragraph from the parser —
+    // unlike the old schema's small inline fragments, there's no more
+    // ambiguity left for the renderer to resolve by merging it with
+    // whatever follows.
+    if (block.displayItem === 'p' || shouldKeepOwnBlock(block)) {
       flushInline();
       out.push(blockHtml(block));
       continue;
@@ -494,10 +523,10 @@ function blockHtml(block) {
   }
 
   if (block.displayItem === 'cs_rule') {
-    const reqHtml = block.requirement_html
-      ? String(block.requirement_html)
-          .replace(/<script[\s\S]*?<\/script>/gi, '')
-          .replace(/\son\w+=("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    // requirement is usually plain text (e.g. "N/A") but can be a D6-pip
+    // icon widget instead (an element block with no text at all).
+    const reqHtml = (block.requirement && typeof block.requirement === 'object')
+      ? blockHtml(block.requirement)
       : esc(block.requirement || '');
 
     return `
@@ -505,7 +534,7 @@ function blockHtml(block) {
         <div class="cs-req">${reqHtml}</div>
         <div class="cs-content">
           <div class="cs-title">${esc(block.title)}</div>
-          ${(block.content || []).map(blockHtml).join('')}
+          ${richBlockSequenceHtml(block.content || [])}
         </div>
       </div>
     `;
@@ -514,7 +543,7 @@ function blockHtml(block) {
   if (block.displayItem === 'subrule') {
     return `
       <div class="subrule-title">${esc(block.title)}</div>
-      ${(block.content || []).map(blockHtml).join('')}
+      ${richBlockSequenceHtml(block.content || [])}
     `;
   }
 
@@ -547,7 +576,10 @@ function blockHtml(block) {
       return textRuns(cell);
     };
 
-    const tdAttrs = tableCellAttrs;
+    const tdAttrs = cell => tableCellAttrs(
+      cell,
+      Array.isArray(cell?.content) && isImageOnlyCellContent(cell.content) ? ['icon-cell'] : []
+    );
 
     return `
       <table class="content-table">
@@ -583,8 +615,8 @@ function blockHtml(block) {
   return `<${safeTag}${blockAttrs(block)}>${textRuns(block)}</${safeTag}>`;
 }
 
-const DATA_URLS = ['units.json', 'units(3).json'];
-const MANIFEST_URLS = ['detachment_css_manifest.json', 'detachment_css_manifest(2).json'];
+const DATA_URLS = ['waha_data.json', 'waha_data(3).json'];
+const MANIFEST_URLS = ['waha_css_manifest.json', 'waha_css_manifest(2).json'];
 let DATA = {};
 let MANIFEST = {};
 const $ = s => document.querySelector(s);
@@ -601,8 +633,6 @@ async function fetchFirst(urls, fallback) {
 }
 
 
-
-// Manifest inline/text CSS is emitted by waha_content_render_utils.js.
 
 function cssUrl(value) {
   return String(value || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '');
@@ -659,20 +689,21 @@ function pushManifestStyleRule(rules, selector, snapshot) {
 function applyManifestAssetCss() {
   const oldAsset = document.getElementById('manifest-asset-css');
   if (oldAsset) oldAsset.remove();
-  const oldInline = document.getElementById('manifest-inline-text-css');
-  if (oldInline) oldInline.remove();
 
   const rules = [];
 
-  // Keep manifest-driven assets for compact widgets/icons only.
-  // Do not emit every asset_candidate_styles entry: that reintroduces computed
-  // layout widths/heights from Wahapedia and can break card layouts.
-  for (const [key, snapshot] of Object.entries(MANIFEST.extra_icons || {})) {
-    pushManifestStyleRule(rules, selectorForClassKey(key), snapshot);
+  // waha_css_manifest.json's `icons` entries are keyed by the same sorted
+  // class-set key as the widget's actual DOM classes, with real CSS
+  // resolved separately for the element itself and its ::before/::after
+  // pseudo-elements (some Wahapedia icon glyphs are drawn via pseudo content).
+  for (const [key, snapshot] of Object.entries(MANIFEST.icons || {})) {
+    const selector = selectorForClassKey(key);
+    pushManifestStyleRule(rules, selector, snapshot.element);
+    pushManifestStyleRule(rules, `${selector}::before`, snapshot.before);
+    pushManifestStyleRule(rules, `${selector}::after`, snapshot.after);
   }
 
-  // Emit only safe text-level classes from the manifest via the shared helper.
-  applyManifestInlineTextCss(MANIFEST);
+  setActiveManifest(MANIFEST);
 
   if (!rules.length) return;
   const style = document.createElement('style');
@@ -681,28 +712,30 @@ function applyManifestAssetCss() {
   document.head.appendChild(style);
 }
 
-function headingStyleFromClasses(classes) {
-  classes = Array.isArray(classes) ? classes : [];
-  const style = { color:'#fff' };
-
-  for (const cls of classes) {
-    const s = MANIFEST.heading_classes?.[cls];
-    if (!s) continue;
-    if (s.backgroundColor && s.backgroundColor !== 'rgba(0, 0, 0, 0)') style.background = s.backgroundColor;
-  }
-
+function headingStyle(heading) {
+  const style = { color: heading?.color || '#fff' };
+  if (heading?.background) style.background = heading.background;
   return Object.entries(style).map(([k,v]) => `${k}:${v}`).join(';');
 }
 
-function factionTheme(factionData, inheritedThemeData) {
-  const firstRule = Object.values(factionData?.army_rules || {})[0];
-  const fromHeading = headingStyleFromClasses(firstRule?.heading_class || []);
-  if (fromHeading.includes('background:')) return fromHeading;
+function factionFrameColor(factionData, inheritedThemeData) {
+  // Not just the first rule: some factions' first-listed rule is a plain,
+  // unbannered heading on Wahapedia's own page (e.g. Chaos Knights' first
+  // rule uses <h2 class="hdrNoColor">) and has no background at all — the
+  // card's overall theme should still pick up whichever rule DOES carry
+  // the faction's real theme colour, not silently fall back to generic.
+  const rules = Object.values(factionData?.army_rules || {});
+  const themedRule = rules.find(r => r?.heading?.background);
+  if (themedRule) return themedRule.heading.background;
 
   const firstUnit = Object.values(factionData?.unit_cards || {})[0]
     || Object.values(inheritedThemeData?.unit_cards || {})[0];
-  const banner = firstUnit?.theme?.banner;
-  return banner ? `background:${banner};color:#fff` : 'color:#fff';
+  return firstUnit?.theme?.banner || null;
+}
+
+function factionTheme(factionData, inheritedThemeData) {
+  const frame = factionFrameColor(factionData, inheritedThemeData);
+  return frame ? `background:${frame};color:#fff` : 'color:#fff';
 }
 
 const STRUCTURAL_KEYS = new Set([
@@ -766,14 +799,14 @@ function allArmyRuleRows() {
 }
 
 function selectedTopLevelFaction() {
-  const id = $('#faction').value;
+  const id = $('#faction-primary').value;
   return topLevelFactionRows().find(x => x.id === id);
 }
 
 function syncSubfactionDropdown() {
   const row = selectedTopLevelFaction();
-  const subRow = $('#subfaction-row');
-  const subSelect = $('#subfaction');
+  const subRow = $('#sub-faction-row');
+  const subSelect = $('#sub-faction');
   const options = [];
 
   if (row?.hasOwnRules) {
@@ -791,7 +824,7 @@ function syncSubfactionDropdown() {
 
 function populate() {
   const rows = topLevelFactionRows();
-  $('#faction').innerHTML = rows.map(x => `<option value="${esc(x.id)}">${esc(x.displayName)}</option>`).join('');
+  $('#faction-primary').innerHTML = rows.map(x => `<option value="${esc(x.id)}">${esc(x.displayName)}</option>`).join('');
   syncSubfactionDropdown();
   render();
 }
@@ -802,7 +835,7 @@ function selectedFactionRows() {
   const row = selectedTopLevelFaction();
   if (!row) return [];
 
-  const subValue = $('#subfaction').value;
+  const subValue = $('#sub-faction').value;
   if (row.subfactions.length && subValue !== '__parent__') {
     const sub = row.subfactions.find(x => x.id === subValue);
     if (sub) return [sub];
@@ -823,7 +856,7 @@ function cardHeader(factionName, factionData, inheritedThemeData) {
 function renderArmyRule(rule) {
   return `
     <section class="army-rule">
-      <div class="section-title" style="${headingStyleFromClasses(rule.heading_class)}">${esc(rule.name)}</div>
+      <div class="section-title" style="${headingStyle(rule.heading)}">${esc(rule.name)}</div>
       <div class="rule-body">${(rule.content || []).map(blockHtml).join('')}</div>
     </section>`;
 }
@@ -831,8 +864,17 @@ function renderArmyRule(rule) {
 function renderArmyRulesCard(row) {
   const { factionName, displayName, factionData, inheritedThemeData } = row;
   const rules = Object.values(factionData?.army_rules || {});
+  // .section-title (and the card border) fall back to var(--frame) whenever
+  // a rule's own heading has no background (e.g. a plain, unbannered
+  // Wahapedia heading) — without setting --frame here too, that fallback
+  // silently used the generic :root default instead of this faction's
+  // actual theme colour, even though the header right above it got it
+  // right (factionTheme applies the same colour, but only inline on
+  // .header, never onto the shared --frame variable other elements read).
+  const frame = factionFrameColor(factionData, inheritedThemeData);
+  const frameStyle = frame ? ` style="--frame:${esc(frame)}"` : '';
   return `
-    <article class="detachment-card army-rules-card" data-faction="${esc(displayName)}">
+    <article class="detachment-card army-rules-card"${frameStyle} data-faction="${esc(displayName)}">
       ${cardHeader(factionName, factionData, inheritedThemeData)}
       <div class="content">
         <div class="army-rules-fit">
@@ -842,10 +884,20 @@ function renderArmyRulesCard(row) {
     </article>`;
 }
 
+function armyRulesCardFilename(card) {
+  return `${card.dataset.faction || 'army'}-army-rules`;
+}
+
+function attachExportUi() {
+  addDownloadAllButton($('.toolbar'), () => document.querySelectorAll('.army-rules-card'), armyRulesCardFilename);
+}
+
 function render() {
   app.innerHTML = selectedFactionRows()
     .map(renderArmyRulesCard)
     .join('');
+
+  attachExportUi();
 
   requestAnimationFrame(() => {
     fitAll();
@@ -947,20 +999,40 @@ function fitArmyRulesCard(card) {
   }
 
   fitBox(content, fit, FIT_BOTTOM_PAD);
+
+  // This all ran synchronously right after the card's HTML was inserted,
+  // before any <img> has had a chance to actually load over the network —
+  // a still-loading image measures as zero-height, so content containing
+  // one can pass the fit check above yet grow well past the card's bottom
+  // edge (clipped by overflow:hidden) once it finishes loading a moment
+  // later, with nothing to redo the fit against its real size. Re-run once
+  // every image that was still pending has settled (loaded or failed).
+  const pendingImages = [...card.querySelectorAll('img')].filter(img => !img.complete);
+  if (pendingImages.length) {
+    let remaining = pendingImages.length;
+    const onSettled = () => {
+      remaining -= 1;
+      if (remaining <= 0) fitArmyRulesCard(card);
+    };
+    pendingImages.forEach(img => {
+      img.addEventListener('load', onSettled, { once: true });
+      img.addEventListener('error', onSettled, { once: true });
+    });
+  }
 }
 
 function fitAll() {
   document.querySelectorAll('.army-rules-card').forEach(fitArmyRulesCard);
 }
 
-$('#faction').addEventListener('change', () => {
+$('#faction-primary').addEventListener('change', () => {
   syncSubfactionDropdown();
   render();
 });
-$('#subfaction').addEventListener('change', render);
+$('#sub-faction').addEventListener('change', render);
 $('#all-factions').addEventListener('change', () => {
   const disabled = $('#all-factions').checked;
-  $('#faction').disabled = disabled;
+  $('#faction-primary').disabled = disabled;
   syncSubfactionDropdown();
   render();
 });

@@ -2,6 +2,5 @@
 
 __pycache__/
 
-!units.json
+!waha_data.json
 !core_stratagems.json
-!detachment_css_manifest.json
