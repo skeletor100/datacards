@@ -4,3 +4,4 @@ __pycache__/
 
 !waha_data.json
 !core_stratagems.json
+!waha_css_manifest.json
