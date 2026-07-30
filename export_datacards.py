@@ -4,7 +4,10 @@ import re
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
-BASE_URL = "http://localhost:8000/units.html"
+# army_rules.html is now the merged Army Rules / Detachment Rules / Unit
+# Rules page (see the "Rule Type" dropdown) — this script selects "Unit
+# Rules" mode and otherwise works the same way it always did.
+BASE_URL = "http://localhost:8000/army_rules.html"
 OUTPUT_DIR = Path("rendered_cards")
 NONE_LABELS = {"None", "__NONE__"}
 
@@ -22,6 +25,10 @@ def wait_for_render(page):
         requestAnimationFrame(() => requestAnimationFrame(resolve));
       })
     """)
+
+def select_rule_type(page):
+    page.select_option("#rule-type", "unit")
+    wait_for_render(page)
 
 def screenshot_current_card(page, output_path):
     card = page.locator(".datasheet-card")
@@ -54,11 +61,11 @@ def get_output_path(page):
     faction = selected_text(page, "#faction-primary")
     unit = selected_text(page, "#unit-select")
 
-    secondary = page.locator("#sub-faction-select")
+    secondary = page.locator("#sub-faction")
     parts = [safe_dir_name(faction)]
 
     if secondary.is_visible():
-        subfaction = selected_text(page, "#sub-faction-select")
+        subfaction = selected_text(page, "#sub-faction")
         if subfaction not in NONE_LABELS:
             parts.append(safe_dir_name(subfaction))
 
@@ -69,18 +76,30 @@ def export_current_unit(page):
 
 def export_selected_subfaction(page):
     unit_options = page.locator("#unit-select option")
+
+    if unit_options.count() == 0:
+        # Strict lookup (see renderChosenUnit): this faction/sub-faction
+        # combo has no unit cards of its own, so the Unit dropdown is empty
+        # and nothing rendered. Skip instead of erroring or saving a
+        # stale/duplicate screenshot.
+        faction = selected_text(page, "#faction-primary")
+        secondary = page.locator("#sub-faction")
+        subfaction = selected_text(page, "#sub-faction") if secondary.is_visible() else "None"
+        print(f"Skipping {faction} / {subfaction}: no unit cards")
+        return
+
     for i in range(unit_options.count()):
         page.select_option("#unit-select", index=i)
         wait_for_render(page)
         export_current_unit(page)
 
 def export_selected_faction(page):
-    secondary = page.locator("#sub-faction-select")
+    secondary = page.locator("#sub-faction")
 
     if secondary.is_visible():
         options = secondary.locator("option")
         for i in range(options.count()):
-            page.select_option("#sub-faction-select", index=i)
+            page.select_option("#sub-faction", index=i)
             wait_for_render(page)
             export_selected_subfaction(page)
     else:
@@ -127,17 +146,17 @@ def main():
         )
 
         page.goto(args.url, wait_until="networkidle")
-        page.wait_for_selector(".datasheet-card")
-        wait_for_render(page)
+        page.wait_for_selector("#faction-primary option", state="attached")
+        select_rule_type(page)
 
         if args.faction:
             select_by_text(page, "#faction-primary", args.faction)
 
         if args.subFaction:
-            secondary = page.locator("#sub-faction-select")
+            secondary = page.locator("#sub-faction")
             if not secondary.is_visible():
                 raise SystemExit("Selected faction has no visible sub-faction dropdown")
-            select_by_text(page, "#sub-faction-select", args.subFaction)
+            select_by_text(page, "#sub-faction", args.subFaction)
 
         if args.unit:
             select_by_text(page, "#unit-select", args.unit)

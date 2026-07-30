@@ -1,7 +1,11 @@
 import argparse, re
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-BASE_URL='http://localhost:8000/detachments.html'
+
+# army_rules.html is now the merged Army Rules / Detachment Rules / Unit
+# Rules page (see the "Rule Type" dropdown) — this script selects
+# "Detachment Rules" mode and otherwise works the same way it always did.
+BASE_URL='http://localhost:8000/army_rules.html'
 OUTPUT_DIR=Path('rendered_cards')
 def safe(v): return re.sub(r'[<>:"/\\|?*\x00-\x1F]','',str(v)).strip()
 def safe_dir(v): return re.sub(r'\s+','_',safe(v))
@@ -56,10 +60,23 @@ def select_text(page, sel, wanted):
         if t.upper()==w or val.strip().upper()==w:
             page.select_option(sel,index=i); wait(page); return
     raise SystemExit(f'Could not find {wanted!r} in {sel}')
+def select_rule_type(page):
+    page.select_option("#rule-type", "detachment")
+    wait(page)
 def screenshot_visible_cards(page, outdir):
     faction = selected(page, "#faction-primary")
     secondary = page.locator("#sub-faction")
     subfaction = selected(page, "#sub-faction") if secondary.is_visible() else "None"
+    det_options = page.locator("#detachment option")
+
+    if det_options.count() == 0:
+        # Strict lookup (see renderDetachmentsPage): this faction/sub-faction
+        # combo has no detachments of its own, so the Detachment dropdown is
+        # empty and nothing rendered. Skip instead of erroring or saving a
+        # stale/duplicate screenshot.
+        print(f"Skipping {faction} / {subfaction}: no detachments")
+        return
+
     det = selected(page, "#detachment")
 
     parts = [safe_dir(faction)]
@@ -69,9 +86,9 @@ def screenshot_visible_cards(page, outdir):
     base = outdir.joinpath(*parts) / safe_dir(det)
     base.mkdir(parents=True, exist_ok=True)
 
-    # When rules+enhancements+stratagems fit together, detachments.html
+    # When rules+enhancements+stratagems fit together, the merged page
     # renders one combined card instead of the usual rules/stratagems pair
-    # (see renderCombined/fitCombinedCard there) — export that single card
+    # (see renderCombined/fitCombinedCard) — export that single card
     # instead of the two-card loop below in that case.
     combined = page.locator('.detachment-card[data-card="combined"]')
     if combined.count() > 0:
@@ -116,6 +133,12 @@ def screenshot_visible_cards(page, outdir):
 def export_detachment(page,outdir): screenshot_visible_cards(page,outdir)
 def export_selected_subfaction(page, outdir):
     opts = page.locator("#detachment option")
+    if opts.count() == 0:
+        faction = selected(page, "#faction-primary")
+        secondary = page.locator("#sub-faction")
+        subfaction = selected(page, "#sub-faction") if secondary.is_visible() else "None"
+        print(f"Skipping {faction} / {subfaction}: no detachments")
+        return
     for i in range(opts.count()):
         page.select_option("#detachment", index=i)
         wait(page)
@@ -154,7 +177,8 @@ def main():
             viewport={"width": 1300, "height": 1900},
             device_scale_factor=a.scale
         )
-        page.goto(a.url, wait_until='networkidle'); page.wait_for_selector('.detachment-card'); wait(page)
+        page.goto(a.url, wait_until='networkidle'); page.wait_for_selector('#faction-primary option', state='attached')
+        select_rule_type(page)
         if a.faction:
             select_text(page, "#faction-primary", a.faction)
 

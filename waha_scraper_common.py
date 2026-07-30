@@ -41,6 +41,7 @@ FACTION_NAME_ALIASES = {
     "Space Marines": "Adeptus Astartes",
     "Chaos Daemons": "Legiones Daemonica",
     "Imperial Agents": "Agents of the Imperium",
+    "T'au Empire": "T’au Empire",
 }
 
 

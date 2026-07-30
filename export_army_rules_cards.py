@@ -3,6 +3,9 @@ import re
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
+# army_rules.html is now the merged Army Rules / Detachment Rules / Unit
+# Rules page (see the "Rule Type" dropdown) — this script selects "Army
+# Rules" mode and otherwise works the same way it always did.
 BASE_URL = "http://localhost:8000/army_rules.html"
 OUTPUT_DIR = Path("rendered_cards")
 NONE_LABELS = {"None", "__NONE__", "__parent__"}
@@ -92,16 +95,21 @@ def select_by_text(page, selector, wanted):
     raise SystemExit(f"Could not find {wanted!r} in {selector}")
 
 
+def select_rule_type(page):
+    page.select_option("#rule-type", "army")
+    wait_for_render(page)
+
+
 def get_output_path(page, outdir):
-    faction = selected_text(page, "#faction")
+    faction = selected_text(page, "#faction-primary")
     parts = [safe_dir_name(faction)]
 
-    secondary = page.locator("#subfaction")
-    secondary_row = page.locator("#subfaction-row")
+    secondary = page.locator("#sub-faction")
+    secondary_row = page.locator("#sub-faction-row")
 
     if secondary.count() and secondary_row.count() and not secondary_row.evaluate("el => el.classList.contains('hidden')"):
-        subfaction = selected_text(page, "#subfaction")
-        sub_value = selected_value(page, "#subfaction")
+        subfaction = selected_text(page, "#sub-faction")
+        sub_value = selected_value(page, "#sub-faction")
         if subfaction and subfaction != faction and sub_value not in NONE_LABELS:
             parts.append(safe_dir_name(subfaction))
 
@@ -109,9 +117,19 @@ def get_output_path(page, outdir):
 
 
 def screenshot_current_army_rule_card(page, outdir):
-    card = page.locator(".army-rules-card").first
-    card.wait_for(state="visible")
     wait_for_render(page)
+
+    card = page.locator(".army-rules-card").first
+    if card.count() == 0:
+        # Strict lookup (see renderArmyRulesPage): this faction/sub-faction
+        # combo has no army rules of its own, so the page rendered nothing
+        # rather than falling back to some other faction's content. Skip
+        # instead of erroring or saving a stale/duplicate screenshot.
+        print(f"Skipping {selected_text(page, '#faction-primary')} "
+              f"/ {selected_text(page, '#sub-faction') if page.locator('#sub-faction').count() else 'None'}: no army rules")
+        return
+
+    card.wait_for(state="visible")
 
     output_path = get_output_path(page, outdir)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -120,13 +138,16 @@ def screenshot_current_army_rule_card(page, outdir):
 
 
 def export_selected_faction(page, outdir):
-    secondary = page.locator("#subfaction")
-    secondary_row = page.locator("#subfaction-row")
+    secondary = page.locator("#sub-faction")
+    secondary_row = page.locator("#sub-faction-row")
 
     if secondary.count() and secondary_row.count() and not secondary_row.evaluate("el => el.classList.contains('hidden')"):
         options = secondary.locator("option")
+        if options.count() == 0:
+            print(f"Skipping {selected_text(page, '#faction-primary')}: no sub-faction options for Army Rules")
+            return
         for i in range(options.count()):
-            page.select_option("#subfaction", index=i)
+            page.select_option("#sub-faction", index=i)
             wait_for_render(page)
             screenshot_current_army_rule_card(page, outdir)
     else:
@@ -134,9 +155,9 @@ def export_selected_faction(page, outdir):
 
 
 def export_all_factions(page, outdir):
-    options = page.locator("#faction option")
+    options = page.locator("#faction-primary option")
     for i in range(options.count()):
-        page.select_option("#faction", index=i)
+        page.select_option("#faction-primary", index=i)
         wait_for_render(page)
         export_selected_faction(page, outdir)
 
@@ -170,19 +191,18 @@ def main():
         )
 
         page.goto(args.url, wait_until="networkidle")
-        page.wait_for_selector("#faction option", state="attached")
-        page.wait_for_selector(".army-rules-card")
-        wait_for_render(page)
+        page.wait_for_selector("#faction-primary option", state="attached")
+        select_rule_type(page)
 
         if args.faction:
-            select_by_text(page, "#faction", args.faction)
+            select_by_text(page, "#faction-primary", args.faction)
 
         if args.subFaction:
-            secondary_row = page.locator("#subfaction-row")
-            secondary = page.locator("#subfaction")
+            secondary_row = page.locator("#sub-faction-row")
+            secondary = page.locator("#sub-faction")
             if not secondary.count() or secondary_row.evaluate("el => el.classList.contains('hidden')"):
                 raise SystemExit("Selected faction has no visible sub-faction dropdown")
-            select_by_text(page, "#subfaction", args.subFaction)
+            select_by_text(page, "#sub-faction", args.subFaction)
             screenshot_current_army_rule_card(page, outdir)
         elif args.faction:
             export_selected_faction(page, outdir)
