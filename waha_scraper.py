@@ -490,7 +490,45 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
             faction["path"],
             "#tooltip_contentArmyList",
         )
-        
+
+        # #tooltip_contentArmyList attaches to the DOM before Wahapedia's own
+        # client-side JS finishes populating it with the actual unit/
+        # detachment links (confirmed by repeated live requests: identical
+        # navigation+wait sometimes captured 0 anchors, sometimes all of
+        # them) — navigate_to_required_selector only waits for the container
+        # itself, not its content. Wait for the anchor count to hold steady
+        # across a few samples before capturing sm_soup, the same
+        # stabilization check already used below for the sub-filter
+        # "no filter" reselection.
+        try:
+            page.wait_for_function("""
+            () => {
+                const el = document.querySelector('#tooltip_contentArmyList');
+                if (!el) return false;
+
+                const now = Date.now();
+
+                window.__initial_last_sample = window.__initial_last_sample || 0;
+                if (now - window.__initial_last_sample < 100) return false;
+
+                window.__initial_last_sample = now;
+
+                const count = el.querySelectorAll('a[href]').length;
+
+                window.__initial_unit_counts = window.__initial_unit_counts || [];
+                window.__initial_unit_counts.push(count);
+
+                if (window.__initial_unit_counts.length > 5) {
+                    window.__initial_unit_counts.shift();
+                }
+
+                return window.__initial_unit_counts.length === 5 &&
+                    window.__initial_unit_counts.every(x => x === count);
+            }
+            """, timeout=15000)
+        except PlaywrightTimeoutError:
+            pass
+
         sm_soup = BeautifulSoup(page.content(), 'html.parser')
         selects = style_parser.get_filter_selects(sm_soup)
         

@@ -78,6 +78,7 @@ def screenshot_visible_cards(page, outdir):
         return
 
     det = selected(page, "#detachment")
+    det_prefix = safe_dir(det).lower()
 
     parts = [safe_dir(faction)]
     if subfaction != "None":
@@ -89,14 +90,16 @@ def screenshot_visible_cards(page, outdir):
     # When rules+enhancements+stratagems fit together, the merged page
     # renders one combined card instead of the usual rules/stratagems pair
     # (see renderCombined/fitCombinedCard) — export that single card
-    # instead of the two-card loop below in that case.
+    # instead of the two-card loop below in that case. It still counts as
+    # the "rules" card for this detachment (there's no separate rules-only
+    # card to distinguish it from), so it uses the same _rules.png name.
     combined = page.locator('.detachment-card[data-card="combined"]')
     if combined.count() > 0:
         wait(page)
         box = combined.bounding_box()
 
         page.screenshot(
-            path=str(base / "combined.png"),
+            path=str(base / f"{det_prefix}_rules.png"),
             clip={
                 "x": box["x"],
                 "y": box["y"],
@@ -104,7 +107,7 @@ def screenshot_visible_cards(page, outdir):
                 "height": 1800,
             }
         )
-        print(f"Saved {base / 'combined.png'}")
+        print(f"Saved {base / f'{det_prefix}_rules.png'}")
         return
 
     for name in ("rules", "stratagems"):
@@ -121,7 +124,7 @@ def screenshot_visible_cards(page, outdir):
         box = card.bounding_box()
 
         page.screenshot(
-            path=str(base / f"{name}.png"),
+            path=str(base / f"{det_prefix}_{name}.png"),
             clip={
                 "x": box["x"],
                 "y": box["y"],
@@ -129,7 +132,7 @@ def screenshot_visible_cards(page, outdir):
                 "height": 1800,
             }
         )
-        print(f"Saved {base / f'{name}.png'}")
+        print(f"Saved {base / f'{det_prefix}_{name}.png'}")
 def export_detachment(page,outdir): screenshot_visible_cards(page,outdir)
 def export_selected_subfaction(page, outdir):
     opts = page.locator("#detachment option")

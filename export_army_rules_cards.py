@@ -103,6 +103,7 @@ def select_rule_type(page):
 def get_output_path(page, outdir):
     faction = selected_text(page, "#faction-primary")
     parts = [safe_dir_name(faction)]
+    name_prefix = faction
 
     secondary = page.locator("#sub-faction")
     secondary_row = page.locator("#sub-faction-row")
@@ -112,8 +113,13 @@ def get_output_path(page, outdir):
         sub_value = selected_value(page, "#sub-faction")
         if subfaction and subfaction != faction and sub_value not in NONE_LABELS:
             parts.append(safe_dir_name(subfaction))
+            # These army rules are specific to the sub-faction (e.g. Black
+            # Templars' own rules, distinct from Adeptus Astartes'), so the
+            # sub-faction name disambiguates the file better than the parent
+            # faction name would.
+            name_prefix = subfaction
 
-    return outdir.joinpath(*parts) / "army_rules.png"
+    return outdir.joinpath(*parts) / f"{safe_dir_name(name_prefix).lower()}_army_rules.png"
 
 
 def screenshot_current_army_rule_card(page, outdir):
