@@ -327,46 +327,55 @@ def discover_army_rules_from_contents(container_soup, faction_name, sub_faction_
     return sections
 
 
-def build_detachment_subfaction_map(faction_name, detachment_select):
+def build_chapter_code_map(chapter_select):
+    """Plain {option value: display name} map from the surviving Chapter/
+    sub-faction filter select, e.g. {"BT": "BLACK TEMPLARS", ...}.
+
+    Wahapedia's 11th-edition faction pages dropped the separate Detachment
+    filter select that build_detachment_subfaction_map used to read (it no
+    longer exists in the markup), but the Chapter select's own option
+    values line up exactly with the CHxx class tokens now stamped on every
+    detachment nav row (see get_detachment_chapter_codes) — value="BT"
+    matches token "CHBT" — so this is enough to turn a row's chapter
+    token(s) back into a readable sub-faction name without needing that
+    second dropdown at all.
+    """
     mapping = {}
-    current_subfaction = faction_name
 
-    for option in detachment_select.find_all("option"):
-        text = option.get_text(strip=True)
-        value = option.get("value")
-        classes = option.get("class", [])
+    for opt in chapter_select.find_all("option"):
+        value = opt.get("value")
+        name = opt.get_text(strip=True)
 
-        if option.has_attr("disabled"):
-            if text == "Boarding Actions":
-                break
-
-            if "ctrlOptionHeader" in classes and text != "Detachment":
-                current_subfaction = text
-
+        if not value:
             continue
 
-        # Skip "No filter"
-        if text.lower() == "no filter":
+        name_lower = name.lower()
+        if name_lower in ("no filter", "no supplement", "no supplements"):
             continue
 
-        mapping[value] = current_subfaction.upper()
+        mapping[value] = style_parser.normalize_faction_name(name)
 
     return mapping
 
-def get_detachment_identifier(cls):
-    for token in cls.split():
-        if len(token) != 4 or token == "clFl":
-            continue
+def get_detachment_chapter_codes(cls):
+    """Chapter codes (the bare 2-char code, e.g. "BT" — matching the
+    Chapter select's own option values, see build_chapter_code_map) from a
+    detachment nav row's CHxx class tokens, excluding the generic CHCH
+    marker every row carries regardless of scope.
 
-        left = token[:2]
-        right = token[2:]
+    A detachment available to every chapter carries one CHxx token per
+    chapter (13-14 of them); a chapter-locked detachment (e.g. Black
+    Templars' own) carries exactly one, alongside CHCH. Exactly one
+    remaining code here means "this detachment belongs to that specific
+    chapter"; zero or several means "this detachment isn't chapter-locked,
+    it's faction-wide" — see discover_detachments_from_contents.
+    """
+    return [
+        token[2:] for token in cls.split()
+        if len(token) == 4 and token.startswith("CH") and token != "CHCH"
+    ]
 
-        if left != right:
-            return right
-
-    return None
-
-def discover_detachments_from_contents(container_soup, faction_name, detachment_subfaction_map):
+def discover_detachments_from_contents(container_soup, faction_name, chapter_code_map):
     detachments = []
     seen_anchors = set()
 
@@ -396,8 +405,11 @@ def discover_detachments_from_contents(container_soup, faction_name, detachment_
 
         cls = " ".join(classes)
 
-        identifier = get_detachment_identifier(cls)
-        sub_faction = detachment_subfaction_map.get(identifier, faction_name)
+        chapter_codes = get_detachment_chapter_codes(cls)
+        if len(chapter_codes) == 1:
+            sub_faction = chapter_code_map.get(chapter_codes[0], faction_name)
+        else:
+            sub_faction = faction_name
 
         heading_row = row.find_previous(
             lambda tag: (
@@ -413,7 +425,7 @@ def discover_detachments_from_contents(container_soup, faction_name, detachment_
         seen_anchors.add(anchor)
         detachments.append({
             "name": heading_row.get_text(" ", strip=True),
-            "identifier": identifier,
+            "chapter_codes": chapter_codes,
             "sub_faction": sub_faction,
             "anchor": anchor,
         })
@@ -538,10 +550,13 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
         sub_filter_key = None
 
         subfaction_map = None
-        detachment_subfaction_map = {}
+        chapter_code_map = {}
 
-        # Handle Sub-Filter ONLY if multiple dropdowns exist
-        if len(selects) >= 2:
+        # Handle Sub-Filter if a Chapter/sub-faction dropdown exists. 11th
+        # edition dropped the separate Detachment dropdown 10th edition had
+        # alongside it (used to require >= 2 selects here) — everything
+        # this block needs now comes from this one Chapter select alone.
+        if len(selects) >= 1:
             sub_filter_key = get_dropdown_label(selects[0])
             
             target_val = next((o.get('value')
@@ -587,7 +602,7 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
 
             subfaction_map = style_parser.build_sub_faction_map(selects[0])
 
-            detachment_subfaction_map = build_detachment_subfaction_map(faction['name'], selects[1])
+            chapter_code_map = build_chapter_code_map(selects[0])
 
             
 
@@ -602,7 +617,7 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
         detachments = discover_detachments_from_contents(
             container_soup,
             faction["name"],
-            detachment_subfaction_map
+            chapter_code_map
         )
 
         army_rule_sections = discover_army_rules_from_contents(

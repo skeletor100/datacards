@@ -517,6 +517,23 @@ def extract_theme(ds, page):
 # ABILITY / SECTION CONTENT (fresh parsing/style/storage layer)
 # =========================================================
 
+# Wahapedia has renamed these two-column wrapper classes at least once
+# (old: Cyrillic "Сol" e.g. ".dsLeftСol" / ".dsRightСol"; current: Latin
+# "ColFlat" e.g. ".dsLeftColFlat" / ".dsRightColFlat"). Try current names
+# first, fall back to older ones so a partial site migration (or a layout
+# variant that never got the rename) doesn't silently yield empty output.
+LEFT_COL_SELECTORS = [".dsLeftColFlat", ".dsLeftСol"]
+RIGHT_COL_SELECTORS = [".dsRightColFlat", ".dsRightСol"]
+
+
+def select_first(ds, selectors):
+    for selector in selectors:
+        node = ds.select_one(selector)
+        if node is not None:
+            return node
+    return None
+
+
 def should_keep_section(title):
     return title.upper() not in EXCLUDED_SECTION_TITLES
 
@@ -536,9 +553,43 @@ def parse_ability_section_item(node, styles, root_style):
     }
 
 
+def parse_core_army_table(table):
+    """Handles the newer `.dsCoreArmy` badge table Wahapedia now renders
+    in place of (or alongside) the old inline 'CORE: ...' / 'FACTION: ...'
+    text lines, e.g.:
+        CORE ABILITIES | Support
+        ARMY RULES     | Waaagh!
+    "CORE ABILITIES" rows feed the section's `core` list; anything else
+    (currently just "ARMY RULES", but this also covers a "FACTION
+    ABILITIES" label if Wahapedia ever renders one this way) feeds
+    `faction`.
+    """
+    core_values = []
+    faction_values = []
+
+    for row in table.select("tr"):
+        label_cell = row.select_one(".dsCoreArmyLabel")
+        value_cell = row.select_one(".dsCoreArmyValue")
+
+        if not label_cell or not value_cell:
+            continue
+
+        label = style_parser.clean_text(label_cell).upper()
+        values = split_csv_value(style_parser.clean_text(value_cell))
+
+        if "CORE" in label:
+            core_values.extend(values)
+        else:
+            faction_values.extend(values)
+
+    return core_values, faction_values
+
+
 def extract_sections_from_container(container, styles, root_style):
     sections = []
     current = None
+    pending_core = []
+    pending_faction = []
 
     if not container:
         return sections
@@ -549,6 +600,18 @@ def extract_sections_from_container(container, styles, root_style):
 
         classes = child.get("class", [])
 
+        if child.name == "table" and "dsCoreArmy" in classes:
+            core_vals, faction_vals = parse_core_army_table(child)
+
+            if current is not None:
+                current["core"].extend(core_vals)
+                current["faction"].extend(faction_vals)
+            else:
+                pending_core.extend(core_vals)
+                pending_faction.extend(faction_vals)
+
+            continue
+
         if "dsHeader" in classes:
             title = style_parser.clean_text(child)
 
@@ -558,10 +621,12 @@ def extract_sections_from_container(container, styles, root_style):
 
             current = {
                 "title": title,
-                "core": [],
-                "faction": [],
+                "core": pending_core,
+                "faction": pending_faction,
                 "items": [],
             }
+            pending_core = []
+            pending_faction = []
             sections.append(current)
 
         elif "dsAbility" in classes:
@@ -591,9 +656,12 @@ def extract_sections_from_container(container, styles, root_style):
 def extract_sections(ds, styles, root_style):
     sections = []
 
-    for selector in [".dsLeftСol", ".dsRightСol"]:
+    for container in (
+        select_first(ds, LEFT_COL_SELECTORS),
+        select_first(ds, RIGHT_COL_SELECTORS),
+    ):
         sections.extend(
-            extract_sections_from_container(ds.select_one(selector), styles, root_style)
+            extract_sections_from_container(container, styles, root_style)
         )
 
     return [
@@ -603,7 +671,8 @@ def extract_sections(ds, styles, root_style):
 
 
 def extract_weapon_abilities(ds, styles, root_style):
-    table = ds.select_one(".dsLeftСol .wTable")
+    left_col = select_first(ds, LEFT_COL_SELECTORS)
+    table = left_col.select_one(".wTable") if left_col else ds.select_one(".wTable")
     if not table:
         return []
 
