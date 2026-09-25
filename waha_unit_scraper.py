@@ -294,17 +294,39 @@ def extract_weapon_profile_marker(marker_cell):
     }
 
 
+def extract_hunter_restriction(row):
+    """Handles the newer `dsHunterKwRow` Wahapedia now renders between a
+    split weapon profile's two rows, e.g. Beast Snagga Boyz' Choppa, which
+    has a plain "Standard" profile and a "Hunter" profile restricted to
+    targeting specific keywords:
+        <tr class="dsHunterKwRow">...<span class="dsHunterKw">HUNTER:
+        <span class="kwb">MONSTER/VEHICLE</span></span>...</tr>
+    Returns the restriction keyword(s) (e.g. ["MONSTER/VEHICLE"]) with the
+    "HUNTER:" label stripped, ready to attach to the weapon row that
+    follows it — the ".kwb" is what actually names the target keyword(s);
+    everything else in the row is just the static "HUNTER:" label.
+    """
+    value_node = row.select_one(".dsHunterKw .kwb")
+
+    if value_node is None:
+        return []
+
+    return split_csv_value(clean_text(value_node))
+
+
 def extract_weapons(ds):
     weapons = []
 
     current_type = None
     current_hit_key = None
+    pending_hunter_restriction = []
 
     table = ds.select_one(".wTable")
     if not table:
         return weapons
 
     for row in table.select("tr"):
+        row_classes = row.get("class", [])
         header_text = clean_text(row)
 
         if "RANGED WEAPONS" in header_text:
@@ -320,8 +342,24 @@ def extract_weapons(ds):
         if not current_type:
             continue
 
+        # Names which keyword(s) the NEXT weapon row (a "Hunter" split
+        # profile) is restricted to targeting. Stashed here rather than
+        # consumed immediately since the row it describes is still one or
+        # two rows further down the table (past the duplicate long-name
+        # row used for responsive layout).
+        if "dsHunterKwRow" in row_classes:
+            pending_hunter_restriction = extract_hunter_restriction(row)
+            continue
+
+        # Generic explanatory boilerplate ("Before selecting targets for
+        # this weapon, select one of its eligible profiles...") — identical
+        # wording on every unit that has a Hunter profile, so it's not
+        # per-weapon data worth capturing here.
+        if "dsHunterKwNoteRow" in row_classes:
+            continue
+
         # Ignore the duplicate long-name rows used for responsive layout
-        if "wTable2_long" in row.get("class", []):
+        if "wTable2_long" in row_classes:
             continue
 
         cells = row.select("td")
@@ -356,7 +394,9 @@ def extract_weapons(ds):
             "S": clean_text(cells[5]),
             "AP": clean_text(cells[6]),
             "D": clean_text(cells[7]),
+            "hunter_restriction": pending_hunter_restriction,
         }
+        pending_hunter_restriction = []
 
         weapons.append(weapon)
 
@@ -671,8 +711,7 @@ def extract_sections(ds, styles, root_style):
 
 
 def extract_weapon_abilities(ds, styles, root_style):
-    left_col = select_first(ds, LEFT_COL_SELECTORS)
-    table = left_col.select_one(".wTable") if left_col else ds.select_one(".wTable")
+    table = ds.select_one(".dsLeftСol .wTable")
     if not table:
         return []
 

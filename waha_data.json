@@ -383477,7 +383477,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -383494,7 +383495,8 @@
                         "WS": "2+",
                         "S": "6",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -383646,7 +383648,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -383660,7 +383663,8 @@
                         "WS": "2+",
                         "S": "7",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -383817,7 +383821,8 @@
                         "BS": "5+",
                         "S": "6",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -383841,7 +383846,8 @@
                         "BS": "-",
                         "S": "6",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -383859,7 +383865,8 @@
                         "WS": "2+",
                         "S": "14",
                         "AP": "-2",
-                        "D": "D3+3"
+                        "D": "D3+3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -383876,7 +383883,8 @@
                         "WS": "2+",
                         "S": "14",
                         "AP": "-3",
-                        "D": "4"
+                        "D": "4",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -384105,7 +384113,8 @@
                         "BS": "5+",
                         "S": "6",
                         "AP": "0",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -384122,7 +384131,8 @@
                         "WS": "3+",
                         "S": "7",
                         "AP": "-2",
-                        "D": "4"
+                        "D": "4",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -384145,7 +384155,8 @@
                         "WS": "2+",
                         "S": "9",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -384168,7 +384179,10 @@
                         "WS": "2+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "D6+1"
+                        "D": "D6+1",
+                        "hunter_restriction": [
+                            "MONSTER/VEHICLE"
+                        ]
                     }
                 ],
                 "weapon_abilities": [],
@@ -384386,7 +384400,8 @@
                         "BS": "2+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -384404,7 +384419,8 @@
                         "BS": "4+",
                         "S": "6",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -384421,7 +384437,8 @@
                         "WS": "2+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -384437,7 +384454,8 @@
                         "WS": "4+",
                         "S": "3",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -384454,7 +384472,8 @@
                         "WS": "2+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -384671,7 +384690,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -384685,7 +384705,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -384778,7 +384799,8 @@
                         "BS": "4+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -384794,7 +384816,8 @@
                         "WS": "2+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -384968,7 +384991,8 @@
                         "BS": "4+",
                         "S": "9",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -384984,7 +385008,8 @@
                         "BS": "4+",
                         "S": "6",
                         "AP": "-2",
-                        "D": "D3+3"
+                        "D": "D3+3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -384998,7 +385023,8 @@
                         "WS": "3+",
                         "S": "12",
                         "AP": "-3",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -385012,7 +385038,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -385266,7 +385293,8 @@
                         "BS": "4+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -385287,7 +385315,8 @@
                         "BS": "4+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -385311,7 +385340,8 @@
                         "BS": "-",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -385327,7 +385357,8 @@
                         "BS": "4+",
                         "S": "9",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -385351,7 +385382,8 @@
                         "BS": "4+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -385375,7 +385407,8 @@
                         "BS": "-",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -385391,7 +385424,8 @@
                         "BS": "4+",
                         "S": "9",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -385405,7 +385439,8 @@
                         "WS": "4+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -385419,7 +385454,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -385625,7 +385661,8 @@
                         "BS": "4+",
                         "S": "8",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -385639,7 +385676,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -385857,7 +385895,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -385873,7 +385912,8 @@
                         "WS": "3+",
                         "S": "7",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -385966,7 +386006,8 @@
                         "BS": "5+",
                         "S": "12",
                         "AP": "-4",
-                        "D": "D6+1"
+                        "D": "D6+1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -385980,7 +386021,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -386171,7 +386213,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -386458,7 +386501,8 @@
                         "WS": "3+",
                         "S": "2",
                         "AP": "0",
-                        "D": "D6"
+                        "D": "D6",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -386472,7 +386516,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -386615,7 +386660,8 @@
                         "BS": "5+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -386639,7 +386685,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -386663,7 +386710,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -386687,7 +386735,8 @@
                         "BS": "-",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -386704,7 +386753,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -386720,7 +386770,8 @@
                         "WS": "2+",
                         "S": "7",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -386734,7 +386785,8 @@
                         "WS": "2+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -387008,7 +387060,8 @@
                         "BS": "4+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -387024,7 +387077,8 @@
                         "WS": "2+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -387251,7 +387305,8 @@
                         "BS": "-",
                         "S": "5",
                         "AP": "-3",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -387267,7 +387322,8 @@
                         "WS": "3+",
                         "S": "8",
                         "AP": "-1",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -387617,7 +387673,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -387633,7 +387690,8 @@
                         "BS": "5+",
                         "S": "6",
                         "AP": "0",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -387654,7 +387712,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -387675,7 +387734,10 @@
                         "WS": "3+",
                         "S": "6",
                         "AP": "-2",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": [
+                            "MONSTER/VEHICLE"
+                        ]
                     },
                     {
                         "type": "melee",
@@ -387691,7 +387753,8 @@
                         "WS": "3+",
                         "S": "8",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -387878,7 +387941,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -387895,7 +387959,8 @@
                         "BS": "5+",
                         "S": "7",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -387919,7 +387984,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -387942,7 +388008,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "-3",
-                        "D": "D6+2"
+                        "D": "D6+2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -387958,7 +388025,8 @@
                         "WS": "2+",
                         "S": "7",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -388133,7 +388201,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -388150,7 +388219,8 @@
                         "BS": "5+",
                         "S": "6",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -388164,7 +388234,8 @@
                         "WS": "4+",
                         "S": "6",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -388345,7 +388416,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -388368,7 +388440,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -388389,7 +388462,8 @@
                         "BS": "5+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -388406,7 +388480,8 @@
                         "WS": "3+",
                         "S": "6",
                         "AP": "-1",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -388422,7 +388497,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -388438,7 +388514,8 @@
                         "WS": "3+",
                         "S": "6",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -388625,7 +388702,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -388642,7 +388720,8 @@
                         "BS": "-",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -388663,7 +388742,8 @@
                         "BS": "5+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -388687,7 +388767,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -388711,7 +388792,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -388735,7 +388817,8 @@
                         "BS": "-",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -388752,7 +388835,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -388775,7 +388859,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -388796,7 +388881,8 @@
                         "BS": "5+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -388813,7 +388899,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -388830,7 +388917,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -388846,7 +388934,8 @@
                         "WS": "3+",
                         "S": "7",
                         "AP": "-1",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -388860,7 +388949,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -388874,7 +388964,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -388888,7 +388979,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -389071,7 +389163,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -389089,7 +389182,8 @@
                         "BS": "5+",
                         "S": "6",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -389106,7 +389200,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -389120,7 +389215,8 @@
                         "WS": "4+",
                         "S": "6",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -389325,7 +389421,8 @@
                         "BS": "4+",
                         "S": "6",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -389343,7 +389440,8 @@
                         "BS": "4+",
                         "S": "9",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -389360,7 +389458,8 @@
                         "BS": "4+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "4"
+                        "D": "4",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -389376,7 +389475,8 @@
                         "BS": "4+",
                         "S": "6",
                         "AP": "-3",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -389390,7 +389490,8 @@
                         "WS": "4+",
                         "S": "6",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -389576,7 +389677,8 @@
                         "BS": "5+",
                         "S": "6",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -389590,7 +389692,8 @@
                         "WS": "4+",
                         "S": "6",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -389707,7 +389810,8 @@
                         "BS": "5+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -389728,7 +389832,8 @@
                         "WS": "3+",
                         "S": "7",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -389749,7 +389854,10 @@
                         "WS": "3+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": [
+                            "MONSTER/VEHICLE"
+                        ]
                     },
                     {
                         "type": "melee",
@@ -389763,7 +389871,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -389779,7 +389888,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -389796,7 +389906,8 @@
                         "WS": "4+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -389987,7 +390098,8 @@
                         "BS": "4+",
                         "S": "9",
                         "AP": "-3",
-                        "D": "D3+2"
+                        "D": "D3+2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -390011,7 +390123,8 @@
                         "BS": "4+",
                         "S": "6",
                         "AP": "-1",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -390034,7 +390147,8 @@
                         "BS": "4+",
                         "S": "8",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -390048,7 +390162,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -390192,7 +390307,8 @@
                         "BS": "4+",
                         "S": "3",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -390206,7 +390322,8 @@
                         "WS": "5+",
                         "S": "2",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -390345,7 +390462,8 @@
                         "BS": "-",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -390362,7 +390480,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -390385,7 +390504,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -390406,7 +390526,8 @@
                         "BS": "5+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -390423,7 +390544,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -390439,7 +390561,8 @@
                         "WS": "3+",
                         "S": "7",
                         "AP": "-1",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -390453,7 +390576,8 @@
                         "WS": "4+",
                         "S": "8",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -390467,7 +390591,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -390481,7 +390606,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -390753,7 +390879,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -390774,7 +390901,8 @@
                         "BS": "5+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -390798,7 +390926,8 @@
                         "BS": "-",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -390822,7 +390951,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -390846,7 +390976,8 @@
                         "BS": "-",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -390860,7 +390991,8 @@
                         "WS": "4+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -390874,7 +391006,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -390890,7 +391023,8 @@
                         "WS": "4+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -391029,7 +391163,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -391043,7 +391178,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -391057,7 +391193,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -391071,7 +391208,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -391235,7 +391373,8 @@
                         "BS": "-",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -391251,7 +391390,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -391272,7 +391412,8 @@
                         "BS": "5+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -391296,7 +391437,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -391313,7 +391455,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -391329,7 +391472,8 @@
                         "WS": "3+",
                         "S": "7",
                         "AP": "-1",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -391343,7 +391487,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -391357,7 +391502,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -391568,7 +391714,8 @@
                         "BS": "4+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -391589,7 +391736,10 @@
                         "BS": "4+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": [
+                            "MONSTER/VEHICLE"
+                        ]
                     },
                     {
                         "type": "ranged",
@@ -391605,7 +391755,8 @@
                         "BS": "4+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -391619,7 +391770,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -391633,7 +391785,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -391654,7 +391807,8 @@
                         "WS": "3+",
                         "S": "7",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -391675,7 +391829,10 @@
                         "WS": "3+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": [
+                            "MONSTER/VEHICLE"
+                        ]
                     }
                 ],
                 "weapon_abilities": [],
@@ -391946,7 +392103,8 @@
                         "BS": "5+",
                         "S": "6",
                         "AP": "0",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -391962,7 +392120,8 @@
                         "BS": "5+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -391978,7 +392137,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -391995,7 +392155,8 @@
                         "WS": "4+",
                         "S": "8",
                         "AP": "-1",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -392012,7 +392173,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -392180,7 +392342,8 @@
                         "BS": "5+",
                         "S": "6",
                         "AP": "0",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -392196,7 +392359,8 @@
                         "BS": "5+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -392214,7 +392378,8 @@
                         "BS": "-",
                         "S": "12",
                         "AP": "-3",
-                        "D": "6"
+                        "D": "6",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -392231,7 +392396,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -392248,7 +392414,8 @@
                         "WS": "4+",
                         "S": "8",
                         "AP": "-1",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -392265,7 +392432,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -392649,7 +392817,8 @@
                         "BS": "4+",
                         "S": "3",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -392666,7 +392835,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -392683,7 +392853,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -392700,7 +392871,8 @@
                         "WS": "3+",
                         "S": "7",
                         "AP": "-1",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -392716,7 +392888,8 @@
                         "WS": "4+",
                         "S": "6",
                         "AP": "-1",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -392732,7 +392905,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -392933,7 +393107,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -392956,7 +393131,8 @@
                         "BS": "5+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -392973,7 +393149,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -392987,7 +393164,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -393001,7 +393179,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -393139,7 +393318,8 @@
                         "BS": "5+",
                         "S": "6",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -393162,7 +393342,8 @@
                         "BS": "-",
                         "S": "6",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -393179,7 +393360,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -393202,7 +393384,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -393223,7 +393406,8 @@
                         "BS": "5+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -393240,7 +393424,8 @@
                         "BS": "-",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -393256,7 +393441,8 @@
                         "WS": "3+",
                         "S": "18",
                         "AP": "-3",
-                        "D": "6"
+                        "D": "6",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -393456,7 +393642,8 @@
                         "BS": "4+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -393472,7 +393659,8 @@
                         "BS": "4+",
                         "S": "9",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -393489,7 +393677,8 @@
                         "BS": "4+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "4"
+                        "D": "4",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -393512,7 +393701,8 @@
                         "BS": "4+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -393533,7 +393723,8 @@
                         "BS": "4+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -393549,7 +393740,8 @@
                         "WS": "3+",
                         "S": "18",
                         "AP": "-3",
-                        "D": "6"
+                        "D": "6",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -393749,7 +393941,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -393765,7 +393958,8 @@
                         "WS": "3+",
                         "S": "8",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -393781,7 +393975,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -393798,7 +393993,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "0",
-                        "D": "D6"
+                        "D": "D6",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -393963,7 +394159,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -393979,7 +394176,8 @@
                         "BS": "5+",
                         "S": "14",
                         "AP": "-3",
-                        "D": "D6+2"
+                        "D": "D6+2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -393996,7 +394194,8 @@
                         "BS": "-",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -394020,7 +394219,8 @@
                         "BS": "5+",
                         "S": "7",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -394043,7 +394243,8 @@
                         "BS": "-",
                         "S": "7",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -394059,7 +394260,8 @@
                         "WS": "3+",
                         "S": "24",
                         "AP": "-4",
-                        "D": "10"
+                        "D": "10",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -394265,7 +394467,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -394288,7 +394491,8 @@
                         "BS": "5+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -394305,7 +394509,8 @@
                         "BS": "5+",
                         "S": "9",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -394322,7 +394527,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -394336,7 +394542,8 @@
                         "WS": "4+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -394353,7 +394560,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -394490,7 +394698,8 @@
                         "BS": "4+",
                         "S": "7",
                         "AP": "-3",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -394507,7 +394716,8 @@
                         "BS": "4+",
                         "S": "3",
                         "AP": "-3",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -394524,7 +394734,8 @@
                         "BS": "4+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "4"
+                        "D": "4",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -394540,7 +394751,8 @@
                         "BS": "4+",
                         "S": "6",
                         "AP": "-2",
-                        "D": "D3+3"
+                        "D": "D3+3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -394554,7 +394766,8 @@
                         "WS": "5+",
                         "S": "2",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -394790,7 +395003,8 @@
                         "BS": "4+",
                         "S": "7",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -394807,7 +395021,8 @@
                         "BS": "5+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -394821,7 +395036,8 @@
                         "WS": "3+",
                         "S": "6",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -394972,7 +395188,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -394988,7 +395205,8 @@
                         "BS": "5+",
                         "S": "9",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -395011,7 +395229,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -395032,7 +395251,8 @@
                         "BS": "5+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -395049,7 +395269,8 @@
                         "BS": "-",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -395065,7 +395286,8 @@
                         "WS": "3+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -395081,7 +395303,8 @@
                         "WS": "3+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -395182,7 +395405,8 @@
                         "BS": "4+",
                         "S": "6",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -395203,7 +395427,8 @@
                         "BS": "4+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -395227,7 +395452,8 @@
                         "BS": "-",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -395241,7 +395467,8 @@
                         "WS": "4+",
                         "S": "8",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -395344,7 +395571,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -395367,7 +395595,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -395388,7 +395617,8 @@
                         "BS": "5+",
                         "S": "12",
                         "AP": "-3",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -395751,7 +395981,8 @@
                         "BS": "4+",
                         "S": "9",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -395768,7 +395999,8 @@
                         "BS": "4+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -395785,7 +396017,8 @@
                         "BS": "-",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -395802,7 +396035,8 @@
                         "WS": "2+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -395819,7 +396053,8 @@
                         "WS": "2+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -396121,7 +396356,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -396135,7 +396371,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -396282,7 +396519,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -396298,7 +396536,8 @@
                         "BS": "5+",
                         "S": "6",
                         "AP": "0",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -396321,7 +396560,8 @@
                         "WS": "2+",
                         "S": "6",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -396342,7 +396582,10 @@
                         "WS": "2+",
                         "S": "12",
                         "AP": "-2",
-                        "D": "D6"
+                        "D": "D6",
+                        "hunter_restriction": [
+                            "MONSTER/VEHICLE"
+                        ]
                     },
                     {
                         "type": "melee",
@@ -396359,7 +396602,8 @@
                         "WS": "3+",
                         "S": "7",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -396591,7 +396835,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -396605,7 +396850,8 @@
                         "BS": "5+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "3"
+                        "D": "3",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -396619,7 +396865,8 @@
                         "WS": "3+",
                         "S": "5",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -396810,7 +397057,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -396834,7 +397082,8 @@
                         "BS": "4+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -396857,7 +397106,8 @@
                         "BS": "4+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "D6+1"
+                        "D": "D6+1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -396875,7 +397125,8 @@
                         "BS": "4+",
                         "S": "6",
                         "AP": "-3",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -396892,7 +397143,8 @@
                         "BS": "4+",
                         "S": "5",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -396911,7 +397163,8 @@
                         "BS": "4+",
                         "S": "8",
                         "AP": "-2",
-                        "D": "4"
+                        "D": "4",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -396927,7 +397180,8 @@
                         "WS": "3+",
                         "S": "8",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -396943,7 +397197,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -396960,7 +397215,8 @@
                         "WS": "3+",
                         "S": "10",
                         "AP": "0",
-                        "D": "D6"
+                        "D": "D6",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -397124,7 +397380,8 @@
                         "BS": "5+",
                         "S": "4",
                         "AP": "0",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -397140,7 +397397,8 @@
                         "BS": "4+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -397156,7 +397414,8 @@
                         "WS": "3+",
                         "S": "7",
                         "AP": "-1",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],
@@ -397313,7 +397572,8 @@
                         "BS": "5+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -397338,7 +397598,8 @@
                         "BS": "4+",
                         "S": "7",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -397364,7 +397625,8 @@
                         "BS": "-",
                         "S": "7",
                         "AP": "-2",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -397389,7 +397651,8 @@
                         "BS": "4+",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "ranged",
@@ -397413,7 +397676,8 @@
                         "BS": "-",
                         "S": "5",
                         "AP": "-1",
-                        "D": "1"
+                        "D": "1",
+                        "hunter_restriction": []
                     },
                     {
                         "type": "melee",
@@ -397429,7 +397693,8 @@
                         "WS": "3+",
                         "S": "7",
                         "AP": "-1",
-                        "D": "2"
+                        "D": "2",
+                        "hunter_restriction": []
                     }
                 ],
                 "weapon_abilities": [],

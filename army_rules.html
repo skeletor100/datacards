@@ -854,6 +854,46 @@ body{margin:0;background:#202020;color:var(--ink);font-family:var(--font);paddin
           letter-spacing:.015em;
           white-space:normal;
         }
+        /* A split weapon profile (e.g. Beast Snagga Boyz' Choppa - Hunter,
+           Mozrog Skragbad's Gutrippa - Hunter) can be restricted to
+           targeting units with specific keyword(s) — see
+           extract_hunter_restriction in waha_unit_scraper.py, and
+           renderWeaponHunterRow above. On Wahapedia's own page this is a
+           small FIXED BLACK banner tag (not the unit's --frame theme
+           color, unlike the section/thead banners elsewhere on this card)
+           sitting directly above the profile it restricts, with a pointed
+           top-right corner, a square bottom-right corner, and a thin rule
+           trailing off its bottom edge across the rest of the table. */
+        .weapon-table tbody tr.weapon-hunter-row td{
+          padding:.1em .35em .1em .35em;
+          text-align:left;
+          border-bottom:none;
+        }
+        .weapon-hunter-tag-row{
+          display:flex;
+          align-items:flex-end;
+          width:100%;
+        }
+        .weapon-hunter-banner{
+          flex:0 0 auto;
+          background:#000;
+          color:#fff;
+          font-weight:900;
+          text-transform:uppercase;
+          letter-spacing:.03em;
+          font-size:.72em;
+          line-height:1;
+          padding:.42em 1.05em .38em .7em;
+          /* Top-right corner cuts to a point (the "arrow"); bottom-right
+             stays a plain square corner at full width — asymmetric, not
+             the symmetric pennant/arrow shape used elsewhere. */
+          clip-path:polygon(0 0, 88% 0, 100% 50%, 100% 100%, 0 100%);
+        }
+        .weapon-hunter-rule{
+          flex:1 1 auto;
+          height:2px;
+          background:#000;
+        }
 
         .section{ margin-bottom:2.0%; }
         .section-heading{
@@ -2455,12 +2495,25 @@ function applyShow(){
       return '';
     }
 
+    function renderWeaponHunterRow(w){
+      const restriction = Array.isArray(w.hunter_restriction) ? w.hunter_restriction : [];
+      if(!restriction.length) return '';
+      // Mirrors Wahapedia's own `dsHunterKwRow` — a standalone full-width
+      // row sitting directly above the "Hunter" profile row it restricts
+      // (see extract_hunter_restriction in waha_unit_scraper.py). On the
+      // real page this is a small black banner tag (fixed black, not the
+      // unit's theme color — unlike every other banner on the card) with a
+      // pointed top-right corner, a square bottom-right corner, and a thin
+      // rule trailing off its bottom edge across the rest of the table.
+      return `<tr class="weapon-hunter-row"><td colspan="7"><span class="weapon-hunter-tag-row"><span class="weapon-hunter-banner">HUNTER: ${esc(restriction.map(k => String(k).toUpperCase()).join(', '))}</span><span class="weapon-hunter-rule"></span></span></td></tr>`;
+    }
+
     function renderWeaponTable(weapons, title, hitKey){
       if(!weapons.length) return '';
       return `<div class="weapon-table-wrap"><table class="weapon-table">
         <colgroup><col class="name"><col class="range"><col class="a"><col class="hit"><col class="s"><col class="ap"><col class="d"></colgroup>
         <thead><tr><th>${esc(title)}</th><th>RANGE</th><th>A</th><th>${esc(hitKey)}</th><th>S</th><th>AP</th><th>D</th></tr></thead>
-        <tbody>${weapons.map(w => `<tr><td><span class="weapon-name-wrap"><span class="weapon-profile-slot" aria-hidden="true">${renderWeaponProfileMarker(w)}</span><span class="weapon-name-content">${renderWeaponName(w)}</span></span></td><td>${esc(w.range)}</td><td>${esc(w.A)}</td><td>${esc(w[hitKey])}</td><td>${esc(w.S)}</td><td>${esc(w.AP)}</td><td>${esc(w.D)}</td></tr>`).join('')}</tbody>
+        <tbody>${weapons.map(w => `${renderWeaponHunterRow(w)}<tr><td><span class="weapon-name-wrap"><span class="weapon-profile-slot" aria-hidden="true">${renderWeaponProfileMarker(w)}</span><span class="weapon-name-content">${renderWeaponName(w)}</span></span></td><td>${esc(w.range)}</td><td>${esc(w.A)}</td><td>${esc(w[hitKey])}</td><td>${esc(w.S)}</td><td>${esc(w.AP)}</td><td>${esc(w.D)}</td></tr>`).join('')}</tbody>
       </table></div>`;
     }
 
