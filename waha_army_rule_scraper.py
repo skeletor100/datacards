@@ -133,6 +133,22 @@ def run(page, section_anchor):
 
     soup, styles, root_style = style_parser.resolve_styled_content(container)
 
+    # Wahapedia now shows a collapsed "FAQ / Errata" spoiler block after
+    # many Army Rules sections — a heading plus a "Show" toggle, with the
+    # real errata text hidden until clicked. extract_rule_cards has no
+    # reason to know about it specifically (it isn't excluded by the
+    # outline_header/str10Wrap checks _is_rule_heading already applies),
+    # so without this it gets picked up as if it were a genuine rule of
+    # its own (name "FAQ / Errata", content ["Show"]). Decomposing it here
+    # — before any heading-walking below — also matters more than it might
+    # look: merely excluding its heading from _is_rule_heading wouldn't be
+    # enough on its own, since extract_rule_cards gathers a rule's content
+    # by walking next_siblings until the next rule heading, so the "Show"
+    # toggle text would just get silently absorbed into whichever real
+    # rule precedes it instead of disappearing.
+    for spoiler in soup.select(".faqErrataSpoiler"):
+        spoiler.decompose()
+
     return extract_rule_cards(soup, styles, root_style)
 
 

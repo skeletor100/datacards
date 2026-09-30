@@ -327,55 +327,56 @@ def discover_army_rules_from_contents(container_soup, faction_name, sub_faction_
     return sections
 
 
-def build_chapter_code_map(chapter_select):
-    """Plain {option value: display name} map from the surviving Chapter/
-    sub-faction filter select, e.g. {"BT": "BLACK TEMPLARS", ...}.
+def parse_data_f(value):
+    """Parses a `data-f="AA:10001,CH:21"`-style attribute into
+    {"AA": "10001", "CH": "21"}. The comma-separated KEY:VALUE pairs
+    aren't in a fixed order — both "AA:...,CH:..." and "CH:...,AA:..."
+    appear on the live page — so this doesn't assume one."""
+    result = {}
 
-    Wahapedia's 11th-edition faction pages dropped the separate Detachment
-    filter select that build_detachment_subfaction_map used to read (it no
-    longer exists in the markup), but the Chapter select's own option
-    values line up exactly with the CHxx class tokens now stamped on every
-    detachment nav row (see get_detachment_chapter_codes) — value="BT"
-    matches token "CHBT" — so this is enough to turn a row's chapter
-    token(s) back into a readable sub-faction name without needing that
-    second dropdown at all.
-    """
-    mapping = {}
-
-    for opt in chapter_select.find_all("option"):
-        value = opt.get("value")
-        name = opt.get_text(strip=True)
-
-        if not value:
+    for part in (value or "").split(","):
+        if ":" not in part:
             continue
 
-        name_lower = name.lower()
-        if name_lower in ("no filter", "no supplement", "no supplements"):
-            continue
+        key, _, val = part.partition(":")
+        key = key.strip()
+        val = val.strip()
 
-        mapping[value] = style_parser.normalize_faction_name(name)
+        if key and val:
+            result[key] = val
 
-    return mapping
+    return result
 
-def get_detachment_chapter_codes(cls):
-    """Chapter codes (the bare 2-char code, e.g. "BT" — matching the
-    Chapter select's own option values, see build_chapter_code_map) from a
-    detachment nav row's CHxx class tokens, excluding the generic CHCH
-    marker every row carries regardless of scope.
 
-    A detachment available to every chapter carries one CHxx token per
-    chapter (13-14 of them); a chapter-locked detachment (e.g. Black
-    Templars' own) carries exactly one, alongside CHCH. Exactly one
-    remaining code here means "this detachment belongs to that specific
-    chapter"; zero or several means "this detachment isn't chapter-locked,
-    it's faction-wide" — see discover_detachments_from_contents.
+def build_detachment_chapter_map(soup):
+    """{CH hex value: chapter name} map, e.g. {"21": "DARK ANGELS", ...}.
+
+    Wahapedia's 11th-edition Contents nav no longer tags a detachment row
+    with a literal CHxx CSS class (see the old get_detachment_chapter_codes)
+    — that information now lives only in the row's own
+    `data-f="AA:...,CH:..."` hex bitmask, which has no readable chapter
+    name on its own. But the Detachments filter panel's per-chapter group
+    headers (`<div class="DetFilterGroupHeader" data-f="...,CH:xx">Dark
+    Angels</div>`) carry that exact same CH value as every detachment
+    listed under them — verified directly: Dark Angels' header is CH:21,
+    and its own "Darkflight Pursuit" detachment row in the Contents nav is
+    also CH:21, byte-for-byte, no bit decoding needed. A faction-wide
+    detachment's CH value (e.g. CH:3fff, every chapter bit set at once)
+    never matches any single chapter's header, so it naturally falls
+    through to "no sub-faction" wherever this map is looked up.
     """
-    return [
-        token[2:] for token in cls.split()
-        if len(token) == 4 and token.startswith("CH") and token != "CHCH"
-    ]
+    chapter_map = {}
 
-def discover_detachments_from_contents(container_soup, faction_name, chapter_code_map):
+    for header in soup.select(".DetFilterGroupHeader"):
+        ch_value = parse_data_f(header.get("data-f")).get("CH")
+        name = header.get_text(" ", strip=True)
+
+        if ch_value and name:
+            chapter_map[ch_value] = style_parser.normalize_faction_name(name)
+
+    return chapter_map
+
+def discover_detachments_from_contents(container_soup, faction_name, chapter_map):
     detachments = []
     seen_anchors = set()
 
@@ -403,13 +404,8 @@ def discover_detachments_from_contents(container_soup, faction_name, chapter_cod
         if "clFl" not in classes:
             continue
 
-        cls = " ".join(classes)
-
-        chapter_codes = get_detachment_chapter_codes(cls)
-        if len(chapter_codes) == 1:
-            sub_faction = chapter_code_map.get(chapter_codes[0], faction_name)
-        else:
-            sub_faction = faction_name
+        ch_value = parse_data_f(row.get("data-f")).get("CH")
+        sub_faction = chapter_map.get(ch_value, faction_name) if ch_value else faction_name
 
         heading_row = row.find_previous(
             lambda tag: (
@@ -425,14 +421,81 @@ def discover_detachments_from_contents(container_soup, faction_name, chapter_cod
         seen_anchors.add(anchor)
         detachments.append({
             "name": heading_row.get_text(" ", strip=True),
-            "chapter_codes": chapter_codes,
             "sub_faction": sub_faction,
             "anchor": anchor,
         })
 
     return detachments
 
+def verify_chapter_source_correlation(faction_name, subfaction_map, chapter_map):
+    """Sanity check only — never blocks scraping. The Chapter <select>
+    dropdown (still used for unit and army-rules sub-faction assignment,
+    via subfaction_map) and the Detachments filter panel's own group
+    headers (used for detachment sub-faction assignment, via
+    build_detachment_chapter_map) are now two completely independent
+    sources for what should be the same set of chapter names — they don't
+    share a key space (one keys on a "CHDA"-style concatenated class
+    suffix, the other on a raw hex bitmask string) so there's no way to
+    cross-check them directly, only by comparing the chapter NAMES each
+    one resolves to.
+
+    The two mismatch directions are NOT equally serious:
+    - A chapter in the table but not the dropdown is a real error: the
+      dropdown is the authoritative list of chapters this faction has, so
+      a detachment group resolving to a name outside that list means
+      something is actually broken (a parsing bug, or Wahapedia adding a
+      chapter/grouping the dropdown doesn't know about yet).
+    - A chapter in the dropdown but not the table is expected and
+      harmless — a chapter can simply have no detachments of its own
+      (e.g. Blood Ravens, or every chapter in a faction like Legiones
+      Daemonica where nothing is chapter-locked) — so this is reported
+      informationally only, with no implication that anything needs
+      fixing. A completely empty table is just this same case for every
+      chapter at once, not a different, more serious one — it gets no
+      special treatment here.
+    """
+    dropdown_chapters = set(subfaction_map.values())
+    table_chapters = set(chapter_map.values())
+
+    if not dropdown_chapters:
+        return
+
+    only_in_table = table_chapters - dropdown_chapters
+    only_in_dropdown = dropdown_chapters - table_chapters
+
+    if only_in_table:
+        print(
+            f"[{faction_name}] WARNING: Detachments filter panel resolved "
+            f"detachment(s) to {sorted(only_in_table)}, which the Chapter "
+            f"dropdown ({sorted(dropdown_chapters)}) doesn't recognise as a "
+            f"real chapter — check build_detachment_chapter_map / the "
+            f".DetFilterGroupHeader selector against the live page."
+        )
+
+    if only_in_dropdown:
+        print(
+            f"[{faction_name}] NOTE: chapter(s) {sorted(only_in_dropdown)} "
+            f"have no detachments of their own — expected, not an error."
+        )
+
+
 def set_default_manifest(manifest, faction_name, sub_faction_name):
+    # faction_name is already normalized once, when factions are discovered
+    # (see discovered_factions). sub_faction_name isn't reliably: detachments
+    # and army rules already normalize it via style_parser before calling
+    # this, but units' sub_faction_name comes straight out of
+    # waha_unit_scraper.py's own SEPARATE normalize_faction_name/
+    # FACTION_NAME_ALIASES copy — if that copy is missing an alias
+    # style_parser's has (already true for at least "T'au Empire"), the two
+    # names for the same faction won't compare equal here, and the unit
+    # silently gets filed under a bogus one-off "sub-faction" keyed by
+    # whichever name wasn't aliased. Re-normalizing both through the same
+    # table right here, regardless of what already happened upstream,
+    # makes this comparison correct no matter which caller's own
+    # normalization (if any) produced its input.
+    faction_name = style_parser.normalize_faction_name(faction_name)
+    sub_faction_name = style_parser.normalize_faction_name(sub_faction_name)
+
     if faction_name == sub_faction_name:
         return manifest.setdefault(
             sub_faction_name,
@@ -550,7 +613,7 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
         sub_filter_key = None
 
         subfaction_map = None
-        chapter_code_map = {}
+        chapter_map = {}
 
         # Handle Sub-Filter if a Chapter/sub-faction dropdown exists. 11th
         # edition dropped the separate Detachment dropdown 10th edition had
@@ -602,7 +665,9 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
 
             subfaction_map = style_parser.build_sub_faction_map(selects[0])
 
-            chapter_code_map = build_chapter_code_map(selects[0])
+            chapter_map = build_detachment_chapter_map(sm_soup)
+
+            verify_chapter_source_correlation(faction["name"], subfaction_map, chapter_map)
 
             
 
@@ -617,7 +682,7 @@ def run_full_pipeline(page, failed_units, failed_detachments, args):
         detachments = discover_detachments_from_contents(
             container_soup,
             faction["name"],
-            chapter_code_map
+            chapter_map
         )
 
         army_rule_sections = discover_army_rules_from_contents(

@@ -39,7 +39,7 @@ def clean_text(element):
 FACTION_NAME_ALIASES = {
     "Space Marines": "Adeptus Astartes",
     "Chaos Daemons": "Legiones Daemonica",
-    "Imperial Agents": "Agents of the Imperium",
+    "Imperial Agents": "Agents of the Imperium"
 }
 
 
@@ -76,7 +76,7 @@ def build_sub_faction_map(select):
         if name_lower in ("no supplement", "no supplements"):
             continue
 
-        mapping[value] = normalize_faction_name(name)
+        mapping[value] = style_parser.normalize_faction_name(name)
 
     if not no_filter_value:
         return {}
@@ -125,45 +125,73 @@ def locate_datacard(page):
     return locator
 
 
-class _ClassOnly:
-    """Minimal stand-in so extract_faction_name's `ds.get("class", [])`
-    check works against a class list read directly off the live locator,
-    without needing the datasheet's own wrapping tag (lost once we only
-    have its innerHTML from resolve_styled_content)."""
-
-    def __init__(self, classes):
-        self._classes = classes
-
-    def get(self, key, default=None):
-        return self._classes if key == "class" else default
+def normalized_keyword_set(keywords):
+    return {style_parser.normalize_faction_name(k) for k in keywords if k}
 
 
-def extract_faction_name(soup, ds, sub_faction_map):
-    datasheet_classes = set(ds.get("class", []))
+def extract_faction_name(soup, data, sub_faction_map):
+    """Sub-faction (chapter, craftworld, Chaos god, ...) for a unit, or
+    the parent faction if it doesn't belong to one specific sub-faction.
 
-    match = None
+    The parent faction itself comes from the page's own FactionRules
+    tooltip — the same lookup this used to fall back to — since it's
+    always the parent, never a sub-faction.
 
-    for class_name, faction_name in sub_faction_map.items():
-        if class_name not in datasheet_classes:
-            continue
+    Step 1: whatever remains in Faction Keywords once the parent faction
+    itself is removed is the sub-faction. Covers Space Marines (chapter
+    keyword sits alongside "ADEPTUS ASTARTES") and Aeldari (just the
+    craftworld keyword, no parent keyword at all).
 
-        if match is not None:
-            # Generic unit - belongs to the parent faction.
-            match = None
-            break
+    Step 2: Legiones Daemonica's sub-faction (a Chaos god) isn't a Faction
+    Keyword at all — it's in the standard Keywords block, alongside the
+    faction's own standard keywords like "CHAOS"/"DAEMON". Checked only
+    when step 1 found nothing AND the parent faction is specifically
+    Legiones Daemonica — not any faction with a sub-faction list — since a
+    generic unit's ordinary standard keywords could otherwise
+    coincidentally match some other faction's sub-faction name (e.g. a
+    Space Marines chapter) with no such intent.
 
-        match = faction_name
-
-    if match is not None:
-        return match
-
-    # Fall back to the existing implementation.
+    Either step falling back covers both "no sub-faction" and "more than
+    one candidate" (this shouldn't happen, but is a warning rather than a
+    silent guess if it does).
+    """
     node = soup.select_one('[data-tooltip-content="#tooltip_contentFactionRules"]')
+    parent_faction = style_parser.normalize_faction_name(clean_text(node)) if node else ""
 
-    if not node:
-        return ""
+    faction_keywords = normalized_keyword_set(data.get("faction_keywords") or [])
+    remaining = sorted(faction_keywords - {parent_faction})
 
-    return normalize_faction_name(clean_text(node))
+    if len(remaining) == 1:
+        return remaining[0]
+
+    if len(remaining) > 1:
+        print(
+            f"WARNING: {data.get('name', 'unit')} has Faction Keywords "
+            f"{sorted(faction_keywords)} leaving more than one candidate "
+            f"sub-faction {remaining} after removing the parent faction "
+            f"{parent_faction!r} — falling back to the parent faction."
+        )
+        return parent_faction
+
+    if sub_faction_map and parent_faction == "LEGIONES DAEMONICA":
+        standard_keywords = set()
+
+        for group in data.get("keywords") or []:
+            standard_keywords.update(group.get("keywords") or [])
+
+        matches = sorted(normalized_keyword_set(standard_keywords) & set(sub_faction_map.values()))
+
+        if len(matches) == 1:
+            return matches[0]
+
+        if len(matches) > 1:
+            print(
+                f"WARNING: {data.get('name', 'unit')} has standard Keywords "
+                f"matching more than one sub-faction {matches} — falling "
+                f"back to the parent faction."
+            )
+
+    return parent_faction
 
 
 def extract_datacard(soup):
@@ -314,20 +342,65 @@ def extract_hunter_restriction(row):
     return split_csv_value(clean_text(value_node))
 
 
+def parse_weapon_profile_row(row, current_hit_key, pending_hunter_restriction):
+    """Parses one `dsWeaponRow` into a profile dict. Returns None if the
+    row doesn't actually carry weapon data (wrong cell count, blank name)."""
+    cells = row.select("td")
+
+    if len(cells) < 8:
+        return None
+
+    profile_marker = extract_weapon_profile_marker(cells[0])
+
+    # Some units (e.g. Mek Gunz) assign different weapon options to
+    # different models in the unit instead of a split-profile marker, e.g.
+    # "1-2" meaning models 1-2 carry this option. That cell holds plain
+    # text rather than a .dsPointy marker in that case.
+    model_range = clean_text(cells[0]) if profile_marker is None else ""
+
+    name_cell = cells[1]
+    name, keywords = extract_weapon_name_and_keywords(name_cell)
+
+    if not name:
+        return None
+
+    return {
+        "name": name,
+        "keywords": keywords,
+        "is_profile": profile_marker is not None,
+        "profile_marker": profile_marker,
+        "models": model_range,
+        "range": clean_text(cells[2]),
+        "A": clean_text(cells[3]),
+        current_hit_key: clean_text(cells[4]),
+        "S": clean_text(cells[5]),
+        "AP": clean_text(cells[6]),
+        "D": clean_text(cells[7]),
+        "hunter_restriction": pending_hunter_restriction,
+    }
+
+
 def extract_weapons(ds):
+    """Groups weapon rows by their enclosing `<tbody>` — Wahapedia puts
+    every profile of a single weapon (e.g. "Gutrippa - Standard" and
+    "Gutrippa - Hunter") in one shared `<tbody class="bkg bkgN">`, and
+    alternates that N (and so the row's background stripe) per weapon, not
+    per profile row. Grouping this way — rather than the previous flat,
+    one-entry-per-`dsWeaponRow` list — lets the renderer stripe backgrounds
+    per weapon and only draw the "HUNTER: ..." separator between a
+    weapon's own profiles, never between two different weapons.
+    """
     weapons = []
 
     current_type = None
     current_hit_key = None
-    pending_hunter_restriction = []
 
     table = ds.select_one(".wTable")
     if not table:
         return weapons
 
-    for row in table.select("tr"):
-        row_classes = row.get("class", [])
-        header_text = clean_text(row)
+    for tbody in table.find_all("tbody", recursive=False):
+        header_text = clean_text(tbody)
 
         if "RANGED WEAPONS" in header_text:
             current_type = "ranged"
@@ -342,68 +415,68 @@ def extract_weapons(ds):
         if not current_type:
             continue
 
-        # Names which keyword(s) the NEXT weapon row (a "Hunter" split
-        # profile) is restricted to targeting. Stashed here rather than
-        # consumed immediately since the row it describes is still one or
-        # two rows further down the table (past the duplicate long-name
-        # row used for responsive layout).
-        if "dsHunterKwRow" in row_classes:
-            pending_hunter_restriction = extract_hunter_restriction(row)
+        tbody_classes = tbody.get("class", [])
+
+        # Spacer between the ranged/melee sections; carries no data.
+        if "dsWeaponsGap" in tbody_classes:
             continue
 
-        # Generic explanatory boilerplate ("Before selecting targets for
-        # this weapon, select one of its eligible profiles...") — identical
-        # wording on every unit that has a Hunter profile, so it's not
-        # per-weapon data worth capturing here.
-        if "dsHunterKwNoteRow" in row_classes:
+        # Empty placeholder Wahapedia renders right after each section
+        # header purely to seed its background-stripe alternation (its
+        # own bkgN value doesn't actually predict the first real weapon's
+        # stripe — that always restarts at the "normal" stripe per
+        # section) — no weapon data in here, safe to skip.
+        if "bkg_reset" in tbody_classes:
             continue
 
-        # Ignore the duplicate long-name rows used for responsive layout
-        if "wTable2_long" in row_classes:
-            continue
-
-        cells = row.select("td")
-
-        if len(cells) < 8:
-            continue
-
-        profile_marker = extract_weapon_profile_marker(cells[0])
-
-        # Some units (e.g. Mek Gunz) assign different weapon options to
-        # different models in the unit instead of a split-profile marker,
-        # e.g. "1-2" meaning models 1-2 carry this option. That cell holds
-        # plain text rather than a .dsPointy marker in that case.
-        model_range = clean_text(cells[0]) if profile_marker is None else ""
-
-        name_cell = cells[1]
-        name, keywords = extract_weapon_name_and_keywords(name_cell)
-
-        if not name:
-            continue
-
-        weapon = {
-            "type": current_type,
-            "name": name,
-            "keywords": keywords,
-            "is_profile": profile_marker is not None,
-            "profile_marker": profile_marker,
-            "models": model_range,
-            "range": clean_text(cells[2]),
-            "A": clean_text(cells[3]),
-            current_hit_key: clean_text(cells[4]),
-            "S": clean_text(cells[5]),
-            "AP": clean_text(cells[6]),
-            "D": clean_text(cells[7]),
-            "hunter_restriction": pending_hunter_restriction,
-        }
+        profiles = []
         pending_hunter_restriction = []
 
-        weapons.append(weapon)
+        for row in tbody.select("tr"):
+            row_classes = row.get("class", [])
+
+            # Names which keyword(s) the NEXT profile row in this same
+            # tbody (a "Hunter" split profile) is restricted to targeting.
+            if "dsHunterKwRow" in row_classes:
+                pending_hunter_restriction = extract_hunter_restriction(row)
+                continue
+
+            # Generic boilerplate ("Before selecting targets for this
+            # weapon, select one of its eligible profiles...") — lives in
+            # its own trailing tbody once per table, not per weapon, so it
+            # never actually reaches here as part of a weapon's profiles;
+            # skipped defensively all the same.
+            if "dsHunterKwNoteRow" in row_classes:
+                continue
+
+            # Duplicate long-name row used for responsive layout
+            if "wTable2_long" in row_classes:
+                continue
+
+            profile = parse_weapon_profile_row(row, current_hit_key, pending_hunter_restriction)
+
+            if profile is None:
+                continue
+
+            pending_hunter_restriction = []
+            profiles.append(profile)
+
+        if profiles:
+            weapons.append({
+                "type": current_type,
+                "profiles": profiles,
+            })
 
     return weapons
 
 
-def extract_keyword_list_from_block(block, prefix):
+def extract_keyword_list_from_block(block, prefix, separators=",;"):
+    """`separators` is a string of single characters, any of which splits
+    one keyword from the next. The live page isn't consistent about using
+    "," or ";" between keywords (both standard and Faction Keywords have
+    been seen using either), so both are accepted by default rather than
+    assuming one.
+    """
     if not block:
         return []
 
@@ -419,7 +492,7 @@ def extract_keyword_list_from_block(block, prefix):
 
     return [
         clean_punctuation_spacing(part)
-        for part in text.split(",")
+        for part in re.split(f"[{re.escape(separators)}]", text)
         if clean_punctuation_spacing(part)
     ]
 
@@ -464,7 +537,7 @@ def extract_keywords(ds):
                 continue
 
             # actual keyword span
-            keywords = extract_keyword_list_from_block(child, "")
+            keywords = extract_keyword_list_from_block(child, "", ",;")
 
             if pending_label:
                 current["applies_to"] = pending_label
@@ -481,7 +554,8 @@ def extract_keywords(ds):
 def extract_faction_keywords(ds):
     return extract_keyword_list_from_block(
         ds.select_one(".dsRightСolKW"),
-        "FACTION KEYWORDS:"
+        "FACTION KEYWORDS:",
+        ",;"
     )
 
 
@@ -796,17 +870,23 @@ def run(page, url, unit_subfaction_map=None):
     if not unit_subfaction_map:
         selects = get_filter_selects(full_soup)
 
-        if len(selects) > 1:
-            unit_subfaction_map = build_sub_faction_map(selects[0])
-        else:
-            unit_subfaction_map = {}
-
-    ds_classes = locator.evaluate("el => Array.from(el.classList)")
-    faction_name = extract_faction_name(full_soup, _ClassOnly(ds_classes), unit_subfaction_map)
+        # An individual unit's page carries only the Chapter/sub-faction
+        # filter select itself — not the extra widgets (Detachments, etc.)
+        # a faction's main listing page has — so requiring more than one
+        # match here (as before) discarded that one valid select on every
+        # unit page and silently fell back to the generic FactionRules
+        # tooltip, which just returns the parent faction name (e.g.
+        # "Space Marines") regardless of the unit's actual chapter. Any
+        # match at all is usable.
+        unit_subfaction_map = build_sub_faction_map(selects[0]) if selects else {}
 
     soup, styles, root_style = style_parser.resolve_styled_content(locator)
 
     data = extract_all(soup, page, styles, root_style)
+
+    # Resolved after extraction because it works from the unit's own
+    # keywords.
+    faction_name = extract_faction_name(full_soup, data, unit_subfaction_map)
 
     return data, faction_name
 

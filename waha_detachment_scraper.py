@@ -292,6 +292,22 @@ def extract_detachment_data(detachment_block, faction_name, detachment_name):
     for nested in soup.select("div.clFl"):
         nested.decompose()
 
+    # Wahapedia now shows a collapsed "FAQ / Errata" spoiler block after
+    # many detachment sections — a heading plus a "Show" toggle, with the
+    # real errata text hidden until clicked. extract_detachment_rules has
+    # no reason to know about it specifically (it isn't excluded by the
+    # str10Wrap/str11Wrap checks it already applies), so without this it
+    # gets picked up as if it were a genuine rule of its own (name
+    # "Errata", content ["Show"]). Decomposing it here — before any
+    # heading-walking below — also matters more than it might look: merely
+    # excluding its heading wouldn't be enough on its own, since
+    # extract_detachment_rules gathers a rule's content by walking
+    # next_siblings until the next h2/h3, so the "Show" toggle text would
+    # just get silently absorbed into whichever real rule precedes it
+    # instead of disappearing.
+    for spoiler in soup.select(".faqErrataSpoiler"):
+        spoiler.decompose()
+
     return {
         "faction": faction_name,
         "detachment": detachment_name,

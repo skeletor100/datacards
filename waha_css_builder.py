@@ -150,12 +150,18 @@ def collect_unit_card(card, icon_class_sets, direct_image_srcs):
 
     collect_from_content(card.get("weapon_abilities"), icon_class_sets, direct_image_srcs)
 
+    # waha_unit_scraper.py's extract_weapons() groups each weapon's
+    # profile(s) — e.g. a Choppa's "Standard" and "Hunter" profiles — under
+    # weapon["profiles"], one <tbody> per weapon. profile_marker (the
+    # .dsPointy split-profile marker) lives on each individual profile now,
+    # not on the weapon/group itself.
     for weapon in card.get("weapons") or []:
-        marker = weapon.get("profile_marker")
-        if isinstance(marker, dict):
-            classes = tuple(sorted(c for c in (marker.get("classes") or []) if c))
-            if classes:
-                icon_class_sets.add(classes)
+        for profile in weapon.get("profiles") or []:
+            marker = profile.get("profile_marker")
+            if isinstance(marker, dict):
+                classes = tuple(sorted(c for c in (marker.get("classes") or []) if c))
+                if classes:
+                    icon_class_sets.add(classes)
 
 
 def collect_detachment_card(card, icon_class_sets, stratagem_color_classes, direct_image_srcs):
