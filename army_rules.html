@@ -781,9 +781,23 @@ body{margin:0;background:#202020;color:var(--ink);font-family:var(--font);paddin
           padding:var(--weapon-row-pad-y, .50em) .25em calc(var(--weapon-row-pad-y, .50em) - .07em);
           text-align:center;
           vertical-align:top;
-          border-bottom:2px dotted var(--rule);
           font-weight:500;
           font-size:1.12em;
+        }
+        /* The dashed rule separates one WEAPON from the next, not one
+           profile from another within the same weapon — so it lives only
+           on the last row of each group (see renderWeaponGroup), rather
+           than on every row by default. */
+        .weapon-table tbody tr.weapon-group-end td{
+          border-bottom:2px dotted var(--rule);
+        }
+        /* Wahapedia stripes backgrounds per WEAPON (a group of one or more
+           profile rows sharing one <tbody>), not per row — see
+           renderWeaponGroup. Every other weapon within a RANGED/MELEE
+           section gets this grey tint; the alternation restarts at the
+           top of each section rather than continuing across both. */
+        .weapon-table tbody tr.weapon-row-alt td{
+          background:rgba(0,0,0,.06);
         }
         .weapon-table tbody td:first-child{
           text-align:left;
@@ -867,7 +881,6 @@ body{margin:0;background:#202020;color:var(--ink);font-family:var(--font);paddin
         .weapon-table tbody tr.weapon-hunter-row td{
           padding:.1em .35em .1em .35em;
           text-align:left;
-          border-bottom:none;
         }
         .weapon-hunter-tag-row{
           display:flex;
@@ -1365,12 +1378,24 @@ function blockHtmlArmyRules(block) {
 }
 
 async function fetchFirst(urls, fallback) {
+  const failures = [];
   for (const url of urls) {
     try {
       const res = await fetch(url);
       if (res.ok) return await res.json();
-    } catch (err) {}
+      failures.push(`${url}: HTTP ${res.status}`);
+    } catch (err) {
+      failures.push(`${url}: ${err?.message || err}`);
+    }
   }
+  // Every URL failed — returning the fallback silently here previously made
+  // failures like a missing/misnamed waha_css_manifest.json (or opening this
+  // page via file:// instead of a local server, which blocks fetch() of
+  // local files entirely) impossible to distinguish from "there's just
+  // nothing there yet". Concretely, a failed manifest fetch means every
+  // weapon-profile-marker (e.g. the dsPointy Hunter/Standard split-profile
+  // markers) renders invisibly — see installWeaponMarkerCss.
+  console.warn(`fetchFirst: all URLs failed, using fallback. Tried:\n${failures.join('\n')}`);
   return fallback;
 }
 
@@ -2319,9 +2344,16 @@ function applyShow(){
         "invulnerable_save_comment": ""
       }],
       "weapons": [
-        { "type": "ranged", "name": "Hand of Dominion", "keywords": ["rapid fire 2"], "range": "30\"", "A": "2", "BS": "2+", "S": "6", "AP": "-2", "D": "2" },
-        { "type": "melee", "name": "Emperor’s Sword", "keywords": ["devastating wounds"], "range": "Melee", "A": "14", "WS": "2+", "S": "8", "AP": "-3", "D": "2" },
-        { "type": "melee", "name": "Hand of Dominion", "keywords": ["lethal hits"], "range": "Melee", "A": "7", "WS": "2+", "S": "14", "AP": "-4", "D": "4" }
+        { "type": "ranged", "profiles": [
+          { "name": "Hand of Dominion", "keywords": ["rapid fire 2"], "range": "30\"", "A": "2", "BS": "2+", "S": "6", "AP": "-2", "D": "2" }
+        ]},
+        { "type": "melee", "profiles": [
+          { "name": "Emperor’s Sword", "keywords": ["devastating wounds"], "range": "Melee", "A": "14", "WS": "2+", "S": "8", "AP": "-3", "D": "2" }
+        ]},
+        { "type": "melee", "profiles": [
+          { "name": "Hand of Dominion - Standard", "keywords": ["lethal hits"], "range": "Melee", "A": "7", "WS": "2+", "S": "14", "AP": "-4", "D": "4" },
+          { "name": "Hand of Dominion - Hunter", "keywords": ["lethal hits"], "hunter_restriction": ["MONSTER/VEHICLE"], "range": "Melee", "A": "7", "WS": "2+", "S": "16", "AP": "-4", "D": "6" }
+        ]}
       ],
       "sections": [
         {
@@ -2495,17 +2527,40 @@ function applyShow(){
       return '';
     }
 
-    function renderWeaponHunterRow(w){
-      const restriction = Array.isArray(w.hunter_restriction) ? w.hunter_restriction : [];
+    function renderWeaponHunterRow(p, altClass){
+      const restriction = Array.isArray(p.hunter_restriction) ? p.hunter_restriction : [];
       if(!restriction.length) return '';
-      // Mirrors Wahapedia's own `dsHunterKwRow` — a standalone full-width
-      // row sitting directly above the "Hunter" profile row it restricts
-      // (see extract_hunter_restriction in waha_unit_scraper.py). On the
-      // real page this is a small black banner tag (fixed black, not the
-      // unit's theme color — unlike every other banner on the card) with a
-      // pointed top-right corner, a square bottom-right corner, and a thin
-      // rule trailing off its bottom edge across the rest of the table.
-      return `<tr class="weapon-hunter-row"><td colspan="7"><span class="weapon-hunter-tag-row"><span class="weapon-hunter-banner">HUNTER: ${esc(restriction.map(k => String(k).toUpperCase()).join(', '))}</span><span class="weapon-hunter-rule"></span></span></td></tr>`;
+      // Mirrors Wahapedia's own `dsHunterKwRow` — a standalone row sitting
+      // directly above the "Hunter" profile row it restricts, INSIDE that
+      // weapon's own tbody group (see extract_hunter_restriction in
+      // waha_unit_scraper.py). Carries the group's own stripe class so its
+      // background matches the rest of that weapon's rows. Rendered as a
+      // small black banner tag (fixed black, not the unit's theme color —
+      // unlike every other banner on the card) with a pointed top-right
+      // corner, a square bottom-right corner, and a thin rule trailing off
+      // its bottom edge across the rest of the table.
+      return `<tr class="weapon-hunter-row${altClass}"><td colspan="7"><span class="weapon-hunter-tag-row"><span class="weapon-hunter-banner">HUNTER: ${esc(restriction.map(k => String(k).toUpperCase()).join(', '))}</span><span class="weapon-hunter-rule"></span></span></td></tr>`;
+    }
+
+    function renderWeaponProfileRow(p, hitKey, altClass, isGroupEnd){
+      const endClass = isGroupEnd ? ' weapon-group-end' : '';
+      return `<tr class="weapon-row${altClass}${endClass}"><td><span class="weapon-name-wrap"><span class="weapon-profile-slot" aria-hidden="true">${renderWeaponProfileMarker(p)}</span><span class="weapon-name-content">${renderWeaponName(p)}</span></span></td><td>${esc(p.range)}</td><td>${esc(p.A)}</td><td>${esc(p[hitKey])}</td><td>${esc(p.S)}</td><td>${esc(p.AP)}</td><td>${esc(p.D)}</td></tr>`;
+    }
+
+    function renderWeaponGroup(group, hitKey, index){
+      // Wahapedia stripes backgrounds per WEAPON (one <tbody> per weapon,
+      // however many profiles it has), restarting at the "normal" stripe
+      // at the top of each RANGED/MELEE section — never continuing across
+      // the section boundary and never striping profile-by-profile within
+      // one weapon. `index` here is this group's position within its own
+      // already-type-filtered list (ranged or melee), so a plain even/odd
+      // check reproduces that per-section restart for free.
+      const altClass = index % 2 === 1 ? ' weapon-row-alt' : '';
+      const profiles = Array.isArray(group.profiles) ? group.profiles : [];
+      // Only the group's LAST profile row draws the dashed separator (see
+      // .weapon-group-end), so it falls between weapons, never between two
+      // profiles of the same weapon (e.g. Standard/Hunter).
+      return profiles.map((p, i) => `${renderWeaponHunterRow(p, altClass)}${renderWeaponProfileRow(p, hitKey, altClass, i === profiles.length - 1)}`).join('');
     }
 
     function renderWeaponTable(weapons, title, hitKey){
@@ -2513,7 +2568,7 @@ function applyShow(){
       return `<div class="weapon-table-wrap"><table class="weapon-table">
         <colgroup><col class="name"><col class="range"><col class="a"><col class="hit"><col class="s"><col class="ap"><col class="d"></colgroup>
         <thead><tr><th>${esc(title)}</th><th>RANGE</th><th>A</th><th>${esc(hitKey)}</th><th>S</th><th>AP</th><th>D</th></tr></thead>
-        <tbody>${weapons.map(w => `${renderWeaponHunterRow(w)}<tr><td><span class="weapon-name-wrap"><span class="weapon-profile-slot" aria-hidden="true">${renderWeaponProfileMarker(w)}</span><span class="weapon-name-content">${renderWeaponName(w)}</span></span></td><td>${esc(w.range)}</td><td>${esc(w.A)}</td><td>${esc(w[hitKey])}</td><td>${esc(w.S)}</td><td>${esc(w.AP)}</td><td>${esc(w.D)}</td></tr>`).join('')}</tbody>
+        <tbody>${weapons.map((group, i) => renderWeaponGroup(group, hitKey, i)).join('')}</tbody>
       </table></div>`;
     }
 
@@ -2531,7 +2586,10 @@ function applyShow(){
 
     function abilitiesForWeapons(items, weapons){
       const keywords = new Set(
-        (weapons || []).flatMap(w => Array.isArray(w.keywords) ? w.keywords : []).map(norm)
+        (weapons || [])
+          .flatMap(w => Array.isArray(w.profiles) ? w.profiles : [])
+          .flatMap(p => Array.isArray(p.keywords) ? p.keywords : [])
+          .map(norm)
       );
       return (items || []).filter(item => keywords.has(norm(blockLeadTitle(item))));
     }
@@ -2778,8 +2836,32 @@ function applyShow(){
 
     function installWeaponMarkerCss(manifest){
       document.getElementById('manifest-weapon-marker-css')?.remove();
+
+      const iconEntries = Object.entries(manifest?.icons || {});
+
+      // Every weapon-profile-marker span's shape/color comes ENTIRELY from
+      // here — the .weapon-profile-marker CSS class itself has no visual
+      // styling of its own (see its rule above). If the manifest failed to
+      // fetch, was empty, or doesn't match the URL this page actually
+      // loaded from, this is silent otherwise: the marker spans still
+      // render in the DOM with correct data-marker attributes (so they
+      // "look right" in the generated HTML/JSON), but with zero width,
+      // height, or background — i.e. invisible.
+      if(!iconEntries.length){
+        console.warn(
+          'installWeaponMarkerCss: manifest has no icons (manifest is',
+          manifest,
+          ') — every .weapon-profile-marker (e.g. dsPointy Hunter/Standard',
+          'split-profile markers) will render invisibly. Check the Network',
+          'tab for a failed/missing request to waha_css_manifest.json (or',
+          'waha_css_manifest(2).json), and that the page is being served',
+          'over http(s), not opened directly via file://.'
+        );
+        return;
+      }
+
       const rules = [];
-      for(const [key, snapshot] of Object.entries(manifest?.icons || {})){
+      for(const [key, snapshot] of iconEntries){
         const selector = `.weapon-profile-marker[data-marker="${markerToken(key)}"]`;
         const elementCss = markerSnapshotCss(snapshot.element);
         if(elementCss) rules.push(`${selector}{${elementCss}}`);
@@ -2792,11 +2874,22 @@ function applyShow(){
           }
         }
       }
-      if(!rules.length) return;
+
+      if(!rules.length){
+        console.warn(
+          'installWeaponMarkerCss: manifest had', iconEntries.length,
+          'icon entries but none produced any usable CSS — every',
+          '.weapon-profile-marker will render invisibly. This usually means',
+          'every snapshot in the manifest is empty/default-valued.'
+        );
+        return;
+      }
+
       const style = document.createElement('style');
       style.id = 'manifest-weapon-marker-css';
       style.textContent = rules.join('\n');
       document.head.appendChild(style);
+      console.info(`installWeaponMarkerCss: installed ${rules.length} rule(s) from ${iconEntries.length} manifest icon(s).`);
     }
     
 
